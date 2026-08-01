@@ -1,34 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Campus Lost and Found Web Application
 
-## Getting Started
+The full-stack web application for the 159.333 Campus Lost and Found project.
 
-First, run the development server:
+## Technology stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Next.js App Router
+- React and TypeScript
+- Tailwind CSS
+- MongoDB Atlas and Mongoose
+- Zod validation
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Requirements
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Node.js 20.9 or later
+- npm
+- A MongoDB Atlas connection string
 
-## Learn More
+## Local setup
 
-To learn more about Next.js, take a look at the following resources:
+1. Run `npm install` to install dependencies.
+2. Run `Copy-Item .env.example .env.local` to create a local environment file.
+3. Replace the placeholder in `.env.local` with a real MongoDB connection string.
+4. Run `npm run dev` to start the development server.
+5. Open `http://localhost:3000` in a browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Example environment variable:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`MONGODB_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER_HOST/campus_lost_found?retryWrites=true&w=majority`
 
-## Deploy on Vercel
+Never commit `.env.local`, passwords, connection strings, or other real credentials.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Quality and security checks
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run these commands before creating a pull request:
+
+- `npm run lint`
+- `npm run build`
+- `npm audit`
+
+The project temporarily overrides vulnerable transitive versions of Sharp and PostCSS until patched versions are included in a stable Next.js release.
