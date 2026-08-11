@@ -1,7 +1,5 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
 
-const scryptAsync = promisify(scrypt);
 const ALGORITHM = "scrypt";
 const COST = 16384;
 const BLOCK_SIZE = 8;
@@ -11,12 +9,27 @@ const SALT_LENGTH = 16;
 const KEY_LENGTH = 64;
 
 async function deriveKey(password: string, salt: Buffer) {
-  return (await scryptAsync(password, salt, KEY_LENGTH, {
-    N: COST,
-    r: BLOCK_SIZE,
-    p: PARALLELIZATION,
-    maxmem: MAX_MEMORY,
-  })) as Buffer;
+  return new Promise<Buffer>((resolve, reject) => {
+    scrypt(
+      password,
+      salt,
+      KEY_LENGTH,
+      {
+        N: COST,
+        r: BLOCK_SIZE,
+        p: PARALLELIZATION,
+        maxmem: MAX_MEMORY,
+      },
+      (error, derivedKey) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(derivedKey);
+      },
+    );
+  });
 }
 
 export async function hashPassword(password: string) {
