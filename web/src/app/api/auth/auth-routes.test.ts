@@ -177,6 +177,28 @@ describe("authentication routes", () => {
     });
   });
 
+  it("does not mistake an internal registration SyntaxError for invalid JSON", async () => {
+    vi.mocked(registerUser).mockRejectedValue(
+      new SyntaxError("internal parser detail"),
+    );
+
+    const response = await registerPost(
+      jsonRequest("http://localhost/api/auth/register", {
+        email: "student@example.com",
+        password: "a secure password",
+        displayName: "Student Name",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "AUTHENTICATION_FAILED",
+        message: "Unable to complete authentication request",
+      },
+    });
+  });
+
   it("logs in, sets the cookie and returns only safe user data", async () => {
     vi.mocked(loginUser).mockResolvedValue({
       user: safeUser,
@@ -235,6 +257,27 @@ describe("authentication routes", () => {
       error: {
         code: "ACCOUNT_UNAVAILABLE",
         message: "Account is unavailable",
+      },
+    });
+  });
+
+  it("does not mistake an internal login SyntaxError for invalid JSON", async () => {
+    vi.mocked(loginUser).mockRejectedValue(
+      new SyntaxError("internal parser detail"),
+    );
+
+    const response = await loginPost(
+      jsonRequest("http://localhost/api/auth/login", {
+        email: "student@example.com",
+        password: "a secure password",
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "AUTHENTICATION_FAILED",
+        message: "Unable to complete authentication request",
       },
     });
   });
