@@ -34,8 +34,11 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(password: string, storedHash: string) {
+  const components = storedHash.split("$");
+  if (components.length !== 6) return false;
+
   const [algorithm, cost, blockSize, parallelization, encodedSalt, encodedKey] =
-    storedHash.split("$");
+    components;
 
   if (
     algorithm !== ALGORITHM ||

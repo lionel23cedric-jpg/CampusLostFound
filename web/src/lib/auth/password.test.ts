@@ -24,4 +24,12 @@ describe("password hashing", () => {
   ])("fails safely for malformed stored hash %s", async (storedHash) => {
     await expect(verifyPassword("password", storedHash)).resolves.toBe(false);
   });
+
+  it("rejects a valid hash with appended fields", async () => {
+    const storedHash = await hashPassword("correct horse battery staple");
+
+    await expect(
+      verifyPassword("correct horse battery staple", `${storedHash}$extra`),
+    ).resolves.toBe(false);
+  });
 });
