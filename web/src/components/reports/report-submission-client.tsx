@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
 import {
+  BrowserReportError,
   getReportCampusLocations,
   getReportCategories,
   type CreatedReport,
@@ -30,57 +31,14 @@ type ReferenceState =
 export function ReportSubmissionClient() {
   const router = useRouter();
   const { status, user, refreshSession } = useAuthSession();
-  const [referenceState, setReferenceState] = useState<ReferenceState>({
-    status: "idle",
-  });
-  const [createdReport, setCreatedReport] = useState<CreatedReport>();
-  const [permissionLost, setPermissionLost] = useState(false);
-  const [formKey, setFormKey] = useState(0);
-  const requestId = useRef(0);
+  const [permissionLostFor, setPermissionLostFor] = useState<string>();
 
-  const isActiveStudent =
-    status === "authenticated" &&
-    user?.role === "student" &&
-    user.status === "active" &&
-    !permissionLost;
-
-  const loadReferences = useCallback(async (blocking = true) => {
-    const currentRequest = ++requestId.current;
-    if (blocking) setReferenceState({ status: "loading" });
-
-    try {
-      const [categories, campusLocations] = await Promise.all([
-        getReportCategories(),
-        getReportCampusLocations(),
-      ]);
-      if (currentRequest !== requestId.current) return;
-
-      if (categories.length > 0 && campusLocations.length > 0) {
-        setReferenceState({ status: "ready", categories, campusLocations });
-      } else if (blocking) {
-        setReferenceState({ status: "error" });
-      }
-    } catch {
-      if (blocking && currentRequest === requestId.current) {
-        setReferenceState({ status: "error" });
-      }
-    }
+  const handleAuthenticationRequired = useCallback(() => {
+    router.replace("/login");
+  }, [router]);
+  const handlePermissionLost = useCallback((accountId: string) => {
+    setPermissionLostFor(accountId);
   }, []);
-
-  useEffect(() => {
-    if (!isActiveStudent) {
-      requestId.current += 1;
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      void loadReferences();
-    }, 0);
-    return () => {
-      window.clearTimeout(timeoutId);
-      requestId.current += 1;
-    };
-  }, [isActiveStudent, loadReferences, user?.id]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -119,7 +77,10 @@ export function ReportSubmissionClient() {
     );
   }
 
-  if (!isActiveStudent) {
+  const accountId =
+    user?.role === "student" && user.status === "active" ? user.id : undefined;
+
+  if (!accountId || permissionLostFor === accountId) {
     return (
       <section className={styles.statePanel} aria-labelledby="report-permission-heading">
         <p className={styles.kicker}>Student reports</p>
@@ -131,6 +92,87 @@ export function ReportSubmissionClient() {
       </section>
     );
   }
+
+  return (
+    <ActiveReportSubmission
+      key={accountId}
+      accountId={accountId}
+      onAuthenticationRequired={handleAuthenticationRequired}
+      onPermissionLost={handlePermissionLost}
+    />
+  );
+}
+
+function ActiveReportSubmission({
+  accountId,
+  onAuthenticationRequired,
+  onPermissionLost,
+}: {
+  accountId: string;
+  onAuthenticationRequired: () => void;
+  onPermissionLost: (accountId: string) => void;
+}) {
+  const [referenceState, setReferenceState] = useState<ReferenceState>({
+    status: "idle",
+  });
+  const [createdReport, setCreatedReport] = useState<CreatedReport>();
+  const [formKey, setFormKey] = useState(0);
+  const requestId = useRef(0);
+  const isMounted = useRef(false);
+
+  const loadReferences = useCallback(async (blocking = true) => {
+    if (!isMounted.current) return;
+
+    const currentRequest = ++requestId.current;
+    if (blocking) setReferenceState({ status: "loading" });
+
+    try {
+      const [categories, campusLocations] = await Promise.all([
+        getReportCategories(),
+        getReportCampusLocations(),
+      ]);
+      if (!isMounted.current || currentRequest !== requestId.current) return;
+
+      if (categories.length > 0 && campusLocations.length > 0) {
+        setReferenceState({ status: "ready", categories, campusLocations });
+      } else if (blocking) {
+        setReferenceState({ status: "error" });
+      }
+    } catch (error) {
+      if (!isMounted.current || currentRequest !== requestId.current) return;
+
+      if (error instanceof BrowserReportError) {
+        if (error.status === 401 || error.code === "AUTHENTICATION_REQUIRED") {
+          onAuthenticationRequired();
+          return;
+        }
+
+        if (
+          error.status === 403 ||
+          error.code === "ACCOUNT_UNAVAILABLE" ||
+          error.code === "REPORT_CREATION_FORBIDDEN"
+        ) {
+          onPermissionLost(accountId);
+          return;
+        }
+      }
+
+      if (blocking) setReferenceState({ status: "error" });
+    }
+  }, [accountId, onAuthenticationRequired, onPermissionLost]);
+
+  useEffect(() => {
+    isMounted.current = true;
+    const timeoutId = window.setTimeout(() => {
+      void loadReferences();
+    }, 0);
+
+    return () => {
+      isMounted.current = false;
+      window.clearTimeout(timeoutId);
+      requestId.current += 1;
+    };
+  }, [loadReferences]);
 
   if (createdReport) {
     return (
@@ -185,12 +227,20 @@ export function ReportSubmissionClient() {
         </p>
       </header>
       <ReportForm
-        key={formKey}
+        key={`${accountId}-${formKey}`}
         categories={referenceState.categories}
         campusLocations={referenceState.campusLocations}
-        onSuccess={setCreatedReport}
-        onAuthenticationRequired={() => router.replace("/login")}
-        onPermissionLost={() => setPermissionLost(true)}
+        onSuccess={(report) => {
+          if (isMounted.current && report.reporterId === accountId) {
+            setCreatedReport(report);
+          }
+        }}
+        onAuthenticationRequired={() => {
+          if (isMounted.current) onAuthenticationRequired();
+        }}
+        onPermissionLost={() => {
+          if (isMounted.current) onPermissionLost(accountId);
+        }}
         onReferenceUnavailable={() => loadReferences(false)}
       />
     </div>

@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -79,6 +82,7 @@ import {
   useAuthSession,
 } from "@/components/auth/auth-session-provider";
 import {
+  BrowserReportError,
   getReportCampusLocations,
   getReportCategories,
   type CreatedReport,
@@ -108,6 +112,13 @@ const student: NonNullable<AuthSessionContextValue["user"]> = {
       handoverInstructions: true,
     },
   },
+};
+
+const secondStudent: NonNullable<AuthSessionContextValue["user"]> = {
+  ...student,
+  id: "second-student-id",
+  email: "second.student@example.com",
+  profile: { ...student.profile, displayName: "Second Student" },
 };
 
 const categories = [
@@ -186,11 +197,38 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+function relativeLuminance(hex: string) {
+  const channels = hex
+    .slice(1)
+    .match(/.{2}/g)!
+    .map((channel) => Number.parseInt(channel, 16) / 255)
+    .map((channel) =>
+      channel <= 0.04045
+        ? channel / 12.92
+        : ((channel + 0.055) / 1.055) ** 2.4,
+    );
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const lighter = Math.max(
+    relativeLuminance(foreground),
+    relativeLuminance(background),
+  );
+  const darker = Math.min(
+    relativeLuminance(foreground),
+    relativeLuminance(background),
+  );
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(useRouter).mockReturnValue({ replace } as never);
-  vi.mocked(getReportCategories).mockResolvedValue(categories);
-  vi.mocked(getReportCampusLocations).mockResolvedValue(campusLocations);
+  vi.mocked(getReportCategories).mockReset().mockResolvedValue(categories);
+  vi.mocked(getReportCampusLocations)
+    .mockReset()
+    .mockResolvedValue(campusLocations);
 });
 
 afterEach(cleanup);
@@ -341,6 +379,44 @@ describe("ReportSubmissionClient", () => {
     expect(screen.queryByLabelText("Report form fixture")).toBeNull();
   });
 
+  it("redirects when initial reference loading reports expired authentication", async () => {
+    mockSession({ status: "authenticated", user: student });
+    vi.mocked(getReportCategories).mockRejectedValue(
+      new BrowserReportError({
+        code: "AUTHENTICATION_REQUIRED",
+        status: 401,
+        message: "Authentication required",
+      }),
+    );
+    render(<ReportSubmissionClient />);
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+    expect(
+      screen.queryByRole("heading", { name: "Report options unavailable" }),
+    ).toBeNull();
+  });
+
+  it("enters the permission state when initial reference loading is forbidden", async () => {
+    mockSession({ status: "authenticated", user: student });
+    vi.mocked(getReportCategories).mockRejectedValue(
+      new BrowserReportError({
+        code: "ACCOUNT_UNAVAILABLE",
+        status: 403,
+        message: "Account is unavailable",
+      }),
+    );
+    render(<ReportSubmissionClient />);
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Report submission unavailable",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("heading", { name: "Report options unavailable" }),
+    ).toBeNull();
+  });
+
   it("retries both reference requests and restores the form", async () => {
     const user = userEvent.setup();
     mockSession({ status: "authenticated", user: student });
@@ -436,6 +512,48 @@ describe("ReportSubmissionClient", () => {
     );
   });
 
+  it("redirects when a background reference refresh reports expired authentication", async () => {
+    const user = userEvent.setup();
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+    vi.mocked(getReportCategories).mockRejectedValueOnce(
+      new BrowserReportError({
+        code: "AUTHENTICATION_REQUIRED",
+        status: 401,
+        message: "Authentication required",
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Refresh references" }));
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+    expect(screen.getByLabelText("Report form fixture")).toBeTruthy();
+  });
+
+  it("enters the permission state when a background reference refresh is forbidden", async () => {
+    const user = userEvent.setup();
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+    vi.mocked(getReportCategories).mockRejectedValueOnce(
+      new BrowserReportError({
+        code: "REPORT_CREATION_FORBIDDEN",
+        status: 403,
+        message: "Only active student accounts can create reports",
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Refresh references" }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Report submission unavailable",
+      }),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText("Report form fixture")).toBeNull();
+  });
+
   it("redirects when authentication is lost", async () => {
     const user = userEvent.setup();
     mockReadyStudent();
@@ -483,6 +601,92 @@ describe("ReportSubmissionClient", () => {
     }
   });
 
+  it("does not display a success response for another reporter", async () => {
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+    const props = vi.mocked(ReportForm).mock.calls.at(-1)?.[0];
+
+    act(() => {
+      props?.onSuccess({ ...createdReport, reporterId: secondStudent.id });
+    });
+
+    expect(screen.queryByRole("heading", { name: "Report submitted" })).toBeNull();
+    expect(screen.getByLabelText("Report form fixture")).toBeTruthy();
+  });
+
+  it("mounts an empty account-scoped form when the active student changes", async () => {
+    const user = userEvent.setup();
+    mockReadyStudent();
+    const { rerender } = render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+    await user.type(screen.getByLabelText("Draft marker"), "First account draft");
+
+    const categoriesRequest = deferred<typeof categories>();
+    const locationsRequest = deferred<typeof campusLocations>();
+    vi.mocked(getReportCategories).mockReturnValueOnce(categoriesRequest.promise);
+    vi.mocked(getReportCampusLocations).mockReturnValueOnce(
+      locationsRequest.promise,
+    );
+    mockSession({ status: "authenticated", user: secondStudent });
+    rerender(<ReportSubmissionClient />);
+
+    expect(screen.queryByLabelText("Report form fixture")).toBeNull();
+    expect(document.body.textContent).not.toContain("First account draft");
+    await waitFor(() => expect(getReportCategories).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      categoriesRequest.resolve(categories);
+      locationsRequest.resolve(campusLocations);
+    });
+
+    expect((await screen.findByLabelText("Draft marker") as HTMLInputElement).value).toBe(
+      "",
+    );
+  });
+
+  it("hides the previous account success state during an identity change", async () => {
+    const user = userEvent.setup();
+    mockReadyStudent();
+    const { rerender } = render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+    await user.click(screen.getByRole("button", { name: "Complete report" }));
+    screen.getByRole("heading", { name: "Report submitted" });
+
+    const categoriesRequest = deferred<typeof categories>();
+    const locationsRequest = deferred<typeof campusLocations>();
+    vi.mocked(getReportCategories).mockReturnValueOnce(categoriesRequest.promise);
+    vi.mocked(getReportCampusLocations).mockReturnValueOnce(
+      locationsRequest.promise,
+    );
+    mockSession({ status: "authenticated", user: secondStudent });
+    rerender(<ReportSubmissionClient />);
+
+    expect(screen.queryByRole("heading", { name: "Report submitted" })).toBeNull();
+    expect(document.body.textContent).not.toContain(createdReport.title);
+    await act(async () => {
+      categoriesRequest.resolve(categories);
+      locationsRequest.resolve(campusLocations);
+    });
+    expect(await screen.findByLabelText("Report form fixture")).toBeTruthy();
+  });
+
+  it("does not carry a lost-permission state into a new student account", async () => {
+    const user = userEvent.setup();
+    mockReadyStudent();
+    const { rerender } = render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+    await user.click(screen.getByRole("button", { name: "Remove permission" }));
+    screen.getByRole("heading", { name: "Report submission unavailable" });
+
+    mockSession({ status: "authenticated", user: secondStudent });
+    rerender(<ReportSubmissionClient />);
+
+    expect(
+      screen.queryByRole("heading", { name: "Report submission unavailable" }),
+    ).toBeNull();
+    expect(await screen.findByLabelText("Report form fixture")).toBeTruthy();
+  });
+
   it("links to the dashboard and mounts a fresh form on request", async () => {
     const user = userEvent.setup();
     mockReadyStudent();
@@ -502,5 +706,23 @@ describe("ReportSubmissionClient", () => {
 
     expect(screen.getByLabelText("Report form fixture")).toBeTruthy();
     expect(ReportForm).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the kicker colour above WCAG AA contrast on both page surfaces", () => {
+    const submissionCss = readFileSync(
+      resolve("src/components/reports/report-submission.module.css"),
+      "utf8",
+    );
+    const globalCss = readFileSync(
+      resolve("src/app/globals.css"),
+      "utf8",
+    );
+
+    expect(submissionCss).toMatch(
+      /\.kicker\s*\{[^}]*color:\s*var\(--campus-green-dark\)/,
+    );
+    expect(globalCss).toMatch(/--campus-green-dark:\s*#174c3d/);
+    expect(contrastRatio("#174c3d", "#f4efe4")).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio("#174c3d", "#fffdf8")).toBeGreaterThanOrEqual(4.5);
   });
 });
