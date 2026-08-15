@@ -175,7 +175,9 @@ describe("ReportForm", () => {
     expect(screen.getByLabelText("Private notes (optional)")).toBeTruthy();
     expect(screen.getByLabelText("Tags (optional)")).toBeTruthy();
     expect(
-      screen.getByText("All fields are required unless marked optional."),
+      screen.getByText(
+        "Complete all unmarked text, date and selection fields. Fields marked optional may be left blank. Privacy choices may be changed.",
+      ),
     ).toBeTruthy();
   });
 

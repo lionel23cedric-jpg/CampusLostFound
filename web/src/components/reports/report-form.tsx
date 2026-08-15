@@ -452,7 +452,8 @@ export function ReportForm({
       )}
 
       <p className={styles.requiredNote}>
-        All fields are required unless marked optional.
+        Complete all unmarked text, date and selection fields. Fields marked
+        optional may be left blank. Privacy choices may be changed.
       </p>
 
       <fieldset className={styles.section} disabled={isPending}>
