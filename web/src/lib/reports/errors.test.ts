@@ -106,6 +106,26 @@ describe("report errors", () => {
     });
   });
 
+  it("omits browse validation fields when none are available", async () => {
+    const parsed = z.string().min(2).safeParse("x");
+    if (parsed.success) throw new Error("Expected validation to fail");
+
+    const responses = [
+      invalidReportQueryResponse(),
+      invalidReportQueryResponse(parsed.error),
+    ];
+
+    for (const response of responses) {
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid report query",
+        },
+      });
+    }
+  });
+
   it("maps browse authentication, not found and unknown failures safely", async () => {
     const authentication = reportBrowseErrorResponse(
       new AuthError("AUTHENTICATION_REQUIRED"),
@@ -115,9 +135,6 @@ describe("report errors", () => {
     );
     const unknown = reportBrowseErrorResponse(
       new Error("mongodb secret detail"),
-    );
-    const unrelated = reportBrowseErrorResponse(
-      new ReportError("CATEGORY_UNAVAILABLE"),
     );
 
     expect(authentication.status).toBe(401);
@@ -140,11 +157,119 @@ describe("report errors", () => {
       },
     });
     expect(JSON.stringify(body)).not.toContain("mongodb secret detail");
-    expect(unrelated.status).toBe(500);
-    await expect(unrelated.json()).resolves.toEqual({
+  });
+
+  it.each([
+    "ACCOUNT_UNAVAILABLE",
+    "EMAIL_ALREADY_REGISTERED",
+    "INVALID_CREDENTIALS",
+    "AUTHENTICATION_FAILED",
+  ] as const)("hides unrelated %s errors from browse routes", async (code) => {
+    const response = reportBrowseErrorResponse(new AuthError(code));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
       error: {
         code: "REPORT_BROWSE_FAILED",
         message: "Unable to load reports",
+      },
+    });
+  });
+
+  it.each([
+    "REPORT_CREATION_FORBIDDEN",
+    "CATEGORY_UNAVAILABLE",
+    "CAMPUS_LOCATION_UNAVAILABLE",
+    "REPORT_CREATION_FAILED",
+    "REFERENCE_DATA_FAILED",
+  ] as const)("hides unrelated %s errors from browse routes", async (code) => {
+    const response = reportBrowseErrorResponse(new ReportError(code));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "REPORT_BROWSE_FAILED",
+        message: "Unable to load reports",
+      },
+    });
+  });
+
+  it.each([
+    "REFERENCE_DATA_FAILED",
+    "REPORT_NOT_FOUND",
+    "REPORT_BROWSE_FAILED",
+  ] as const)("hides unrelated %s errors from report creation", async (code) => {
+    const response = reportErrorResponse(new ReportError(code));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "REPORT_CREATION_FAILED",
+        message: "Unable to create report",
+      },
+    });
+  });
+
+  it.each([
+    "ACCOUNT_UNAVAILABLE",
+    "EMAIL_ALREADY_REGISTERED",
+    "INVALID_CREDENTIALS",
+    "AUTHENTICATION_FAILED",
+  ] as const)("hides unrelated %s errors from report creation", async (code) => {
+    const response = reportErrorResponse(new AuthError(code));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "REPORT_CREATION_FAILED",
+        message: "Unable to create report",
+      },
+    });
+  });
+
+  it("preserves only authentication-required and reference-data errors for reference routes", async () => {
+    const authentication = referenceDataErrorResponse(
+      new AuthError("AUTHENTICATION_REQUIRED"),
+    );
+    const reference = referenceDataErrorResponse(
+      new ReportError("REFERENCE_DATA_FAILED"),
+    );
+
+    expect(authentication.status).toBe(401);
+    await expect(authentication.json()).resolves.toEqual({
+      error: {
+        code: "AUTHENTICATION_REQUIRED",
+        message: "Authentication required",
+      },
+    });
+    expect(reference.status).toBe(500);
+    await expect(reference.json()).resolves.toEqual({
+      error: {
+        code: "REFERENCE_DATA_FAILED",
+        message: "Unable to load reference data",
+      },
+    });
+  });
+
+  it.each([
+    new AuthError("ACCOUNT_UNAVAILABLE"),
+    new AuthError("EMAIL_ALREADY_REGISTERED"),
+    new AuthError("INVALID_CREDENTIALS"),
+    new AuthError("AUTHENTICATION_FAILED"),
+    new ReportError("REPORT_CREATION_FORBIDDEN"),
+    new ReportError("CATEGORY_UNAVAILABLE"),
+    new ReportError("CAMPUS_LOCATION_UNAVAILABLE"),
+    new ReportError("REPORT_CREATION_FAILED"),
+    new ReportError("REPORT_NOT_FOUND"),
+    new ReportError("REPORT_BROWSE_FAILED"),
+  ])("hides unrelated errors from reference routes", async (error) => {
+    const response = referenceDataErrorResponse(error);
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "REFERENCE_DATA_FAILED",
+        message: "Unable to load reference data",
       },
     });
   });

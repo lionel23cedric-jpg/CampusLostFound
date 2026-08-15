@@ -35,6 +35,22 @@ const reportErrorDefinitions = {
 
 export type ReportErrorCode = keyof typeof reportErrorDefinitions;
 
+const reportCreationErrorCodes = new Set<ReportErrorCode>([
+  "REPORT_CREATION_FORBIDDEN",
+  "CATEGORY_UNAVAILABLE",
+  "CAMPUS_LOCATION_UNAVAILABLE",
+  "REPORT_CREATION_FAILED",
+]);
+
+const referenceDataErrorCodes = new Set<ReportErrorCode>([
+  "REFERENCE_DATA_FAILED",
+]);
+
+const reportBrowseErrorCodes = new Set<ReportErrorCode>([
+  "REPORT_NOT_FOUND",
+  "REPORT_BROWSE_FAILED",
+]);
+
 export class ReportError extends Error {
   readonly code: ReportErrorCode;
   readonly status: number;
@@ -70,23 +86,39 @@ function safeReportErrorResponse(error: ReportError) {
   );
 }
 
+function isAuthenticationRequired(error: unknown): error is AuthError {
+  return (
+    error instanceof AuthError && error.code === "AUTHENTICATION_REQUIRED"
+  );
+}
+
+function safeDomainError(
+  error: unknown,
+  allowedCodes: ReadonlySet<ReportErrorCode>,
+  fallbackCode: ReportErrorCode,
+) {
+  return error instanceof ReportError && allowedCodes.has(error.code)
+    ? error
+    : new ReportError(fallbackCode);
+}
+
 export function reportErrorResponse(error: unknown) {
-  if (error instanceof AuthError) return authErrorResponse(error);
+  if (isAuthenticationRequired(error)) return authErrorResponse(error);
 
   return safeReportErrorResponse(
-    error instanceof ReportError
-      ? error
-      : new ReportError("REPORT_CREATION_FAILED"),
+    safeDomainError(
+      error,
+      reportCreationErrorCodes,
+      "REPORT_CREATION_FAILED",
+    ),
   );
 }
 
 export function referenceDataErrorResponse(error: unknown) {
-  if (error instanceof AuthError) return authErrorResponse(error);
+  if (isAuthenticationRequired(error)) return authErrorResponse(error);
 
   return safeReportErrorResponse(
-    error instanceof ReportError
-      ? error
-      : new ReportError("REFERENCE_DATA_FAILED"),
+    safeDomainError(error, referenceDataErrorCodes, "REFERENCE_DATA_FAILED"),
   );
 }
 
@@ -107,11 +139,9 @@ export function invalidReportQueryResponse(error?: ZodError) {
 }
 
 export function reportBrowseErrorResponse(error: unknown) {
-  if (error instanceof AuthError) return authErrorResponse(error);
+  if (isAuthenticationRequired(error)) return authErrorResponse(error);
 
   return safeReportErrorResponse(
-    error instanceof ReportError && error.code === "REPORT_NOT_FOUND"
-      ? error
-      : new ReportError("REPORT_BROWSE_FAILED"),
+    safeDomainError(error, reportBrowseErrorCodes, "REPORT_BROWSE_FAILED"),
   );
 }
