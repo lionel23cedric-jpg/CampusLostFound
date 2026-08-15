@@ -11,6 +11,7 @@ vi.mock("@/lib/reports/service", () => ({ createReport: vi.fn() }));
 import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { ReportError } from "@/lib/reports/errors";
+import type { OwnerReport } from "@/lib/reports/public-report";
 import {
   listActiveCampusLocations,
   listActiveCategories,
@@ -209,7 +210,7 @@ describe("report routes", () => {
 
   it("creates a report and returns only the owner-safe response", async () => {
     const ownerReport = {
-      id: "report-id",
+      id: "64b64c6f2f4d9f1a2b3c4d54",
       reporterId: user.id,
       reportType: "lost",
       title: "Black laptop bag",
@@ -229,7 +230,7 @@ describe("report routes", () => {
       resolvedAt: null,
       createdAt: "2026-08-15T02:05:00.000Z",
       updatedAt: "2026-08-15T02:05:00.000Z",
-    } as never;
+    } satisfies OwnerReport;
     vi.mocked(createReport).mockResolvedValue(ownerReport);
 
     const response = await reportsPost(jsonRequest(validBody));
