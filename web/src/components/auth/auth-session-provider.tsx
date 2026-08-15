@@ -23,7 +23,7 @@ export type AuthSessionStatus =
   | "unauthenticated"
   | "unavailable";
 
-type AuthSessionContextValue = {
+export type AuthSessionContextValue = {
   status: AuthSessionStatus;
   user: PublicUser | null;
   setAuthenticatedUser: (user: PublicUser) => void;
