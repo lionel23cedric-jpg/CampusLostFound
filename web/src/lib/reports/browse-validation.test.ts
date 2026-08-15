@@ -86,6 +86,32 @@ describe("report browse validation", () => {
     expect(parsed.data[field as keyof typeof parsed.data]).toEqual(expected);
   });
 
+  it("accepts the largest page whose 50-item offset is a safe integer", () => {
+    const maximumSafePage = Math.floor(Number.MAX_SAFE_INTEGER / 50) + 1;
+    const parsed = parse(`page=${maximumSafePage}&pageSize=50`);
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) throw new Error("Expected safe page offset");
+    expect(parsed.data).toEqual({ page: maximumSafePage, pageSize: 50 });
+    expect(
+      Number.isSafeInteger((parsed.data.page - 1) * parsed.data.pageSize),
+    ).toBe(true);
+  });
+
+  it("rejects a page whose calculated offset is not a safe integer", () => {
+    const firstUnsafePage = Math.floor(Number.MAX_SAFE_INTEGER / 50) + 2;
+    const parsed = parse(`page=${firstUnsafePage}&pageSize=50`);
+
+    expect(parsed.success).toBe(false);
+    if (parsed.success) throw new Error("Expected unsafe page offset rejection");
+    expect(parsed.error.issues).toContainEqual(
+      expect.objectContaining({
+        path: ["page"],
+        message: "Page offset exceeds the safe integer range",
+      }),
+    );
+  });
+
   it.each(["lost", "found"])("accepts the %s report type", (reportType) => {
     const parsed = parse(`reportType=${reportType}`);
 

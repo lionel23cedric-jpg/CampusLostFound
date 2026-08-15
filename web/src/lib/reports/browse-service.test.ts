@@ -43,6 +43,25 @@ const secondDocument = { _id: "second-report" };
 const firstMemberReport = { id: "first-report" };
 const secondMemberReport = { id: "second-report" };
 
+const memberReportProjection = {
+  _id: 1,
+  reporterId: 1,
+  reportType: 1,
+  title: 1,
+  publicDescription: 1,
+  categoryId: 1,
+  campusLocationId: 1,
+  occurredAt: 1,
+  colors: 1,
+  tags: 1,
+  photoUrls: 1,
+  status: 1,
+  privacySettings: 1,
+  resolvedAt: 1,
+  createdAt: 1,
+  updatedAt: 1,
+};
+
 const findExec = vi.fn();
 const findChain = {
   sort: vi.fn(),
@@ -93,12 +112,7 @@ describe("report browse service", () => {
     expect(connectToDatabase).toHaveBeenCalledOnce();
     expect(ItemReportModel.find).toHaveBeenCalledWith(
       { status: { $in: allowedStatuses } },
-      expect.objectContaining({
-        reporterId: 1,
-        privacySettings: 1,
-        title: 1,
-        publicDescription: 1,
-      }),
+      memberReportProjection,
     );
     expect(findChain.sort).toHaveBeenCalledWith({
       occurredAt: -1,
@@ -115,8 +129,11 @@ describe("report browse service", () => {
     await listReports(user, query({ q: "laptop bag" }));
 
     expect(ItemReportModel.find).toHaveBeenCalledWith(
-      expect.objectContaining({ $text: { $search: "laptop bag" } }),
-      expect.objectContaining({ score: { $meta: "textScore" } }),
+      {
+        status: { $in: ["open", "claim_pending", "resolved", "closed"] },
+        $text: { $search: "laptop bag" },
+      },
+      { ...memberReportProjection, score: { $meta: "textScore" } },
     );
     expect(findChain.sort).toHaveBeenCalledWith({
       score: { $meta: "textScore" },
@@ -259,11 +276,12 @@ describe("report browse service", () => {
     countExec.mockResolvedValue(13);
 
     await expect(
-      listReports(user, query({ page: 3, pageSize: 6 })),
+      listReports(user, query({ page: 4, pageSize: 6 })),
     ).resolves.toEqual({
       reports: [],
-      pagination: { page: 3, pageSize: 6, total: 13, totalPages: 3 },
+      pagination: { page: 4, pageSize: 6, total: 13, totalPages: 3 },
     });
+    expect(findChain.skip).toHaveBeenCalledWith(18);
   });
 
   it("loads a non-draft detail and maps it for the current viewer", async () => {
@@ -277,7 +295,7 @@ describe("report browse service", () => {
         _id: "64b64c6f2f4d9f1a2b3c4d54",
         status: { $in: ["open", "claim_pending", "resolved", "closed"] },
       },
-      expect.objectContaining({ reporterId: 1, privacySettings: 1 }),
+      memberReportProjection,
     );
     expect(toMemberReport).toHaveBeenCalledWith(firstDocument, user.id);
   });

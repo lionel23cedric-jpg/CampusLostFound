@@ -40,6 +40,14 @@ export const reportBrowseQuerySchema = z
     pageSize: positiveInteger.pipe(z.number().max(50)).default(12),
   })
   .superRefine((value, context) => {
+    if (!Number.isSafeInteger((value.page - 1) * value.pageSize)) {
+      context.addIssue({
+        code: "custom",
+        path: ["page"],
+        message: "Page offset exceeds the safe integer range",
+      });
+    }
+
     if (
       value.occurredFrom &&
       value.occurredTo &&
