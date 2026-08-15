@@ -107,10 +107,10 @@ async function fillValidForm() {
   fireEvent.change(screen.getByLabelText("Colours"), {
     target: { value: " Black, Silver " },
   });
-  fireEvent.change(screen.getByLabelText("Tags"), {
+  fireEvent.change(screen.getByLabelText(/^Tags/), {
     target: { value: " Laptop, BAG " },
   });
-  fireEvent.change(screen.getByLabelText("Photo URL 1"), {
+  fireEvent.change(screen.getByLabelText(/^Photo URL 1/), {
     target: { value: "https://images.example/item.jpg" },
   });
   fireEvent.change(screen.getByLabelText("Distinguishing feature 1"), {
@@ -147,6 +147,7 @@ describe("ReportForm", () => {
 
     expect(screen.getByRole("radio", { name: "Lost item" })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Found item" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Report type" })).toBeTruthy();
     expect(screen.getByLabelText("Title")).toBeTruthy();
     expect(screen.getByLabelText("Public description")).toBeTruthy();
     expect(screen.getByLabelText("Event date and time")).toBeTruthy();
@@ -165,20 +166,24 @@ describe("ReportForm", () => {
       );
     }
 
-    expect(screen.getByLabelText("Photo URL 1")).toBeTruthy();
+    expect(screen.getByLabelText("Photo URL 1 (optional)")).toBeTruthy();
     expect(screen.getByLabelText("Distinguishing feature 1")).toBeTruthy();
     expect(screen.getByLabelText("Verification question 1")).toBeTruthy();
     expect(screen.getByLabelText("Expected answer 1")).toBeTruthy();
-    expect(screen.getByLabelText("Exact location details")).toBeTruthy();
-    expect(screen.getByLabelText("Serial number")).toBeTruthy();
-    expect(screen.getByLabelText("Private notes")).toBeTruthy();
+    expect(screen.getByLabelText("Exact location details (optional)")).toBeTruthy();
+    expect(screen.getByLabelText("Serial number (optional)")).toBeTruthy();
+    expect(screen.getByLabelText("Private notes (optional)")).toBeTruthy();
+    expect(screen.getByLabelText("Tags (optional)")).toBeTruthy();
+    expect(
+      screen.getByText("All fields are required unless marked optional."),
+    ).toBeTruthy();
   });
 
   it("uses stable unique IDs and enforces dynamic row limits", async () => {
     const user = userEvent.setup();
     renderForm();
 
-    const firstPhoto = screen.getByLabelText("Photo URL 1");
+    const firstPhoto = screen.getByLabelText("Photo URL 1 (optional)");
     expect(firstPhoto.id).toMatch(/photo-0$/);
     expect(
       screen.getByRole("button", { name: "Remove photo URL 1" }).hasAttribute(
@@ -197,11 +202,11 @@ describe("ReportForm", () => {
     ).toBe(true);
 
     await user.click(screen.getByRole("button", { name: "Add photo URL" }));
-    const secondPhoto = screen.getByLabelText("Photo URL 2");
+    const secondPhoto = screen.getByLabelText("Photo URL 2 (optional)");
     const secondPhotoId = secondPhoto.id;
     expect(secondPhotoId).not.toBe(firstPhoto.id);
     await user.click(screen.getByRole("button", { name: "Remove photo URL 1" }));
-    expect(screen.getByLabelText("Photo URL 1").id).toBe(secondPhotoId);
+    expect(screen.getByLabelText("Photo URL 1 (optional)").id).toBe(secondPhotoId);
 
     await user.click(
       screen.getByRole("button", { name: "Add distinguishing feature" }),
@@ -230,7 +235,7 @@ describe("ReportForm", () => {
     for (let index = 0; index < 4; index += 1) {
       await user.click(screen.getByRole("button", { name: "Add photo URL" }));
     }
-    expect(screen.getAllByLabelText(/Photo URL \d/)).toHaveLength(5);
+    expect(screen.getAllByLabelText(/Photo URL \d \(optional\)/)).toHaveLength(5);
     expect(
       screen.getByRole("button", { name: "Add photo URL" }).hasAttribute("disabled"),
     ).toBe(true);
@@ -289,6 +294,59 @@ describe("ReportForm", () => {
     await user.type(title, "Black laptop bag");
     expect(title.getAttribute("aria-invalid")).toBe("false");
     expect(screen.queryByText("Title must contain at least 5 characters")).toBeNull();
+  });
+
+  it("clears only the edited error when repeated fields have sibling errors", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await user.click(screen.getByRole("button", { name: "Add photo URL" }));
+    fireEvent.change(screen.getByLabelText("Photo URL 1 (optional)"), {
+      target: { value: "http://images.example/one.jpg" },
+    });
+    fireEvent.change(screen.getByLabelText("Photo URL 2 (optional)"), {
+      target: { value: "http://images.example/two.jpg" },
+    });
+    await user.click(
+      screen.getByRole("button", { name: "Add distinguishing feature" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Add verification question" }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Submit report" }));
+
+    const firstPhoto = screen.getByLabelText("Photo URL 1 (optional)");
+    const secondPhoto = screen.getByLabelText("Photo URL 2 (optional)");
+    const firstFeature = screen.getByLabelText("Distinguishing feature 1");
+    const secondFeature = screen.getByLabelText("Distinguishing feature 2");
+    const firstQuestion = screen.getByLabelText("Verification question 1");
+    const secondQuestion = screen.getByLabelText("Verification question 2");
+    for (const control of [
+      firstPhoto,
+      secondPhoto,
+      firstFeature,
+      secondFeature,
+      firstQuestion,
+      secondQuestion,
+    ]) {
+      expect(control.getAttribute("aria-invalid")).toBe("true");
+    }
+
+    fireEvent.change(firstPhoto, {
+      target: { value: "https://images.example/one.jpg" },
+    });
+    fireEvent.change(firstFeature, { target: { value: "Blue stitched lining" } });
+    fireEvent.change(firstQuestion, {
+      target: { value: "What is attached to the zipper?" },
+    });
+
+    expect(firstPhoto.getAttribute("aria-invalid")).toBe("false");
+    expect(firstFeature.getAttribute("aria-invalid")).toBe("false");
+    expect(firstQuestion.getAttribute("aria-invalid")).toBe("false");
+    expect(secondPhoto.getAttribute("aria-invalid")).toBe("true");
+    expect(secondFeature.getAttribute("aria-invalid")).toBe("true");
+    expect(secondQuestion.getAttribute("aria-invalid")).toBe("true");
   });
 
   it("submits the exact transformed payload once and reports success", async () => {
@@ -372,7 +430,7 @@ describe("ReportForm", () => {
   });
 
   it.each([
-    ["photoUrls", "Photo URL 1", "Review the photo list"],
+    ["photoUrls", "Photo URL 1 (optional)", "Review the photo list"],
     ["privacySettings", "Show photos to other members", "Review privacy choices"],
     [
       "privateVerification",

@@ -217,7 +217,7 @@ export function ReportForm({
         row.id === id ? { ...row, value } : row,
       ),
     }));
-    clearErrorsFor("photoUrls", `photoUrls.${index}`);
+    clearErrorsFor(`photoUrls.${index}`);
   }
 
   function updateFeature(id: string, value: string) {
@@ -233,10 +233,7 @@ export function ReportForm({
           ),
       },
     }));
-    clearErrorsFor(
-      "privateVerification.distinguishingFeatures",
-      `privateVerification.distinguishingFeatures.${index}`,
-    );
+    clearErrorsFor(`privateVerification.distinguishingFeatures.${index}`);
   }
 
   function updateQuestion(
@@ -257,7 +254,6 @@ export function ReportForm({
       },
     }));
     clearErrorsFor(
-      "privateVerification.verificationQuestions",
       `privateVerification.verificationQuestions.${index}.${field}`,
     );
   }
@@ -455,6 +451,10 @@ export function ReportForm({
         </div>
       )}
 
+      <p className={styles.requiredNote}>
+        All fields are required unless marked optional.
+      </p>
+
       <fieldset className={styles.section} disabled={isPending}>
         <legend>Basic information</legend>
         <p className={styles.sectionIntro}>
@@ -462,8 +462,8 @@ export function ReportForm({
           other campus members.
         </p>
 
-        <div className={styles.field}>
-          <span className={styles.label}>Report type</span>
+        <fieldset className={styles.reportTypeGroup}>
+          <legend className={styles.label}>Report type</legend>
           <div className={styles.choiceRow}>
             {(["lost", "found"] as const).map((reportType) => {
               const id = inputId(`reportType-${reportType}`);
@@ -482,7 +482,7 @@ export function ReportForm({
               );
             })}
           </div>
-        </div>
+        </fieldset>
 
         <div className={styles.field}>
           <label htmlFor={inputId("title")}>Title</label>
@@ -635,7 +635,7 @@ export function ReportForm({
           </div>
 
           <div className={styles.field}>
-            <label htmlFor={inputId("tags")}>Tags</label>
+            <label htmlFor={inputId("tags")}>Tags (optional)</label>
             <input
               id={inputId("tags")}
               name="tags"
@@ -669,7 +669,7 @@ export function ReportForm({
             return (
               <div className={styles.repeatRow} key={row.id}>
                 <div className={styles.field}>
-                  <label htmlFor={id}>Photo URL {index + 1}</label>
+                  <label htmlFor={id}>Photo URL {index + 1} (optional)</label>
                   <input
                     id={id}
                     name={path}
@@ -830,7 +830,7 @@ export function ReportForm({
         <div className={styles.shortGrid}>
           <div className={styles.field}>
             <label htmlFor={inputId("privateVerification.exactLocationDetails")}>
-              Exact location details
+              Exact location details (optional)
             </label>
             <textarea
               id={inputId("privateVerification.exactLocationDetails")}
@@ -861,7 +861,7 @@ export function ReportForm({
 
           <div className={styles.field}>
             <label htmlFor={inputId("privateVerification.serialNumber")}>
-              Serial number
+              Serial number (optional)
             </label>
             <input
               id={inputId("privateVerification.serialNumber")}
@@ -985,7 +985,7 @@ export function ReportForm({
 
         <div className={styles.field}>
           <label htmlFor={inputId("privateVerification.privateNotes")}>
-            Private notes
+            Private notes (optional)
           </label>
           <textarea
             id={inputId("privateVerification.privateNotes")}
