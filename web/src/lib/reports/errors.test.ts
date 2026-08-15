@@ -4,9 +4,11 @@ import { z } from "zod";
 import { AuthError } from "@/lib/auth/errors";
 
 import {
+  invalidReportQueryResponse,
   invalidReportResponse,
   referenceDataErrorResponse,
   ReportError,
+  reportBrowseErrorResponse,
   reportErrorResponse,
 } from "./errors";
 
@@ -82,6 +84,67 @@ describe("report errors", () => {
       error: {
         code: "REFERENCE_DATA_FAILED",
         message: "Unable to load reference data",
+      },
+    });
+  });
+
+  it("returns exact browse validation fields", async () => {
+    const parsed = z
+      .strictObject({ page: z.string().regex(/^[1-9]\d*$/) })
+      .safeParse({ page: "0" });
+    if (parsed.success) throw new Error("Expected validation to fail");
+
+    const response = invalidReportQueryResponse(parsed.error);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid report query",
+        fields: { page: expect.any(Array) },
+      },
+    });
+  });
+
+  it("maps browse authentication, not found and unknown failures safely", async () => {
+    const authentication = reportBrowseErrorResponse(
+      new AuthError("AUTHENTICATION_REQUIRED"),
+    );
+    const missing = reportBrowseErrorResponse(
+      new ReportError("REPORT_NOT_FOUND"),
+    );
+    const unknown = reportBrowseErrorResponse(
+      new Error("mongodb secret detail"),
+    );
+    const unrelated = reportBrowseErrorResponse(
+      new ReportError("CATEGORY_UNAVAILABLE"),
+    );
+
+    expect(authentication.status).toBe(401);
+    await expect(authentication.json()).resolves.toEqual({
+      error: {
+        code: "AUTHENTICATION_REQUIRED",
+        message: "Authentication required",
+      },
+    });
+    expect(missing.status).toBe(404);
+    await expect(missing.json()).resolves.toEqual({
+      error: { code: "REPORT_NOT_FOUND", message: "Report not found" },
+    });
+    expect(unknown.status).toBe(500);
+    const body = await unknown.json();
+    expect(body).toEqual({
+      error: {
+        code: "REPORT_BROWSE_FAILED",
+        message: "Unable to load reports",
+      },
+    });
+    expect(JSON.stringify(body)).not.toContain("mongodb secret detail");
+    expect(unrelated.status).toBe(500);
+    await expect(unrelated.json()).resolves.toEqual({
+      error: {
+        code: "REPORT_BROWSE_FAILED",
+        message: "Unable to load reports",
       },
     });
   });

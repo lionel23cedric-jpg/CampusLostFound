@@ -23,6 +23,14 @@ const reportErrorDefinitions = {
     message: "Unable to load reference data",
     status: 500,
   },
+  REPORT_NOT_FOUND: {
+    message: "Report not found",
+    status: 404,
+  },
+  REPORT_BROWSE_FAILED: {
+    message: "Unable to load reports",
+    status: 500,
+  },
 } as const;
 
 export type ReportErrorCode = keyof typeof reportErrorDefinitions;
@@ -79,5 +87,31 @@ export function referenceDataErrorResponse(error: unknown) {
     error instanceof ReportError
       ? error
       : new ReportError("REFERENCE_DATA_FAILED"),
+  );
+}
+
+export function invalidReportQueryResponse(error?: ZodError) {
+  const fields = error ? z.flattenError(error).fieldErrors : undefined;
+  const includeFields = fields && Object.keys(fields).length > 0;
+
+  return Response.json(
+    {
+      error: {
+        code: "VALIDATION_ERROR",
+        message: "Invalid report query",
+        ...(includeFields ? { fields } : {}),
+      },
+    },
+    { status: 400 },
+  );
+}
+
+export function reportBrowseErrorResponse(error: unknown) {
+  if (error instanceof AuthError) return authErrorResponse(error);
+
+  return safeReportErrorResponse(
+    error instanceof ReportError && error.code === "REPORT_NOT_FOUND"
+      ? error
+      : new ReportError("REPORT_BROWSE_FAILED"),
   );
 }
