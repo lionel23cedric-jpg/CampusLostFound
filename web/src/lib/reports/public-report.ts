@@ -33,3 +33,29 @@ export function toOwnerReport(report: ReportDocument) {
 }
 
 export type OwnerReport = ReturnType<typeof toOwnerReport>;
+
+export function toMemberReport(report: ReportDocument, viewerId: string) {
+  return {
+    id: report._id.toString(),
+    reportType: report.reportType,
+    title: report.title,
+    publicDescription: report.publicDescription,
+    categoryId: report.categoryId.toString(),
+    campusLocationId: report.privacySettings.showCampusLocation
+      ? report.campusLocationId.toString()
+      : null,
+    occurredAt: report.privacySettings.showEventDate
+      ? report.occurredAt.toISOString()
+      : null,
+    colors: [...report.colors],
+    tags: [...report.tags],
+    photoUrls: report.privacySettings.showPhoto ? [...report.photoUrls] : [],
+    status: report.status,
+    resolvedAt: report.resolvedAt?.toISOString() ?? null,
+    createdAt: report.createdAt.toISOString(),
+    updatedAt: report.updatedAt.toISOString(),
+    isOwner: report.reporterId.toString() === viewerId,
+  };
+}
+
+export type MemberReport = ReturnType<typeof toMemberReport>;
