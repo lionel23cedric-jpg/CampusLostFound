@@ -1,0 +1,36 @@
+.panel {
+  width: 100%;
+  max-width: 34rem;
+  border: 1px solid var(--line, #d8d1c4);
+  border-radius: 20px;
+  background: var(--paper-light, #fffdf8);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  box-shadow: 0 1.25rem 3.75rem rgb(30 49 40 / 9%);
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--green, #1f6a52);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.panel h1 {
+  margin: 0;
+  color: var(--ink, #17372f);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 7vw, 2.75rem);
+  line-height: 1.06;
+}
+
+.description {
+  margin: 1rem 0 1.75rem;
+  color: var(--muted, #53645d);
+  line-height: 1.6;
+}
+
+.footer {
+  margin-top: 1.5rem;
+}
