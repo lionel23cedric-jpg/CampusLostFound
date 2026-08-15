@@ -27,11 +27,13 @@ vi.mock("./report-form", async () => {
 
   return {
     ReportForm: vi.fn(function MockReportForm({
+      categories,
       onSuccess,
       onAuthenticationRequired,
       onPermissionLost,
       onReferenceUnavailable,
     }: {
+      categories: Array<{ id: string; name: string }>;
       onSuccess: (report: typeof createdReport) => void;
       onAuthenticationRequired: () => void;
       onPermissionLost: () => void;
@@ -48,6 +50,11 @@ vi.mock("./report-form", async () => {
               onChange={(event) => setDraftMarker(event.target.value)}
             />
           </label>
+          <ul aria-label="Category options">
+            {categories.map((category) => (
+              <li key={category.id}>{category.name}</li>
+            ))}
+          </ul>
           <p>{privateFixture.distinguishingFeature}</p>
           <p>{privateFixture.exactLocation}</p>
           <p>{privateFixture.serialNumber}</p>
@@ -266,6 +273,20 @@ describe("ReportSubmissionClient", () => {
     expect(getReportCampusLocations).not.toHaveBeenCalled();
   });
 
+  it("announces a session check that becomes unavailable", () => {
+    mockSession({ status: "loading", user: null });
+    const { rerender } = render(<ReportSubmissionClient />);
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    mockSession({ status: "unavailable", user: null });
+    rerender(<ReportSubmissionClient />);
+
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent).toContain("We could not check your account");
+    expect(alerts[0].hasAttribute("aria-live")).toBe(false);
+  });
+
   it.each(["staff", "administrator"] as const)(
     "denies an authenticated %s without loading reference data",
     (role) => {
@@ -370,12 +391,11 @@ describe("ReportSubmissionClient", () => {
     );
     render(<ReportSubmissionClient />);
 
-    const state = await screen.findByRole("heading", {
-      name: "Report options unavailable",
-    });
-    expect(state.parentElement?.textContent).not.toContain(
-      "private database detail",
-    );
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("Report options unavailable");
+    expect(alert.textContent).not.toContain("private database detail");
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(alert.hasAttribute("aria-live")).toBe(false);
     expect(screen.queryByLabelText("Report form fixture")).toBeNull();
   });
 
@@ -512,6 +532,33 @@ describe("ReportSubmissionClient", () => {
     );
   });
 
+  it.each([
+    ["categories", [], campusLocations],
+    ["campus locations", categories, []],
+  ])(
+    "removes stale form options when refreshed %s are empty",
+    async (_label, nextCategories, nextLocations) => {
+      const user = userEvent.setup();
+      mockReadyStudent();
+      render(<ReportSubmissionClient />);
+      await screen.findByLabelText("Report form fixture");
+      expect(screen.getByText("Electronics")).toBeTruthy();
+      await user.type(screen.getByLabelText("Draft marker"), "Stale draft");
+      vi.mocked(getReportCategories).mockResolvedValueOnce(nextCategories);
+      vi.mocked(getReportCampusLocations).mockResolvedValueOnce(nextLocations);
+
+      await user.click(
+        screen.getByRole("button", { name: "Refresh references" }),
+      );
+
+      const alert = await screen.findByRole("alert");
+      expect(alert.textContent).toContain("Report options unavailable");
+      expect(screen.queryByLabelText("Report form fixture")).toBeNull();
+      expect(screen.queryByText("Electronics")).toBeNull();
+      expect(document.body.textContent).not.toContain("Stale draft");
+    },
+  );
+
   it("redirects when a background reference refresh reports expired authentication", async () => {
     const user = userEvent.setup();
     mockReadyStudent();
@@ -575,9 +622,10 @@ describe("ReportSubmissionClient", () => {
 
     await user.click(screen.getByRole("button", { name: "Remove permission" }));
 
-    expect(
-      screen.getByRole("heading", { name: "Report submission unavailable" }),
-    ).toBeTruthy();
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0].textContent).toContain("Report submission unavailable");
+    expect(alerts[0].hasAttribute("aria-live")).toBe(false);
     expect(screen.queryByLabelText("Report form fixture")).toBeNull();
   });
 

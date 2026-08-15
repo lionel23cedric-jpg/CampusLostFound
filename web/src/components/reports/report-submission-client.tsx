@@ -48,7 +48,11 @@ export function ReportSubmissionClient() {
 
   if (status === "unavailable") {
     return (
-      <section className={styles.statePanel} aria-labelledby="report-session-error">
+      <section
+        className={styles.statePanel}
+        aria-labelledby="report-session-error"
+        role="alert"
+      >
         <p className={styles.kicker}>Account check</p>
         <h1 id="report-session-error">We could not check your account</h1>
         <p>Your session may still be active. Retry when the service is available.</p>
@@ -82,7 +86,11 @@ export function ReportSubmissionClient() {
 
   if (!accountId || permissionLostFor === accountId) {
     return (
-      <section className={styles.statePanel} aria-labelledby="report-permission-heading">
+      <section
+        className={styles.statePanel}
+        aria-labelledby="report-permission-heading"
+        role="alert"
+      >
         <p className={styles.kicker}>Student reports</p>
         <h1 id="report-permission-heading">Report submission unavailable</h1>
         <p>Only active student accounts can submit lost and found reports.</p>
@@ -135,7 +143,7 @@ function ActiveReportSubmission({
 
       if (categories.length > 0 && campusLocations.length > 0) {
         setReferenceState({ status: "ready", categories, campusLocations });
-      } else if (blocking) {
+      } else {
         setReferenceState({ status: "error" });
       }
     } catch (error) {
@@ -198,7 +206,11 @@ function ActiveReportSubmission({
 
   if (referenceState.status === "error") {
     return (
-      <section className={styles.statePanel} aria-labelledby="report-options-error">
+      <section
+        className={styles.statePanel}
+        aria-labelledby="report-options-error"
+        role="alert"
+      >
         <p className={styles.kicker}>Report setup</p>
         <h1 id="report-options-error">Report options unavailable</h1>
         <p>
