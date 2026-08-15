@@ -71,6 +71,22 @@ it("keeps the home link as a centred 44 pixel touch target", () => {
   expect(brandRule).toMatch(/justify-content:\s*center/);
 });
 
+it("keeps compact account navigation within narrow screens", () => {
+  const css = readFileSync(resolve("src/components/site-header.module.css"), "utf8");
+  const navLinkRule = css.match(/\.navLink\s*\{([^}]*)\}/)?.[1];
+  const accountButtonRule = css.match(/\.signOut,\s*\.retry\s*\{([^}]*)\}/)?.[1];
+  const compactCss = css.slice(css.indexOf("@media (max-width: 22rem)"));
+
+  expect(navLinkRule).toMatch(/min-width:\s*44px/);
+  expect(accountButtonRule).toMatch(/min-width:\s*44px/);
+  expect(compactCss).toMatch(
+    /\.inner,\s*\.navigation\s*\{[^}]*gap:\s*0\.25rem/,
+  );
+  expect(compactCss).toMatch(
+    /\.navigation :global\(\.primary-action\),\s*\.signOut,\s*\.retry\s*\{[^}]*min-width:\s*44px[^}]*padding-inline:\s*0\.25rem/,
+  );
+});
+
 it("shows signed-out navigation", () => {
   mockSession({ status: "unauthenticated", user: null });
   render(<SiteHeader />);
