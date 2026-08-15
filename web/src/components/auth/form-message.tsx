@@ -5,7 +5,7 @@ type FieldErrorProps = {
 
 export function FieldError({ id, message }: FieldErrorProps) {
   return message ? (
-    <p className="field-error" id={id} role="alert">
+    <p className="field-error" id={id}>
       {message}
     </p>
   ) : null;
