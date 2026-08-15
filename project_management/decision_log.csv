@@ -1,0 +1,3 @@
+DecisionID,Date,Decision,Reason,AlternativesConsidered,MembersInvolved,Impact,Status
+D-001,2026-07-17,Use Django as the primary web framework,Provides authentication ORM forms security features and supports rapid full-stack development,React with separate API; Flask,All members,Affects architecture deployment and team learning,Proposed
+D-002,2026-07-17,Implement explainable lost-found item matching as the intelligent function,Directly addresses the project brief and can be evaluated using labelled examples,Image classification; external generative AI API,All members,Affects database design implementation testing and final report,Proposed

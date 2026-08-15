@@ -1,0 +1,247 @@
+.dashboard,
+.statePanel,
+.loading {
+  width: min(100% - 2rem, 72rem);
+  margin-inline: auto;
+}
+
+.dashboard {
+  display: grid;
+  gap: clamp(2.5rem, 6vw, 5rem);
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.introduction {
+  max-width: 46rem;
+}
+
+.kicker,
+.upcomingLabel,
+.availableLabel {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kicker,
+.upcomingLabel {
+  color: var(--warm-accent);
+}
+
+.availableLabel {
+  color: var(--campus-green-dark);
+}
+
+.introduction h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.35rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.introduction > p:last-child,
+.upcomingHeading p,
+.upcomingGrid article > p:last-child,
+.statePanel p {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.introduction > p:last-child {
+  max-width: 58ch;
+  margin: 1.25rem 0 0;
+}
+
+.account,
+.statePanel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.account h2,
+.upcoming h2,
+.statePanel h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0 0;
+}
+
+.facts > div:first-child {
+  grid-column: span 2;
+}
+
+.facts dt {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.facts dd {
+  overflow-wrap: anywhere;
+  margin: 0.55rem 0 0;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--campus-green);
+  border-radius: 999px;
+  background: #e8f0eb;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.82rem;
+}
+
+.upcomingHeading p {
+  margin: 0.65rem 0 0;
+}
+
+.upcomingGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.upcomingGrid article {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: 1.4rem;
+}
+
+.upcomingGrid article:nth-child(2) {
+  background: #e8f0eb;
+}
+
+.upcomingGrid article:nth-child(3) {
+  background: #f2e5dc;
+}
+
+.upcomingGrid h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.15rem;
+}
+
+.workflowLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--campus-green);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
+.workflowLink:hover {
+  color: var(--campus-green-dark);
+}
+
+.workflowLink:active {
+  transform: translateY(1px);
+}
+
+.upcomingGrid article > p:last-child {
+  margin: 0.7rem 0 0;
+}
+
+.statePanel,
+.loading {
+  margin-block: clamp(3rem, 10vw, 7rem);
+}
+
+.statePanel {
+  max-width: 38rem;
+}
+
+.retry {
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+}
+
+.retry:hover {
+  background: var(--campus-green-dark);
+}
+
+.loading {
+  display: grid;
+  max-width: 40rem;
+  gap: 1rem;
+  color: var(--ink-soft);
+}
+
+.skeleton,
+.skeletonShort {
+  display: block;
+  height: 4rem;
+  border-radius: 12px;
+  background: #ded9ce;
+  animation: skeleton-pulse 1.4s ease-in-out infinite alternate;
+}
+
+.skeletonShort {
+  width: 68%;
+}
+
+@keyframes skeleton-pulse {
+  from {
+    opacity: 0.5;
+  }
+
+  to {
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 48rem) {
+  .facts,
+  .upcomingGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .upcomingGrid article:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 32rem) {
+  .facts,
+  .upcomingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .facts > div:first-child,
+  .upcomingGrid article:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .skeletonShort {
+    animation: none;
+  }
+}
