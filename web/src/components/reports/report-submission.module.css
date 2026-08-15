@@ -1,0 +1,207 @@
+.page,
+.loading,
+.statePanel,
+.success {
+  width: min(100% - 2rem, 72rem);
+  margin-inline: auto;
+}
+
+.page {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.introduction {
+  max-width: 48rem;
+}
+
+.kicker {
+  margin: 0 0 0.75rem;
+  color: var(--warm-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.introduction h1,
+.statePanel h1,
+.success h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.introduction h1 {
+  font-size: clamp(2.35rem, 6vw, 4.5rem);
+}
+
+.statePanel h1,
+.success h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+}
+
+.introduction > p:last-child,
+.statePanel > p:not(.kicker),
+.success > p:not(.kicker) {
+  max-width: 64ch;
+  margin: 1rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.loading,
+.statePanel,
+.success {
+  margin-block: clamp(3rem, 10vw, 7rem);
+}
+
+.loading {
+  display: grid;
+  max-width: 42rem;
+  gap: 1rem;
+  color: var(--ink-soft);
+}
+
+.statePanel,
+.success {
+  max-width: 48rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.4rem, 4vw, 2.75rem);
+  box-shadow: var(--shadow);
+}
+
+.skeleton,
+.skeletonShort {
+  display: block;
+  height: 4rem;
+  border-radius: 12px;
+  background: #ded9ce;
+  animation: skeleton-pulse 1.4s ease-in-out infinite alternate;
+}
+
+.skeletonShort {
+  width: 68%;
+}
+
+.primaryButton,
+.secondaryButton,
+.primaryLink,
+.secondaryLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.7rem 1rem;
+  text-decoration: none;
+}
+
+.primaryButton,
+.primaryLink {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+}
+
+.primaryButton,
+.secondaryLink {
+  margin-top: 1.25rem;
+}
+
+.primaryButton:hover,
+.primaryLink:hover {
+  background: var(--campus-green-dark);
+}
+
+.secondaryButton,
+.secondaryLink {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green);
+}
+
+.secondaryButton:hover,
+.secondaryLink:hover {
+  background: #e9f0eb;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0 0;
+}
+
+.summary > div {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 0.9rem;
+}
+
+.summary dt {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.summary dd {
+  margin: 0.45rem 0 0;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.reportId {
+  overflow-wrap: anywhere;
+}
+
+.successActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+@keyframes skeleton-pulse {
+  from {
+    opacity: 0.5;
+  }
+
+  to {
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 32rem) {
+  .page,
+  .loading,
+  .statePanel,
+  .success {
+    width: min(100% - 1rem, 72rem);
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .successActions > * {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .skeletonShort {
+    animation: none;
+  }
+}
