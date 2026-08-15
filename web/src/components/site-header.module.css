@@ -15,7 +15,11 @@
 
 .brand {
   display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   gap: 0.65rem;
   color: var(--ink);
   font-size: 1.05rem;
@@ -59,6 +63,17 @@
   font-size: 0.9rem;
 }
 
+.navLink {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+}
+
+.navLink:active {
+  transform: translateY(1px);
+}
+
 .userName {
   max-width: 10rem;
   overflow: hidden;
@@ -70,6 +85,7 @@
 
 .signOut,
 .retry {
+  min-width: 44px;
   min-height: 44px;
   border: 0;
   border-radius: 10px;
@@ -125,8 +141,22 @@
   }
 }
 
-@media (max-width: 22rem) {
+@media (max-width: 28rem) {
   .brand > span:last-child {
     display: none;
+  }
+}
+
+@media (max-width: 22rem) {
+  .inner,
+  .navigation {
+    gap: 0.25rem;
+  }
+
+  .navigation :global(.primary-action),
+  .signOut,
+  .retry {
+    min-width: 44px;
+    padding-inline: 0.25rem;
   }
 }

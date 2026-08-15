@@ -16,13 +16,22 @@
 }
 
 .kicker,
-.upcomingLabel {
+.upcomingLabel,
+.availableLabel {
   margin: 0 0 0.75rem;
-  color: var(--warm-accent);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.kicker,
+.upcomingLabel {
+  color: var(--warm-accent);
+}
+
+.availableLabel {
+  color: var(--campus-green-dark);
 }
 
 .introduction h1 {
@@ -130,6 +139,23 @@
   margin: 0;
   color: var(--ink);
   font-size: 1.15rem;
+}
+
+.workflowLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--campus-green);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
+}
+
+.workflowLink:hover {
+  color: var(--campus-green-dark);
+}
+
+.workflowLink:active {
+  transform: translateY(1px);
 }
 
 .upcomingGrid article > p:last-child {

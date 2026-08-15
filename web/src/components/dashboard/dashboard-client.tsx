@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
 
 import styles from "./dashboard.module.css";
 
-const upcomingWork = [
+const recoveryWorkflow = [
   {
     title: "Report an item",
     description: "Submit lost or found item details with private ownership evidence.",
+    href: "/reports/new",
   },
   {
     title: "Search possible matches",
@@ -114,13 +116,23 @@ export function DashboardClient() {
       <section className={styles.upcoming} aria-labelledby="upcoming-heading">
         <div className={styles.upcomingHeading}>
           <h2 id="upcoming-heading">Recovery workflow</h2>
-          <p>These actions arrive in later project features.</p>
+          <p>Start a report now. More recovery actions will arrive in later features.</p>
         </div>
         <div className={styles.upcomingGrid}>
-          {upcomingWork.map((item) => (
+          {recoveryWorkflow.map((item) => (
             <article key={item.title}>
-              <p className={styles.upcomingLabel}>Upcoming</p>
-              <h3>{item.title}</h3>
+              <p className={item.href ? styles.availableLabel : styles.upcomingLabel}>
+                {item.href ? "Available now" : "Upcoming"}
+              </p>
+              <h3>
+                {item.href ? (
+                  <Link className={styles.workflowLink} href={item.href}>
+                    {item.title}
+                  </Link>
+                ) : (
+                  item.title
+                )}
+              </h3>
               <p>{item.description}</p>
             </article>
           ))}

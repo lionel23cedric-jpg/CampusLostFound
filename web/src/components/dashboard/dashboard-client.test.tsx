@@ -8,12 +8,16 @@ vi.mock("next/navigation", () => ({ useRouter: vi.fn() }));
 vi.mock("@/components/auth/auth-session-provider", () => ({
   useAuthSession: vi.fn(),
 }));
+vi.mock("@/components/reports/report-submission-client", () => ({
+  ReportSubmissionClient: () => <section aria-label="Report submission fixture" />,
+}));
 
 import { useRouter } from "next/navigation";
 import {
   type AuthSessionContextValue,
   useAuthSession,
 } from "@/components/auth/auth-session-provider";
+import NewReportPage, { metadata as newReportMetadata } from "@/app/reports/new/page";
 
 import { DashboardClient } from "./dashboard-client";
 
@@ -57,6 +61,14 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+it("renders the report submission route with its page metadata", () => {
+  const { container } = render(<NewReportPage />);
+
+  expect(newReportMetadata.title).toBe("Report an item");
+  expect(container.querySelector("main#main-content")).toBeTruthy();
+  expect(screen.getByLabelText("Report submission fixture")).toBeTruthy();
+});
+
 it("shows a stable loading state without private content", () => {
   mockSession({ status: "loading", user: null });
   render(<DashboardClient />);
@@ -83,7 +95,7 @@ it("shows a retryable unavailable state without redirecting", async () => {
   expect(replace).not.toHaveBeenCalled();
 });
 
-it("renders only safe account details and informational workflow cards", () => {
+it("renders safe account details and the available report action", () => {
   mockSession({ status: "authenticated", user: safeUser });
   const { container } = render(<DashboardClient />);
 
@@ -91,9 +103,12 @@ it("renders only safe account details and informational workflow cards", () => {
   expect(screen.getByText("student@example.com")).toBeTruthy();
   expect(screen.getByText("Student")).toBeTruthy();
   expect(screen.getByText("Active")).toBeTruthy();
-  expect(screen.getAllByText("Upcoming")).toHaveLength(3);
+  expect(
+    screen.getByRole("link", { name: "Report an item" }).getAttribute("href"),
+  ).toBe("/reports/new");
+  expect(screen.getByText("Available now")).toBeTruthy();
+  expect(screen.getAllByText("Upcoming")).toHaveLength(2);
   expect(container.textContent).not.toMatch(/password|token|session hash/i);
-  expect(screen.queryByRole("link", { name: /submit report/i })).toBeNull();
   expect(container.textContent).not.toContain("user-id");
 });
 

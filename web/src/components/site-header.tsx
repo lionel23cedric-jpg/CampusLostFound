@@ -54,7 +54,10 @@ export function SiteHeader() {
           {status === "authenticated" && user ? (
             <>
               <span className={styles.userName}>{user.profile.displayName}</span>
-              <Link className="text-link" href="/dashboard">
+              <Link className={`${styles.navLink} text-link`} href="/reports/new">
+                Report item
+              </Link>
+              <Link className={`${styles.navLink} text-link`} href="/dashboard">
                 Dashboard
               </Link>
               <button
