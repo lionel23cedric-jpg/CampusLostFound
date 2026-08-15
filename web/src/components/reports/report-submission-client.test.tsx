@@ -19,9 +19,11 @@ vi.mock("@/lib/reports/browser-client", async () => {
     getReportCampusLocations: vi.fn(),
   };
 });
-vi.mock("./report-form", () => ({
-  ReportForm: vi.fn(
-    ({
+vi.mock("./report-form", async () => {
+  const { useState } = await vi.importActual<typeof import("react")>("react");
+
+  return {
+    ReportForm: vi.fn(function MockReportForm({
       onSuccess,
       onAuthenticationRequired,
       onPermissionLost,
@@ -31,33 +33,44 @@ vi.mock("./report-form", () => ({
       onAuthenticationRequired: () => void;
       onPermissionLost: () => void;
       onReferenceUnavailable: () => Promise<void>;
-    }) => (
-      <section aria-label="Report form fixture">
-        <p>{privateFixture.distinguishingFeature}</p>
-        <p>{privateFixture.exactLocation}</p>
-        <p>{privateFixture.serialNumber}</p>
-        <p>{privateFixture.question}</p>
-        <p>{privateFixture.answer}</p>
-        <p>{privateFixture.notes}</p>
-        <button type="button" onClick={() => onSuccess(createdReport)}>
-          Complete report
-        </button>
-        <button type="button" onClick={onAuthenticationRequired}>
-          Expire authentication
-        </button>
-        <button type="button" onClick={onPermissionLost}>
-          Remove permission
-        </button>
-        <button
-          type="button"
-          onClick={() => void onReferenceUnavailable()}
-        >
-          Refresh references
-        </button>
-      </section>
-    ),
-  ),
-}));
+    }) {
+      const [draftMarker, setDraftMarker] = useState("");
+
+      return (
+        <section aria-label="Report form fixture">
+          <label>
+            Draft marker
+            <input
+              value={draftMarker}
+              onChange={(event) => setDraftMarker(event.target.value)}
+            />
+          </label>
+          <p>{privateFixture.distinguishingFeature}</p>
+          <p>{privateFixture.exactLocation}</p>
+          <p>{privateFixture.serialNumber}</p>
+          <p>{privateFixture.question}</p>
+          <p>{privateFixture.answer}</p>
+          <p>{privateFixture.notes}</p>
+          <button type="button" onClick={() => onSuccess(createdReport)}>
+            Complete report
+          </button>
+          <button type="button" onClick={onAuthenticationRequired}>
+            Expire authentication
+          </button>
+          <button type="button" onClick={onPermissionLost}>
+            Remove permission
+          </button>
+          <button
+            type="button"
+            onClick={() => void onReferenceUnavailable()}
+          >
+            Refresh references
+          </button>
+        </section>
+      );
+    }),
+  };
+});
 
 import { useRouter } from "next/navigation";
 
@@ -361,17 +374,66 @@ describe("ReportSubmissionClient", () => {
     expect(props?.onReferenceUnavailable).toEqual(expect.any(Function));
   });
 
-  it("reloads both reference lists when the form reports stale options", async () => {
+  it("refreshes stale options without losing the mounted form state", async () => {
     const user = userEvent.setup();
     mockReadyStudent();
     render(<ReportSubmissionClient />);
     await screen.findByLabelText("Report form fixture");
+    await user.type(screen.getByLabelText("Draft marker"), "Keep this draft");
+
+    const categoriesRequest = deferred<typeof categories>();
+    const locationsRequest = deferred<typeof campusLocations>();
+    vi.mocked(getReportCategories).mockReturnValueOnce(categoriesRequest.promise);
+    vi.mocked(getReportCampusLocations).mockReturnValueOnce(
+      locationsRequest.promise,
+    );
 
     await user.click(screen.getByRole("button", { name: "Refresh references" }));
 
     await waitFor(() => expect(getReportCategories).toHaveBeenCalledTimes(2));
     expect(getReportCampusLocations).toHaveBeenCalledTimes(2);
-    expect(await screen.findByLabelText("Report form fixture")).toBeTruthy();
+    expect((screen.getByLabelText("Draft marker") as HTMLInputElement).value).toBe(
+      "Keep this draft",
+    );
+
+    await act(async () => {
+      categoriesRequest.resolve([
+        ...categories,
+        {
+          id: "507f1f77bcf86cd799439012",
+          name: "Books",
+          description: "Books and textbooks",
+        },
+      ]);
+      locationsRequest.resolve(campusLocations);
+    });
+
+    expect((screen.getByLabelText("Draft marker") as HTMLInputElement).value).toBe(
+      "Keep this draft",
+    );
+    await waitFor(() =>
+      expect(
+        vi.mocked(ReportForm).mock.calls.at(-1)?.[0].categories,
+      ).toHaveLength(2),
+    );
+  });
+
+  it("keeps the form and local input when a background refresh fails", async () => {
+    const user = userEvent.setup();
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+    await user.type(screen.getByLabelText("Draft marker"), "Still here");
+    vi.mocked(getReportCategories).mockRejectedValueOnce(new Error("hidden"));
+
+    await user.click(screen.getByRole("button", { name: "Refresh references" }));
+
+    await waitFor(() => expect(getReportCategories).toHaveBeenCalledTimes(2));
+    expect(getReportCampusLocations).toHaveBeenCalledTimes(2);
+    expect(screen.getByLabelText("Report form fixture")).toBeTruthy();
+    expect((screen.getByLabelText("Draft marker") as HTMLInputElement).value).toBe(
+      "Still here",
+    );
   });
 
   it("redirects when authentication is lost", async () => {

@@ -44,9 +44,9 @@ export function ReportSubmissionClient() {
     user.status === "active" &&
     !permissionLost;
 
-  const loadReferences = useCallback(async () => {
+  const loadReferences = useCallback(async (blocking = true) => {
     const currentRequest = ++requestId.current;
-    setReferenceState({ status: "loading" });
+    if (blocking) setReferenceState({ status: "loading" });
 
     try {
       const [categories, campusLocations] = await Promise.all([
@@ -55,13 +55,13 @@ export function ReportSubmissionClient() {
       ]);
       if (currentRequest !== requestId.current) return;
 
-      setReferenceState(
-        categories.length > 0 && campusLocations.length > 0
-          ? { status: "ready", categories, campusLocations }
-          : { status: "error" },
-      );
+      if (categories.length > 0 && campusLocations.length > 0) {
+        setReferenceState({ status: "ready", categories, campusLocations });
+      } else if (blocking) {
+        setReferenceState({ status: "error" });
+      }
     } catch {
-      if (currentRequest === requestId.current) {
+      if (blocking && currentRequest === requestId.current) {
         setReferenceState({ status: "error" });
       }
     }
@@ -191,7 +191,7 @@ export function ReportSubmissionClient() {
         onSuccess={setCreatedReport}
         onAuthenticationRequired={() => router.replace("/login")}
         onPermissionLost={() => setPermissionLost(true)}
-        onReferenceUnavailable={loadReferences}
+        onReferenceUnavailable={() => loadReferences(false)}
       />
     </div>
   );
