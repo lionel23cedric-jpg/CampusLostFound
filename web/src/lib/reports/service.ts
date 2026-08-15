@@ -19,9 +19,10 @@ export async function createReport(
 
   const database = await connectToDatabase();
   const transaction = await database.startSession();
+  let result: OwnerReport | undefined;
 
   try {
-    return await transaction.withTransaction(async () => {
+    await transaction.withTransaction(async () => {
       const category = await CategoryModel.findOne(
         { _id: input.categoryId, isActive: true },
         { _id: 1 },
@@ -71,9 +72,15 @@ export async function createReport(
         { session: transaction },
       );
 
-      return toOwnerReport(report);
+      result = toOwnerReport(report);
     });
   } finally {
     await transaction.endSession();
   }
+
+  if (!result) {
+    throw new Error("Report transaction did not produce a result");
+  }
+
+  return result;
 }

@@ -192,6 +192,19 @@ describe("report service", () => {
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
+  it("rejects when the transaction produces no result and ends the session", async () => {
+    transaction.withTransaction.mockResolvedValue(undefined);
+
+    await expect(createReport(user, input)).rejects.toThrow(
+      "Report transaction did not produce a result",
+    );
+
+    expect(CategoryModel.findOne).not.toHaveBeenCalled();
+    expect(ItemReportModel.create).not.toHaveBeenCalled();
+    expect(toOwnerReport).not.toHaveBeenCalled();
+    expect(transaction.endSession).toHaveBeenCalledOnce();
+  });
+
   it("preserves a public-report persistence failure and ends the session", async () => {
     const failure = new Error("public insert failed");
     vi.mocked(ItemReportModel.create).mockRejectedValue(failure);
