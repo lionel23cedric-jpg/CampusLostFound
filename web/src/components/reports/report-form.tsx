@@ -42,6 +42,37 @@ export type ReportFormProps = {
 
 type FocusRequest = { token: number; targetId?: string };
 
+const SERVER_FIELD_TARGETS = new Set([
+  "title",
+  "publicDescription",
+  "categoryId",
+  "campusLocationId",
+  "occurredAt",
+  "colors",
+  "tags",
+]);
+
+const SERVER_GROUP_TARGETS: Record<string, string> = {
+  photoUrls: "photoUrls.0",
+  privacySettings: "privacySettings.showPhoto",
+  privateVerification: "privateVerification.distinguishingFeatures.0",
+};
+
+function normaliseServerFields(fields: Record<string, string[]>) {
+  const errors: ReportFormErrors = {};
+  const groups: Record<string, string> = {};
+
+  for (const [field, messages] of Object.entries(fields)) {
+    const target =
+      SERVER_GROUP_TARGETS[field] ??
+      (SERVER_FIELD_TARGETS.has(field) ? field : "_form");
+    (errors[target] ??= []).push(...messages);
+    if (SERVER_GROUP_TARGETS[field]) groups[target] = field;
+  }
+
+  return { errors, groups };
+}
+
 function messagesFor(
   errors: ReportFormErrors,
   path: string,
@@ -85,6 +116,7 @@ export function ReportForm({
   const nextPhotoId = useRef(1);
   const nextFeatureId = useRef(1);
   const nextQuestionId = useRef(1);
+  const mappedServerGroups = useRef<Record<string, string>>({});
 
   const inputId = (path: string) => `${idPrefix}-${path.replaceAll(".", "-")}`;
   const errorId = (path: string) => `${inputId(path)}-error`;
@@ -125,7 +157,10 @@ export function ReportForm({
     setFormMessage(message);
     setFocusRequest({
       token: ++focusToken.current,
-      targetId: firstPath ? targetIdForPath(firstPath) : undefined,
+      targetId:
+        firstPath && firstPath !== "_form"
+          ? targetIdForPath(firstPath)
+          : undefined,
     });
   }
 
@@ -142,14 +177,25 @@ export function ReportForm({
   }, [focusRequest]);
 
   function clearErrorsFor(...paths: string[]) {
+    const mappedTargets = Object.entries(mappedServerGroups.current)
+      .filter(([, group]) =>
+        paths.some((path) => path === group || path.startsWith(`${group}.`)),
+      )
+      .map(([target]) => target);
     setErrors((current) =>
       Object.fromEntries(
         Object.entries(current).filter(
           ([key]) =>
+            !mappedTargets.includes(key) &&
             !paths.some(
               (path) => key === path || key.startsWith(`${path}.`),
             ),
         ),
+      ),
+    );
+    mappedServerGroups.current = Object.fromEntries(
+      Object.entries(mappedServerGroups.current).filter(
+        ([target]) => !mappedTargets.includes(target),
       ),
     );
     setFormMessage(undefined);
@@ -326,12 +372,14 @@ export function ReportForm({
 
     const validation = validateReportForm(values);
     if (!validation.success) {
+      mappedServerGroups.current = {};
       publishFailure(validation.errors);
       return;
     }
 
     setErrors({});
     setFormMessage(undefined);
+    mappedServerGroups.current = {};
     submitLock.current = true;
     setIsPending(true);
 
@@ -351,7 +399,9 @@ export function ReportForm({
           publishFailure({ campusLocationId: [error.message] });
           await onReferenceUnavailable();
         } else if (error.status === 400 && error.fields) {
-          publishFailure(error.fields, error.message);
+          const normalised = normaliseServerFields(error.fields);
+          mappedServerGroups.current = normalised.groups;
+          publishFailure(normalised.errors, error.message);
         } else if (error.code === "NETWORK_ERROR") {
           publishFailure({}, NETWORK_ERROR);
         } else {
@@ -393,7 +443,11 @@ export function ReportForm({
             <ul>
               {summaryEntries.map(({ path, message }, index) => (
                 <li key={`${path}-${index}`}>
-                  <a href={`#${targetIdForPath(path)}`}>{message}</a>
+                  {path === "_form" ? (
+                    message
+                  ) : (
+                    <a href={`#${targetIdForPath(path)}`}>{message}</a>
+                  )}
                 </li>
               ))}
             </ul>

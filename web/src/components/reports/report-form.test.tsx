@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -82,32 +89,39 @@ function renderForm() {
 
 async function fillValidForm() {
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Title"), "Black laptop bag");
-  await user.type(
-    screen.getByLabelText("Public description"),
-    "Black laptop bag with a shoulder strap.",
-  );
-  await user.selectOptions(screen.getByLabelText("Category"), categoryId);
-  await user.selectOptions(
-    screen.getByLabelText("Campus location"),
-    campusLocationId,
-  );
-  await user.type(screen.getByLabelText("Event date and time"), "2000-01-01T12:00");
-  await user.type(screen.getByLabelText("Colours"), " Black, Silver ");
-  await user.type(screen.getByLabelText("Tags"), " Laptop, BAG ");
-  await user.type(
-    screen.getByLabelText("Photo URL 1"),
-    "https://images.example/item.jpg",
-  );
-  await user.type(
-    screen.getByLabelText("Distinguishing feature 1"),
-    "Small scratch beneath the handle",
-  );
-  await user.type(
-    screen.getByLabelText("Verification question 1"),
-    "What is attached to the zipper?",
-  );
-  await user.type(screen.getByLabelText("Expected answer 1"), "A blue tag");
+  fireEvent.change(screen.getByLabelText("Title"), {
+    target: { value: "Black laptop bag" },
+  });
+  fireEvent.change(screen.getByLabelText("Public description"), {
+    target: { value: "Black laptop bag with a shoulder strap." },
+  });
+  fireEvent.change(screen.getByLabelText("Category"), {
+    target: { value: categoryId },
+  });
+  fireEvent.change(screen.getByLabelText("Campus location"), {
+    target: { value: campusLocationId },
+  });
+  fireEvent.change(screen.getByLabelText("Event date and time"), {
+    target: { value: "2000-01-01T12:00" },
+  });
+  fireEvent.change(screen.getByLabelText("Colours"), {
+    target: { value: " Black, Silver " },
+  });
+  fireEvent.change(screen.getByLabelText("Tags"), {
+    target: { value: " Laptop, BAG " },
+  });
+  fireEvent.change(screen.getByLabelText("Photo URL 1"), {
+    target: { value: "https://images.example/item.jpg" },
+  });
+  fireEvent.change(screen.getByLabelText("Distinguishing feature 1"), {
+    target: { value: "Small scratch beneath the handle" },
+  });
+  fireEvent.change(screen.getByLabelText("Verification question 1"), {
+    target: { value: "What is attached to the zipper?" },
+  });
+  fireEvent.change(screen.getByLabelText("Expected answer 1"), {
+    target: { value: "A blue tag" },
+  });
   return user;
 }
 
@@ -155,6 +169,9 @@ describe("ReportForm", () => {
     expect(screen.getByLabelText("Distinguishing feature 1")).toBeTruthy();
     expect(screen.getByLabelText("Verification question 1")).toBeTruthy();
     expect(screen.getByLabelText("Expected answer 1")).toBeTruthy();
+    expect(screen.getByLabelText("Exact location details")).toBeTruthy();
+    expect(screen.getByLabelText("Serial number")).toBeTruthy();
+    expect(screen.getByLabelText("Private notes")).toBeTruthy();
   });
 
   it("uses stable unique IDs and enforces dynamic row limits", async () => {
@@ -185,6 +202,30 @@ describe("ReportForm", () => {
     expect(secondPhotoId).not.toBe(firstPhoto.id);
     await user.click(screen.getByRole("button", { name: "Remove photo URL 1" }));
     expect(screen.getByLabelText("Photo URL 1").id).toBe(secondPhotoId);
+
+    await user.click(
+      screen.getByRole("button", { name: "Add distinguishing feature" }),
+    );
+    const secondFeature = screen.getByLabelText("Distinguishing feature 2");
+    const secondFeatureId = secondFeature.id;
+    await user.click(
+      screen.getByRole("button", { name: "Remove distinguishing feature 1" }),
+    );
+    expect(screen.getByLabelText("Distinguishing feature 1").id).toBe(
+      secondFeatureId,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Add verification question" }),
+    );
+    const secondQuestion = screen.getByLabelText("Verification question 2");
+    const secondQuestionId = secondQuestion.id;
+    await user.click(
+      screen.getByRole("button", { name: "Remove verification question 1" }),
+    );
+    expect(screen.getByLabelText("Verification question 1").id).toBe(
+      secondQuestionId,
+    );
 
     for (let index = 0; index < 4; index += 1) {
       await user.click(screen.getByRole("button", { name: "Add photo URL" }));
@@ -328,6 +369,76 @@ describe("ReportForm", () => {
     expect(summary.textContent).toContain("That title cannot be used");
     expect(summary.textContent).not.toContain("A blue tag");
     expect(screen.getByLabelText("Title").getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it.each([
+    ["photoUrls", "Photo URL 1", "Review the photo list"],
+    ["privacySettings", "Show photos to other members", "Review privacy choices"],
+    [
+      "privateVerification",
+      "Distinguishing feature 1",
+      "Review private verification",
+    ],
+  ])(
+    "associates a flattened %s error with a real control and clears it on edit",
+    async (field, label, message) => {
+      vi.mocked(submitReport).mockRejectedValue(
+        new BrowserReportError({
+          code: "VALIDATION_ERROR",
+          status: 400,
+          message: "Review the highlighted fields",
+          fields: { [field]: [message] },
+        }),
+      );
+      renderForm();
+      const user = await fillValidForm();
+
+      await user.click(screen.getByRole("button", { name: "Submit report" }));
+
+      const summary = await screen.findByRole("alert");
+      const control = screen.getByLabelText(label);
+      const link = within(summary).getByRole("link", { name: message });
+      expect(link.getAttribute("href")).toBe(`#${control.id}`);
+      expect(control.getAttribute("aria-invalid")).toBe("true");
+      const describedIds = control.getAttribute("aria-describedby")?.split(" ") ?? [];
+      expect(describedIds.length).toBeGreaterThan(0);
+      expect(
+        describedIds.some((id) =>
+          document.getElementById(id)?.textContent?.includes(message),
+        ),
+      ).toBe(true);
+      await waitFor(() => expect(document.activeElement).toBe(control));
+
+      if (field === "privacySettings") {
+        await user.click(control);
+      } else {
+        fireEvent.change(control, { target: { value: "Updated safe value" } });
+      }
+
+      expect(control.getAttribute("aria-invalid")).toBe("false");
+      expect(screen.queryByText(message)).toBeNull();
+    },
+  );
+
+  it("keeps an unknown flattened field error in the summary", async () => {
+    vi.mocked(submitReport).mockRejectedValue(
+      new BrowserReportError({
+        code: "VALIDATION_ERROR",
+        status: 400,
+        message: "Review the highlighted fields",
+        fields: { unknownServerField: ["Review this report"] },
+      }),
+    );
+    renderForm();
+    const user = await fillValidForm();
+
+    await user.click(screen.getByRole("button", { name: "Submit report" }));
+
+    const summary = await screen.findByRole("alert");
+    expect(summary.textContent).toContain("Review this report");
+    expect(within(summary).queryByRole("link", { name: "Review this report" })).toBeNull();
+    await new Promise((resolve) => window.setTimeout(resolve, 100));
+    expect(document.activeElement).toBe(summary);
   });
 
   it.each([
