@@ -68,6 +68,7 @@ it("shows signed-out navigation", () => {
   expect(screen.getByRole("link", { name: "Create account" }).getAttribute("href")).toBe(
     "/register",
   );
+  expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
 });
 
 it("shows the safe display name and dashboard for an authenticated user", () => {
@@ -77,6 +78,9 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   expect(screen.getByText("Student Name")).toBeTruthy();
   expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
     "/dashboard",
+  );
+  expect(screen.getByRole("link", { name: "Report item" }).getAttribute("href")).toBe(
+    "/reports/new",
   );
   expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
 });
@@ -99,6 +103,7 @@ it("keeps an accessible retry action when session resolution is unavailable", as
 
   await user.click(screen.getByRole("button", { name: "Retry session check" }));
   expect(refreshSession).toHaveBeenCalledOnce();
+  expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
 });
 
 it("announces session loading without navigation links", () => {
@@ -107,6 +112,7 @@ it("announces session loading without navigation links", () => {
 
   expect(screen.getByText("Checking session")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
 });
 
 it("shows only a generic logout failure message", async () => {

@@ -59,6 +59,16 @@
   font-size: 0.9rem;
 }
 
+.navLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+
+.navLink:active {
+  transform: translateY(1px);
+}
+
 .userName {
   max-width: 10rem;
   overflow: hidden;
@@ -125,7 +135,7 @@
   }
 }
 
-@media (max-width: 22rem) {
+@media (max-width: 28rem) {
   .brand > span:last-child {
     display: none;
   }
