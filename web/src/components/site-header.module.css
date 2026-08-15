@@ -15,7 +15,11 @@
 
 .brand {
   display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
   align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   gap: 0.65rem;
   color: var(--ink);
   font-size: 1.05rem;

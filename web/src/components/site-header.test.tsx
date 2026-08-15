@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -58,6 +61,15 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+it("keeps the home link as a centred 44 pixel touch target", () => {
+  const css = readFileSync(resolve("src/components/site-header.module.css"), "utf8");
+  const brandRule = css.match(/\.brand\s*\{([^}]*)\}/)?.[1];
+
+  expect(brandRule).toMatch(/min-width:\s*44px/);
+  expect(brandRule).toMatch(/min-height:\s*44px/);
+  expect(brandRule).toMatch(/justify-content:\s*center/);
+});
 
 it("shows signed-out navigation", () => {
   mockSession({ status: "unauthenticated", user: null });
