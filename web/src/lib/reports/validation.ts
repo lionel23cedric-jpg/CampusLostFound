@@ -42,9 +42,16 @@ const photoUrlSchema = z
   .string()
   .trim()
   .url("Photo URL must be valid")
-  .refine((value) => new URL(value).protocol === "https:", {
-    message: "Photo URL must use HTTPS",
-  });
+  .refine(
+    (value) => {
+      try {
+        return new URL(value).protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { message: "Photo URL must use HTTPS" },
+  );
 
 const privacySettingsSchema = z
   .strictObject({
