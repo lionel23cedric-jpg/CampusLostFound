@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -70,9 +72,8 @@ describe("report form validation", () => {
     vi.useRealTimers();
   });
 
-  it("creates deterministic empty values with privacy enabled", () => {
-    let sequence = 0;
-    const values = createInitialReportFormValues(() => `row-${++sequence}`);
+  it("creates hydration-stable empty values with privacy enabled", () => {
+    const values = createInitialReportFormValues();
 
     expect(values).toEqual({
       reportType: "lost",
@@ -83,19 +84,19 @@ describe("report form validation", () => {
       occurredAt: "",
       colors: "",
       tags: "",
-      photoUrls: [{ id: "row-1", value: "" }],
+      photoUrls: [{ id: "photo-0", value: "" }],
       privacySettings: {
         showPhoto: true,
         showEventDate: true,
         showCampusLocation: true,
       },
       privateVerification: {
-        distinguishingFeatures: [{ id: "row-2", value: "" }],
+        distinguishingFeatures: [{ id: "feature-0", value: "" }],
         exactLocationDetails: "",
         serialNumber: "",
         verificationQuestions: [
           {
-            id: "row-3",
+            id: "question-0",
             question: "",
             expectedAnswer: "",
           },
@@ -103,6 +104,20 @@ describe("report form validation", () => {
         privateNotes: "",
       },
     });
+    expect(createInitialReportFormValues()).toEqual(values);
+  });
+
+  it("has no runtime dependency on server report validation or models", () => {
+    const source = readFileSync(
+      new URL("./form-validation.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain(
+      'import type { CreateReportInput } from "./validation";',
+    );
+    expect(source).not.toContain("createReportSchema");
+    expect(source).not.toContain("@/models/");
   });
 
   it.each(["lost", "found"] as const)("accepts the %s report type", (reportType) => {

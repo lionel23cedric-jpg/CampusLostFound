@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-import {
-  createReportSchema,
-  type CreateReportInput,
-} from "./validation";
+import type { CreateReportInput } from "./validation";
 
 export type TextFormRow = { id: string; value: string };
 export type VerificationFormRow = {
@@ -53,6 +50,17 @@ const boundedText = (label: string, minimum: number, maximum: number) =>
     .trim()
     .min(minimum, `${label} must contain at least ${minimum} characters`)
     .max(maximum, `${label} must contain at most ${maximum} characters`);
+
+const objectIdSchema = z
+  .string()
+  .regex(/^[a-f\d]{24}$/i, "Reference must be a valid ObjectId");
+
+const optionalPrivateText = (label: string, maximum: number) =>
+  z
+    .string()
+    .trim()
+    .max(maximum, `${label} must contain at most ${maximum} characters`)
+    .transform((value) => value || null);
 
 const commaSeparated = (
   label: string,
@@ -117,7 +125,7 @@ const localDateTimeSchema = z
       });
     }
   })
-  .transform((value) => parseLocalDateTime(value)?.toISOString() ?? value);
+  .transform((value) => parseLocalDateTime(value) ?? new Date(Number.NaN));
 
 const photoRowsSchema = z
   .array(textRowSchema)
@@ -153,8 +161,8 @@ const formSchema = z.strictObject({
   reportType: z.enum(["lost", "found"]),
   title: boundedText("Title", 5, 120),
   publicDescription: boundedText("Public description", 10, 2000),
-  categoryId: z.string(),
-  campusLocationId: z.string(),
+  categoryId: objectIdSchema,
+  campusLocationId: objectIdSchema,
   occurredAt: localDateTimeSchema,
   colors: commaSeparated("Colour", 1, 5, 32),
   tags: commaSeparated("Tag", 0, 10, 40).transform((tags) =>
@@ -176,8 +184,8 @@ const formSchema = z.strictObject({
           .min(1, "Provide at least one distinguishing feature")
           .max(10, "Provide at most 10 distinguishing features"),
       ),
-    exactLocationDetails: z.string(),
-    serialNumber: z.string(),
+    exactLocationDetails: optionalPrivateText("Exact location details", 500),
+    serialNumber: optionalPrivateText("Serial number", 200),
     verificationQuestions: z
       .array(
         z.strictObject({
@@ -194,7 +202,7 @@ const formSchema = z.strictObject({
           expectedAnswer,
         })),
       ),
-    privateNotes: z.string(),
+    privateNotes: optionalPrivateText("Private notes", 2000),
   }),
 });
 
@@ -206,9 +214,7 @@ function toDottedErrors(error: z.ZodError): ReportFormErrors {
   }, {});
 }
 
-export function createInitialReportFormValues(
-  createId: () => string = () => crypto.randomUUID(),
-): ReportFormValues {
+export function createInitialReportFormValues(): ReportFormValues {
   return {
     reportType: "lost",
     title: "",
@@ -218,18 +224,18 @@ export function createInitialReportFormValues(
     occurredAt: "",
     colors: "",
     tags: "",
-    photoUrls: [{ id: createId(), value: "" }],
+    photoUrls: [{ id: "photo-0", value: "" }],
     privacySettings: {
       showPhoto: true,
       showEventDate: true,
       showCampusLocation: true,
     },
     privateVerification: {
-      distinguishingFeatures: [{ id: createId(), value: "" }],
+      distinguishingFeatures: [{ id: "feature-0", value: "" }],
       exactLocationDetails: "",
       serialNumber: "",
       verificationQuestions: [
-        { id: createId(), question: "", expectedAnswer: "" },
+        { id: "question-0", question: "", expectedAnswer: "" },
       ],
       privateNotes: "",
     },
@@ -239,18 +245,15 @@ export function createInitialReportFormValues(
 export function validateReportForm(
   values: ReportFormValues,
 ): ReportFormValidation {
-  const browserResult = formSchema.safeParse(values);
+  const result = formSchema.safeParse(values);
 
-  if (!browserResult.success) {
+  if (!result.success) {
     return {
       success: false,
-      errors: toDottedErrors(browserResult.error),
+      errors: toDottedErrors(result.error),
     };
   }
 
-  const result = createReportSchema.safeParse(browserResult.data);
-
-  return result.success
-    ? { success: true, data: result.data }
-    : { success: false, errors: toDottedErrors(result.error) };
+  const data: CreateReportInput = result.data;
+  return { success: true, data };
 }
