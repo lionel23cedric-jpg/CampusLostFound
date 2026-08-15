@@ -4,6 +4,7 @@ import {
   createInitialReportFormValues,
   validateReportForm,
   type ReportFormValues,
+  type VerificationFormRow,
 } from "./form-validation";
 
 const categoryId = "64b64c6f2f4d9f1a2b3c4d5e";
@@ -51,10 +52,18 @@ function expectInvalid(values: ReportFormValues, path: string) {
   if (!result.success) expect(result.errors[path]).toBeDefined();
 }
 
+function expectValid(values: ReportFormValues) {
+  const result = validateReportForm(values);
+
+  expect(result.success).toBe(true);
+  if (!result.success) throw new Error(JSON.stringify(result.errors));
+  return result.data;
+}
+
 describe("report form validation", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-15T00:00:00.000Z"));
+    vi.setSystemTime(new Date("2026-08-20T00:00:00.000Z"));
   });
 
   afterEach(() => {
@@ -119,9 +128,33 @@ describe("report form validation", () => {
     ["campusLocationId", "not-an-id", "campusLocationId"],
     ["occurredAt", "", "occurredAt"],
     ["occurredAt", "not-a-date", "occurredAt"],
-    ["occurredAt", "2026-08-16T14:00", "occurredAt"],
+    ["occurredAt", "2026-08-21T14:00", "occurredAt"],
   ] as const)("rejects invalid %s", (field, value, path) => {
     expectInvalid({ ...validValues(), [field]: value }, path);
+  });
+
+  it.each([
+    ["title minimum", "title", "t".repeat(5)],
+    ["title maximum", "title", "t".repeat(120)],
+    ["description minimum", "publicDescription", "d".repeat(10)],
+    ["description maximum", "publicDescription", "d".repeat(2000)],
+  ] as const)("accepts the %s boundary", (_label, field, value) => {
+    const data = expectValid({ ...validValues(), [field]: value });
+
+    expect(data[field]).toBe(value);
+  });
+
+  it("converts the local wall-clock event time to the correct UTC instant", () => {
+    const values = validValues();
+    values.occurredAt = "2026-08-14T14:00";
+    const timezoneOffset = new Date(2026, 7, 14, 14, 0).getTimezoneOffset();
+    const expectedUtc = new Date(
+      Date.UTC(2026, 7, 14, 14, 0) + timezoneOffset * 60_000,
+    );
+
+    expect(expectValid(values).occurredAt.toISOString()).toBe(
+      expectedUtc.toISOString(),
+    );
   });
 
   it.each([
@@ -133,10 +166,27 @@ describe("report form validation", () => {
   });
 
   it.each([
+    ["c".repeat(32), ["c".repeat(32)]],
+    ["red, blue, green, black, white", ["red", "blue", "green", "black", "white"]],
+  ])("accepts colour-count boundaries: %s", (colors, expected) => {
+    expect(expectValid({ ...validValues(), colors }).colors).toEqual(expected);
+  });
+
+  it.each([
     [Array.from({ length: 11 }, (_, index) => `tag${index}`).join(","), "tags"],
     ["tag," + "t".repeat(41), "tags.1"],
   ])("rejects invalid tag text %#", (tags, path) => {
     expectInvalid({ ...validValues(), tags }, path);
+  });
+
+  it.each([
+    ["", []],
+    [
+      ["t".repeat(40), ...Array.from({ length: 9 }, (_, index) => `tag${index}`)].join(","),
+      ["t".repeat(40), ...Array.from({ length: 9 }, (_, index) => `tag${index}`)],
+    ],
+  ])("accepts tag-count boundaries", (tags, expected) => {
+    expect(expectValid({ ...validValues(), tags }).tags).toEqual(expected);
   });
 
   it.each([
@@ -157,6 +207,20 @@ describe("report form validation", () => {
     }));
 
     expectInvalid(values, "photoUrls");
+  });
+
+  it("accepts five nonblank photo URLs and omits blank rows", () => {
+    const values = validValues();
+    const expected = Array.from(
+      { length: 5 },
+      (_, index) => `https://images.example/${index}.jpg`,
+    );
+    values.photoUrls = [
+      { id: "blank", value: " " },
+      ...expected.map((value, index) => ({ id: `photo-${index}`, value })),
+    ];
+
+    expect(expectValid(values).photoUrls).toEqual(expected);
   });
 
   it.each([
@@ -180,6 +244,24 @@ describe("report form validation", () => {
   });
 
   it.each([
+    [[{ id: "feature-1", value: "f".repeat(200) }], ["f".repeat(200)]],
+    [
+      Array.from({ length: 10 }, (_, index) => ({
+        id: `feature-${index}`,
+        value: `feature ${index}`,
+      })),
+      Array.from({ length: 10 }, (_, index) => `feature ${index}`),
+    ],
+  ] as const)("accepts distinguishing-feature boundaries %#", (rows, expected) => {
+    const values = validValues();
+    values.privateVerification.distinguishingFeatures = [...rows];
+
+    expect(expectValid(values).privateVerification.distinguishingFeatures).toEqual(
+      expected,
+    );
+  });
+
+  it.each([
     ["exactLocationDetails", 501],
     ["serialNumber", 201],
     ["privateNotes", 2001],
@@ -188,6 +270,32 @@ describe("report form validation", () => {
     values.privateVerification[field] = "x".repeat(length);
 
     expectInvalid(values, `privateVerification.${field}`);
+  });
+
+  it("accepts every optional private-text maximum", () => {
+    const values = validValues();
+    values.privateVerification.exactLocationDetails = "l".repeat(500);
+    values.privateVerification.serialNumber = "s".repeat(200);
+    values.privateVerification.privateNotes = "n".repeat(2000);
+
+    expect(expectValid(values).privateVerification).toMatchObject({
+      exactLocationDetails: "l".repeat(500),
+      serialNumber: "s".repeat(200),
+      privateNotes: "n".repeat(2000),
+    });
+  });
+
+  it("normalises every blank optional private field to null", () => {
+    const values = validValues();
+    values.privateVerification.exactLocationDetails = " ";
+    values.privateVerification.serialNumber = " ";
+    values.privateVerification.privateNotes = " ";
+
+    expect(expectValid(values).privateVerification).toMatchObject({
+      exactLocationDetails: null,
+      serialNumber: null,
+      privateNotes: null,
+    });
   });
 
   it.each([
@@ -234,6 +342,56 @@ describe("report form validation", () => {
 
     expectInvalid(values, path);
   });
+
+  it.each([
+    [
+      [{ id: "question-1", question: "12345", expectedAnswer: "a" }],
+      1,
+      5,
+      1,
+    ],
+    [
+      Array.from({ length: 5 }, (_, index) => ({
+        id: `question-${index}`,
+        question: index === 0 ? "q".repeat(200) : `Question ${index}?`,
+        expectedAnswer: index === 0 ? "a".repeat(500) : "answer",
+      })),
+      5,
+      200,
+      500,
+    ],
+  ] as const)(
+    "accepts verification-pair boundaries %#",
+    (rows, count, questionLength, answerLength) => {
+      const values = validValues();
+      values.privateVerification.verificationQuestions = [...rows];
+
+      const questions = expectValid(values).privateVerification
+        .verificationQuestions;
+      expect(questions).toHaveLength(count);
+      expect(questions[0].question).toHaveLength(questionLength);
+      expect(questions[0].expectedAnswer).toHaveLength(answerLength);
+    },
+  );
+
+  it("rejects extra properties in verification pairs", () => {
+    const values = validValues();
+    const pair = values.privateVerification.verificationQuestions[0] as
+      VerificationFormRow & { isPublic?: boolean };
+    pair.isPublic = true;
+
+    expectInvalid(values, "privateVerification.verificationQuestions.0");
+  });
+
+  it.each(["showPhoto", "showEventDate", "showCampusLocation"] as const)(
+    "rejects non-boolean privacy value for %s",
+    (field) => {
+      const values = validValues();
+      values.privacySettings[field] = "true" as unknown as boolean;
+
+      expectInvalid(values, `privacySettings.${field}`);
+    },
+  );
 
   it("normalises browser values into the server contract without row IDs", () => {
     const result = validateReportForm(validValues());
