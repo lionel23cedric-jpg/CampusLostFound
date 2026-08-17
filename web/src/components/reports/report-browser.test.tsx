@@ -307,6 +307,43 @@ describe("ReportBrowser filters, results and pagination", () => {
     expect(push).toHaveBeenCalledWith("/reports?q=laptop+bag&reportType=lost");
   });
 
+  it("keeps URL category and location filters selected while labels load and after they arrive", async () => {
+    const user = userEvent.setup();
+    const categoryRequest = deferred<typeof categories>();
+    const locationsRequest = deferred<typeof campusLocations>();
+    currentSearch = new URLSearchParams(
+      `categoryId=${memberReport.categoryId}&campusLocationId=${campusLocations[0].id}`,
+    );
+    vi.mocked(getReportCategories).mockReturnValue(categoryRequest.promise);
+    vi.mocked(getReportCampusLocations).mockReturnValue(locationsRequest.promise);
+    render(<ReportBrowser />);
+    await screen.findByText(memberReport.title);
+
+    const categorySelect = screen.getByLabelText("Category") as HTMLSelectElement;
+    const locationSelect = screen.getByLabelText("Campus location") as HTMLSelectElement;
+    expect(categorySelect.value).toBe(memberReport.categoryId);
+    expect(locationSelect.value).toBe(campusLocations[0].id);
+    expect(screen.queryByText("Category unavailable")).toBeNull();
+    expect(screen.queryByText("Campus location unavailable")).toBeNull();
+
+    await act(async () => {
+      categoryRequest.resolve(categories);
+      locationsRequest.resolve(campusLocations);
+    });
+    expect(categorySelect.value).toBe(memberReport.categoryId);
+    expect(locationSelect.value).toBe(campusLocations[0].id);
+
+    await user.click(screen.getByRole("button", { name: "Search reports" }));
+    expect(push).toHaveBeenCalledWith(
+      `/reports?categoryId=${memberReport.categoryId}&campusLocationId=${campusLocations[0].id}`,
+    );
+  });
+
+  it("exposes the filter heading as the search landmark name", async () => {
+    render(<ReportBrowser />);
+    expect(await screen.findByRole("search", { name: "Filter reports" })).toBeTruthy();
+  });
+
   it("focuses a linked validation summary and does not navigate invalid values", async () => {
     const user = userEvent.setup();
     render(<ReportBrowser />);
@@ -398,6 +435,29 @@ describe("ReportBrowser filters, results and pagination", () => {
     expect(replace).toHaveBeenCalledTimes(1);
   });
 
+  it("corrects the same out-of-range URL again after navigating away and back", async () => {
+    currentSearch = new URLSearchParams("q=laptop&page=8");
+    vi.mocked(getReports).mockImplementation(async (request) =>
+      request.page === 8
+        ? {
+            reports: [],
+            pagination: { page: 8, pageSize: 12, total: 14, totalPages: 2 },
+          }
+        : readyPage,
+    );
+    const { rerender } = render(<ReportBrowser />);
+    await waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+
+    currentSearch = new URLSearchParams("q=away");
+    rerender(<ReportBrowser />);
+    await waitFor(() => expect(getReports).toHaveBeenCalledWith({ q: "away" }));
+
+    currentSearch = new URLSearchParams("q=laptop&page=8");
+    rerender(<ReportBrowser />);
+    await waitFor(() => expect(replace).toHaveBeenCalledTimes(2));
+    expect(replace).toHaveBeenLastCalledWith("/reports?q=laptop&page=2");
+  });
+
   it("focuses results after user navigation but not initial load or retry", async () => {
     const user = userEvent.setup();
     const { rerender } = render(<ReportBrowser />);
@@ -429,6 +489,31 @@ describe("ReportBrowser filters, results and pagination", () => {
     expect(await screen.findByText("Current result")).toBeTruthy();
     await act(async () => first.resolve(readyPage));
     expect(screen.queryByText(memberReport.title)).toBeNull();
+  });
+
+  it("invalidates the old request during query cleanup before the new timer starts", async () => {
+    const first = deferred<ReportPage>();
+    const second = deferred<ReportPage>();
+    const newReport = { ...memberReport, id: "new-report", title: "Current result" };
+    vi.mocked(getReports)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    const { rerender } = render(<ReportBrowser />);
+    await waitFor(() => expect(getReports).toHaveBeenCalledOnce());
+
+    currentSearch = new URLSearchParams("q=current");
+    rerender(<ReportBrowser />);
+    await act(async () => first.resolve(readyPage));
+    expect(screen.queryByText(memberReport.title)).toBeNull();
+
+    await waitFor(() => expect(getReports).toHaveBeenCalledTimes(2));
+    await act(async () =>
+      second.resolve({
+        reports: [newReport],
+        pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+      }),
+    );
+    expect(await screen.findByText("Current result")).toBeTruthy();
   });
 
   it("prevents a previous account response from entering the next account", async () => {

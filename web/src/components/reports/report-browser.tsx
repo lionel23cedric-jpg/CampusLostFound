@@ -33,9 +33,9 @@ import { ReportCard } from "./report-card";
 import styles from "./report-browsing.module.css";
 
 type ReportState =
-  | { status: "loading" }
-  | { status: "ready"; page: ReportPage }
-  | { status: "error" };
+  | { status: "loading"; queryKey: string }
+  | { status: "ready"; queryKey: string; page: ReportPage }
+  | { status: "error"; queryKey: string };
 
 type ReferenceState =
   | { status: "loading" }
@@ -131,6 +131,7 @@ function ActiveReportBrowser() {
   );
   const [reportState, setReportState] = useState<ReportState>({
     status: "loading",
+    queryKey,
   });
   const [referenceState, setReferenceState] = useState<ReferenceState>({
     status: "loading",
@@ -146,7 +147,6 @@ function ActiveReportBrowser() {
   const pendingResultFocus = useRef(false);
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const errorHeadingRef = useRef<HTMLHeadingElement>(null);
-  const correctedQueryRef = useRef<string | undefined>(undefined);
 
   const classifyError = useCallback(
     (error: unknown) => {
@@ -168,7 +168,7 @@ function ActiveReportBrowser() {
     async (focusResults = false) => {
       if (!mounted.current) return;
       const currentRequest = ++reportRequestId.current;
-      setReportState({ status: "loading" });
+      setReportState({ status: "loading", queryKey });
 
       try {
         const page = await getReports(parsedSearch.request);
@@ -178,10 +178,8 @@ function ActiveReportBrowser() {
         if (
           page.reports.length === 0 &&
           page.pagination.totalPages > 0 &&
-          requestedPage > page.pagination.totalPages &&
-          correctedQueryRef.current !== queryKey
+          requestedPage > page.pagination.totalPages
         ) {
-          correctedQueryRef.current = queryKey;
           pendingResultFocus.current = focusResults;
           router.replace(
             reportSearchHref({
@@ -192,13 +190,15 @@ function ActiveReportBrowser() {
           return;
         }
 
-        setReportState({ status: "ready", page });
+        setReportState({ status: "ready", queryKey, page });
         if (focusResults) {
           window.requestAnimationFrame(() => resultsHeadingRef.current?.focus());
         }
       } catch (error) {
         if (!mounted.current || currentRequest !== reportRequestId.current) return;
-        if (!classifyError(error)) setReportState({ status: "error" });
+        if (!classifyError(error)) {
+          setReportState({ status: "error", queryKey });
+        }
       }
     },
     [classifyError, parsedSearch.request, queryKey, router],
@@ -237,7 +237,10 @@ function ActiveReportBrowser() {
     const timeoutId = window.setTimeout(() => {
       void loadReports(shouldFocus);
     }, 0);
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      reportRequestId.current += 1;
+    };
   }, [loadReports]);
 
   useEffect(() => {
@@ -263,6 +266,10 @@ function ActiveReportBrowser() {
 
   const values = parsedSearch.values;
   const request = parsedSearch.request;
+  const visibleReportState: ReportState =
+    reportState.queryKey === queryKey
+      ? reportState
+      : { status: "loading", queryKey };
   const categoryNames = new Map(
     referenceState.status === "ready"
       ? referenceState.categories.map((category) => [category.id, category.name])
@@ -276,6 +283,18 @@ function ActiveReportBrowser() {
         ])
       : [],
   );
+  const selectedCategory =
+    referenceState.status === "ready"
+      ? referenceState.categories.find(
+          (category) => category.id === values.categoryId,
+        )
+      : undefined;
+  const selectedLocation =
+    referenceState.status === "ready"
+      ? referenceState.campusLocations.find(
+          (location) => location.id === values.campusLocationId,
+        )
+      : undefined;
   const hasFilters = Object.keys(request).some((key) => key !== "page");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -301,9 +320,9 @@ function ActiveReportBrowser() {
     "aria-describedby": fieldError(name) ? `${name}-error` : undefined,
   });
   const totalLabel =
-    reportState.status === "ready"
-      ? `${reportState.page.pagination.total} ${
-          reportState.page.pagination.total === 1 ? "report" : "reports"
+    visibleReportState.status === "ready"
+      ? `${visibleReportState.page.pagination.total} ${
+          visibleReportState.page.pagination.total === 1 ? "report" : "reports"
         }`
       : "Reports";
 
@@ -318,9 +337,9 @@ function ActiveReportBrowser() {
     ) : null;
 
   let reportContent;
-  if (reportState.status === "loading") {
+  if (visibleReportState.status === "loading") {
     reportContent = <p role="status">Loading reports</p>;
-  } else if (reportState.status === "error") {
+  } else if (visibleReportState.status === "error") {
     reportContent = (
       <div className={styles.inlineState} role="alert">
         <p>We could not load reports.</p>
@@ -329,7 +348,7 @@ function ActiveReportBrowser() {
         </button>
       </div>
     );
-  } else if (reportState.page.reports.length === 0) {
+  } else if (visibleReportState.page.reports.length === 0) {
     reportContent = hasFilters ? (
       <div className={styles.emptyState}>
         <p>No reports match these filters.</p>
@@ -346,17 +365,21 @@ function ActiveReportBrowser() {
   } else {
     reportContent = (
       <div className={styles.reportList}>
-        {reportState.page.reports.map((report) => (
+        {visibleReportState.page.reports.map((report) => (
           <ReportCard
             key={report.id}
             report={report}
             categoryName={
-              categoryNames.get(report.categoryId) ?? "Category unavailable"
+              referenceState.status === "loading"
+                ? "Category details loading"
+                : categoryNames.get(report.categoryId) ?? "Category unavailable"
             }
             campusLocationName={
               report.campusLocationId
-                ? campusLocationNames.get(report.campusLocationId) ??
-                  "Campus location unavailable"
+                ? referenceState.status === "loading"
+                  ? "Campus location details loading"
+                  : campusLocationNames.get(report.campusLocationId) ??
+                    "Campus location unavailable"
                 : "Location hidden"
             }
           />
@@ -366,9 +389,10 @@ function ActiveReportBrowser() {
   }
 
   const pagination =
-    reportState.status === "ready" && reportState.page.pagination.totalPages > 0
+    visibleReportState.status === "ready" &&
+    visibleReportState.page.pagination.totalPages > 0
       ? (() => {
-          const { page, totalPages } = reportState.page.pagination;
+          const { page, totalPages } = visibleReportState.page.pagination;
           const previousHref =
             page > 1 ? reportSearchHref({ ...request, page: page - 1 }) : undefined;
           const nextHref =
@@ -423,11 +447,12 @@ function ActiveReportBrowser() {
         <form
           key={queryKey}
           role="search"
+          aria-labelledby="report-filter-heading"
           className={styles.filters}
           onSubmit={handleSubmit}
           noValidate
         >
-          <h2>Filter reports</h2>
+          <h2 id="report-filter-heading">Filter reports</h2>
           {Object.keys(formErrors).length > 0 ? (
             <section className={styles.errorSummary} role="alert">
               <h3 ref={errorHeadingRef} tabIndex={-1}>
@@ -490,12 +515,19 @@ function ActiveReportBrowser() {
               {...fieldAccessibility("categoryId")}
             >
               <option value="">Any category</option>
+              {values.categoryId ? (
+                <option value={values.categoryId}>
+                  {selectedCategory?.name ?? "Selected category"}
+                </option>
+              ) : null}
               {referenceState.status === "ready"
-                ? referenceState.categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))
+                ? referenceState.categories
+                    .filter((category) => category.id !== values.categoryId)
+                    .map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))
                 : null}
             </select>
             {fieldError("categoryId") ? (
@@ -511,12 +543,21 @@ function ActiveReportBrowser() {
               {...fieldAccessibility("campusLocationId")}
             >
               <option value="">Any campus location</option>
+              {values.campusLocationId ? (
+                <option value={values.campusLocationId}>
+                  {selectedLocation
+                    ? `${selectedLocation.campusName} · ${selectedLocation.locationName}`
+                    : "Selected campus location"}
+                </option>
+              ) : null}
               {referenceState.status === "ready"
-                ? referenceState.campusLocations.map((location) => (
-                    <option key={location.id} value={location.id}>
-                      {location.campusName} · {location.locationName}
-                    </option>
-                  ))
+                ? referenceState.campusLocations
+                    .filter((location) => location.id !== values.campusLocationId)
+                    .map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.campusName} · {location.locationName}
+                      </option>
+                    ))
                 : null}
             </select>
             {fieldError("campusLocationId") ? (
