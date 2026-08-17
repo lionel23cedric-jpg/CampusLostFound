@@ -56,7 +56,7 @@ Client protection improves the experience but never replaces the server's sessio
 
 The existing category and campus-location loaders remain the reference-data source. All calls stay same-origin so browser code never reads the HttpOnly session token.
 
-Strict Zod schemas validate successful list, pagination and detail responses at runtime. The schemas mirror the existing member-safe backend contract and reject unknown response fields. Malformed JSON, malformed successful payloads, network failures and unexpected server errors become stable browser-safe errors. Raw response text, database failures, stack traces and credentials are never rendered.
+Strict Zod schemas validate successful list, pagination and detail responses at runtime. The schemas mirror the existing member-safe backend contract, reject unknown response fields, and accept member-visible photo links only when they parse as `https:` URLs. Malformed JSON, malformed successful payloads, network failures and unexpected server errors become stable browser-safe errors. Raw response text, database failures, stack traces and credentials are never rendered.
 
 The report browser client constructs list URLs from an explicit allowlist of supported values. It does not forward arbitrary URL parameters to the API. Detail IDs are encoded before entering the request path.
 

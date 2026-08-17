@@ -136,7 +136,7 @@ it("encodes the report id before loading detail", async () => {
 });
 ```
 
-Add table cases proving list/detail schemas reject extra `reporterId`, `privacySettings`, `serialNumber`, malformed dates, unknown pagination fields and a non-integer page. Reuse the existing 401/403/404/500 public-error test pattern and verify exact `BrowserReportError` status/code without raw response leakage.
+Add table cases proving list/detail schemas reject extra `reporterId`, `privacySettings`, `serialNumber`, malformed dates, malformed photo URLs, `http:`, `javascript:` and `data:` photo schemes, unknown pagination fields and a non-integer page. Reuse the existing 401/403/404/500 public-error test pattern and verify exact `BrowserReportError` status/code without raw response leakage.
 
 - [ ] **Step 2: Run the tests and confirm red**
 
@@ -198,7 +198,7 @@ export type ReportBrowseRequest = {
 };
 ```
 
-Use `z.strictObject` for every member-report and pagination property. Dates use `z.string().datetime({ offset: true })`; hidden `occurredAt`/location and `resolvedAt` are nullable. Pagination numbers are non-negative integers, except `page` and `pageSize`, which are positive integers.
+Use `z.strictObject` for every member-report and pagination property. Dates use `z.string().datetime({ offset: true })`; hidden `occurredAt`/location and `resolvedAt` are nullable. Member `photoUrls` use one total refinement that catches URL parsing failures and accepts only `new URL(value).protocol === "https:"`; no malformed value or other scheme may reach a component. Pagination numbers are non-negative integers, except `page` and `pageSize`, which are positive integers.
 
 Build list parameters in this fixed order and omit defaults/undefined values:
 
@@ -481,7 +481,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-NZ", {
 });
 
 <article className={styles.card}>
-  <Link className={styles.cardLink} href={`/reports/${report.id}`}>
+  <Link className={styles.cardLink} href={`/reports/${encodeURIComponent(report.id)}`}>
     <div className={styles.cardHeading}>
       <p>{report.reportType === "lost" ? "Lost" : "Found"} · {statusLabel}</p>
       {report.isOwner ? <span>Your report</span> : null}
@@ -923,7 +923,7 @@ it("renders only privacy-safe detail and safe hidden labels", async () => {
 });
 ```
 
-Also test route metadata/async params, session states, student/staff/admin access, report/reference parallel starts, reference fallback and retry without losing loaded detail, explicit external photo links with no automatic image request, all visible timestamps in `Pacific/Auckland`, 404 exact state, 500 Retry, 401 redirect, 403 permission alert, stale request after account/ID change, and `/reports` Back link.
+Also test route metadata/async params, session states, student/staff/admin access, report/reference parallel starts, reference fallback and retry without losing loaded detail, explicit HTTPS external photo links with no automatic image request, browser-client rejection of malformed/non-HTTPS photo URLs before render, all visible timestamps in `Pacific/Auckland`, 404 exact state, 500 Retry, 401 redirect, 403 permission alert, stale request after account/ID change, and `/reports` Back link.
 
 - [ ] **Step 2: Confirm red**
 
@@ -959,7 +959,7 @@ if (error instanceof BrowserReportError) {
 setReportState({ status: "error" });
 ```
 
-Render one `article` with a single `h1`, a text type/status line, description, labelled `<dl>`, colour/tag lists and optional owner text. For each member-visible photo URL, render an explicitly labelled external link such as `<a href={url} target="_blank" rel="noreferrer">View submitted photo 1 (external)</a>`; never render `<img>`, preload a URL or use raw HTML. Loading uses `role="status"`; not-found is ordinary content; blocking failure/permission uses one `role="alert"`.
+Render one `article` with a single `h1`, a text type/status line, description, labelled `<dl>`, colour/tag lists and optional owner text. Task 1 guarantees every member-visible photo URL is valid HTTPS; for each URL, render an explicitly labelled external link such as `<a href={url} target="_blank" rel="noreferrer">View submitted photo 1 (external)</a>`. Never render `<img>`, preload a URL or use raw HTML. Loading uses `role="status"`; not-found is ordinary content; blocking failure/permission uses one `role="alert"`.
 
 Create the async-param route:
 
