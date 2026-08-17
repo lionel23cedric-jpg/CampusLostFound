@@ -3,6 +3,7 @@
 }
 
 .browserPage,
+.detailPage,
 .loading,
 .statePanel {
   width: min(100% - 2rem, 76rem);
@@ -13,6 +14,110 @@
   display: grid;
   gap: 2rem;
   padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.detailPage {
+  display: grid;
+  max-width: 58rem;
+  gap: 1rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.backLink {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  color: var(--campus-green-dark);
+  font-weight: 800;
+}
+
+.detailArticle {
+  display: grid;
+  min-width: 0;
+  gap: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.detailHeader h1,
+.detailSection h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.detailHeader h1 {
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.detailHeader > p:last-child,
+.detailSection > p {
+  margin: 0.75rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.detailFacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+.detailFacts > div {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+}
+
+.detailFacts dt {
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.detailFacts dd {
+  margin: 0.35rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.detailSection {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.detailSection h2 {
+  font-size: 1.35rem;
+}
+
+.photoLinks {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photoLinks a {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 44px;
+  align-items: center;
+  color: var(--campus-green-dark);
+  font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .introduction {
@@ -369,6 +474,10 @@
   .cardFacts {
     grid-template-columns: 1fr;
   }
+
+  .detailFacts {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 48rem) {
@@ -379,6 +488,7 @@
 
 @media (max-width: 20rem) {
   .browserPage,
+  .detailPage,
   .loading,
   .statePanel {
     width: min(100% - 1rem, 76rem);
@@ -386,6 +496,7 @@
 
   .filters,
   .statePanel,
+  .detailArticle,
   .cardContent {
     padding: 1rem;
   }
