@@ -81,6 +81,20 @@ The browser parses the current URL into a browser-safe search form. Invalid, dup
 
 Submitting the search form writes only non-default values to the URL and resets `page` to 1. Clear returns to `/reports`. Pagination preserves the active filters and changes only `page`. Because the URL is authoritative, reload, Back, Forward and copied links reproduce the same search.
 
+The visible date controls use native `date` inputs. An occurred-from date is converted from local midnight at the start of that calendar day to an ISO date-time. An occurred-to date is converted from the final millisecond of that local calendar day to an ISO date-time. The resulting values always carry an explicit `Z` offset accepted by the backend and include the complete dates the member selected. Reversed ranges are rejected in the browser before navigation, while the backend remains authoritative.
+
+## Module boundaries
+
+- `src/lib/reports/browser-client.ts` gains strict list/detail response schemas and focused fetch functions while retaining the existing submission and reference-data functions.
+- `src/lib/reports/browse-search.ts` owns browser-safe URL parsing, form-to-query normalisation and filter-preserving pagination URLs. It has no React, database or server-model imports.
+- `src/components/reports/report-browser.tsx` owns protected-session coordination, reference/report loading, URL synchronisation and list-page states.
+- `src/components/reports/report-card.tsx` renders one privacy-safe linked result without a second data-fetch boundary.
+- `src/components/reports/report-detail-client.tsx` owns protected detail loading and detail-page states.
+- Route files under `src/app/reports/` remain thin metadata and semantic-main entries.
+- Existing dashboard and site-header files receive only the new navigation destinations and the minimum responsive adjustments needed to keep the 320-pixel contract.
+
+No generic repository layer, global state store, query framework or shared component hierarchy is introduced.
+
 ## Search workspace
 
 The page begins with a concise heading and supporting sentence explaining that results contain privacy-safe campus reports.
