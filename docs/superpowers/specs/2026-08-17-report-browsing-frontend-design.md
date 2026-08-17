@@ -130,10 +130,10 @@ Each report card may show only fields in the member-visible response:
 - Campus location name, `Location hidden`, or safe unavailable fallback.
 - Event date or `Date hidden`.
 - Visible colours and tags where useful.
-- A visible photo only when `photoUrls` contains a member-visible URL.
+- `Photo available` only when `photoUrls` contains a member-visible URL; result cards never auto-load a user-supplied third-party URL.
 - `Your report` when `isOwner` is true.
 
-Type and status use text as well as colour. Missing visible photos do not create broken placeholders. Cards do not render reporter identifiers, privacy settings or any private ownership evidence.
+Type and status use text as well as colour. Reports without a visible photo do not create broken placeholders. Cards do not render the photo URL, reporter identifiers, privacy settings or any private ownership evidence.
 
 ## Pagination
 
@@ -151,11 +151,13 @@ An out-of-range page returned by the backend is treated as an empty page with au
 - Title and full public description.
 - Category and member-visible campus location.
 - Member-visible event date.
-- Visible colours, tags and photos.
+- Visible colours and tags, plus explicitly activated `View submitted photo` links when member-visible photo URLs exist.
 - Created and updated dates, plus resolved date when applicable.
 - `Your report` when the authenticated viewer owns the report.
 
 The page includes a clear `Back to reports` link. Native browser Back continues to restore the prior URL-backed search automatically. The first version does not add edit, claim, message or management actions that do not yet exist.
+
+Because submitted HTTPS photo URLs may point to arbitrary third-party origins, neither page requests them automatically. Detail links open only after explicit member activation, use a new tab with `rel="noreferrer"`, and state that the destination is external. A later trusted first-party media pipeline may replace this behaviour with inline images.
 
 An invalid or absent report produces the same clear not-found state. The UI does not speculate whether a hidden draft or private record exists.
 
@@ -209,7 +211,7 @@ The feature targets WCAG 2.2 AA and follows the existing application semantics.
 - At least 44-pixel interactive targets.
 - Sufficient text and control contrast on every used background.
 - Restrained live regions without duplicate announcements.
-- Meaningful image alt text derived only from safe report content, or empty alt text when an image is decorative to an already labelled card.
+- Explicit photo links have report-safe descriptive names, identify the external destination, and never rely on a raw URL as link text.
 - A normal reading and keyboard order at all breakpoints.
 - No horizontal overflow at 320 CSS pixels.
 - Reduced-motion support for any non-essential transition.
@@ -229,7 +231,7 @@ Vitest and Testing Library coverage will include:
 - Stale request rejection during rapid query changes and account changes.
 - Parallel report/reference loading and independent retry states.
 - Successful results, true empty collection, filtered empty results and out-of-range page recovery.
-- Privacy-hidden location, date and photo presentation.
+- Privacy-hidden location/date presentation and non-loading photo-availability or explicit-link behaviour.
 - Inactive or missing category and campus-location fallbacks.
 - Owner indication without reporter-identifier exposure.
 - Detail success, not found, retry, authentication expiry and permission states.

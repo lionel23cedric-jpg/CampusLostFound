@@ -449,7 +449,7 @@ expect(document.body.textContent).not.toMatch(
 );
 ```
 
-Add cases for lost/found and every status label, description excerpt, category/location fallbacks, visible date formatted `en-NZ`, tags/colours, visible photo with safe alt/loading/referrer attributes, and non-owner output.
+Add cases for lost/found and every status label, description excerpt, category/location fallbacks, visible date formatted in `Pacific/Auckland`, tags/colours, `Photo available` when URLs exist, no `<img>`/`src`/raw URL emission, encoded report IDs, and non-owner output.
 
 - [ ] **Step 2: Confirm red**
 
@@ -477,6 +477,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-NZ", {
   day: "numeric",
   month: "short",
   year: "numeric",
+  timeZone: "Pacific/Auckland",
 });
 
 <article className={styles.card}>
@@ -492,21 +493,12 @@ const dateFormatter = new Intl.DateTimeFormat("en-NZ", {
       <div><dt>Location</dt><dd>{campusLocationName}</dd></div>
       <div><dt>Date</dt><dd>{report.occurredAt ? dateFormatter.format(new Date(report.occurredAt)) : "Date hidden"}</dd></div>
     </dl>
-    {report.photoUrls[0] ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={report.photoUrls[0]}
-        alt={`Submitted photo for ${report.title}`}
-        loading="lazy"
-        decoding="async"
-        referrerPolicy="no-referrer"
-      />
-    ) : null}
+    {report.photoUrls.length > 0 ? <span>Photo available</span> : null}
   </Link>
 </article>
 ```
 
-Use text plus restrained border colour for type/status. Give `.cardLink` a 44-pixel minimum target, visible focus from globals, stable overflow wrapping and a single-column mobile layout. Do not nest buttons or links.
+Use text plus restrained border colour for type/status. Give `.cardLink` a 44-pixel minimum target, visible focus from globals, stable overflow wrapping and a single-column mobile layout. Do not nest buttons or links, emit a photo URL or trigger an external photo request.
 
 - [ ] **Step 4: Verify card behaviour and style floor**
 
@@ -931,7 +923,7 @@ it("renders only privacy-safe detail and safe hidden labels", async () => {
 });
 ```
 
-Also test route metadata/async params, session states, student/staff/admin access, report/reference parallel starts, reference fallback and retry without losing loaded detail, visible photo attributes, all visible timestamps, 404 exact state, 500 Retry, 401 redirect, 403 permission alert, stale request after account/ID change, and `/reports` Back link.
+Also test route metadata/async params, session states, student/staff/admin access, report/reference parallel starts, reference fallback and retry without losing loaded detail, explicit external photo links with no automatic image request, all visible timestamps in `Pacific/Auckland`, 404 exact state, 500 Retry, 401 redirect, 403 permission alert, stale request after account/ID change, and `/reports` Back link.
 
 - [ ] **Step 2: Confirm red**
 
@@ -967,7 +959,7 @@ if (error instanceof BrowserReportError) {
 setReportState({ status: "error" });
 ```
 
-Render one `article` with a single `h1`, a text type/status line, description, labelled `<dl>`, colour/tag lists, optional owner text and visible photos. External photos use `loading="lazy"`, `decoding="async"` and `referrerPolicy="no-referrer"`; never render raw HTML. Loading uses `role="status"`; not-found is ordinary content; blocking failure/permission uses one `role="alert"`.
+Render one `article` with a single `h1`, a text type/status line, description, labelled `<dl>`, colour/tag lists and optional owner text. For each member-visible photo URL, render an explicitly labelled external link such as `<a href={url} target="_blank" rel="noreferrer">View submitted photo 1 (external)</a>`; never render `<img>`, preload a URL or use raw HTML. Loading uses `role="status"`; not-found is ordinary content; blocking failure/permission uses one `role="alert"`.
 
 Create the async-param route:
 
@@ -1155,7 +1147,7 @@ Start the local framework with `npm run dev` only after confirming port availabi
 Verify in one bounded browser round:
 
 - 1440 and 768 CSS pixels: filter rail/result hierarchy, detail reading width and no clipped content.
-- 375 and 320 CSS pixels: filters stack before results, cards/images fit, pagination fits and authenticated header has no horizontal overflow.
+- 375 and 320 CSS pixels: filters stack before results, cards/photo links fit, pagination fits and authenticated header has no horizontal overflow.
 - Keyboard: skip link, every filter, Search, Clear, result link, pagination and Back link.
 - URL: Search, Clear, Previous/Next, reload, Back and Forward preserve canonical state.
 - States: loading, empty, retry, privacy-hidden labels and detail not-found.
