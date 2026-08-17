@@ -15,6 +15,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-NZ", {
   day: "numeric",
   month: "short",
   year: "numeric",
+  timeZone: "Pacific/Auckland",
 });
 
 export type ReportCardProps = {
@@ -35,7 +36,10 @@ export function ReportCard({
 
   return (
     <article className={styles.card}>
-      <Link className={styles.cardLink} href={`/reports/${report.id}`}>
+      <Link
+        className={styles.cardLink}
+        href={`/reports/${encodeURIComponent(report.id)}`}
+      >
         <div className={styles.cardContent}>
           <div className={styles.cardHeading}>
             <p
@@ -87,20 +91,11 @@ export function ReportCard({
                 ))}
               </ul>
             ) : null}
+            {report.photoUrls.length > 0 ? (
+              <span className={styles.ownerLabel}>Photo available</span>
+            ) : null}
           </div>
         </div>
-
-        {report.photoUrls[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className={styles.cardPhoto}
-            src={report.photoUrls[0]}
-            alt={`Submitted photo for ${report.title}`}
-            loading="lazy"
-            decoding="async"
-            referrerPolicy="no-referrer"
-          />
-        ) : null}
       </Link>
     </article>
   );

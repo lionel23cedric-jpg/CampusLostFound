@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { MemberReport } from "@/lib/reports/browser-client";
 
@@ -87,8 +87,8 @@ describe("ReportCard", () => {
     expect(screen.queryByText("Your report")).toBeNull();
   });
 
-  it("formats a visible date for New Zealand and secures an external photo", () => {
-    render(
+  it("formats the event in the New Zealand timezone without loading a photo", () => {
+    const { container } = render(
       <ReportCard
         report={{
           ...memberReport,
@@ -105,16 +105,61 @@ describe("ReportCard", () => {
 
     expect(screen.getByText("15 Aug 2026")).toBeTruthy();
     expect(screen.getByText("Auckland Library")).toBeTruthy();
-    const image = screen.getByRole("img", {
-      name: 'Submitted photo for Bag <script>alert("private")</script>',
-    });
-    expect(image.getAttribute("src")).toBe(
+    expect(screen.getByText("Photo available")).toBeTruthy();
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(container.querySelector("[src]")).toBeNull();
+    expect(container.innerHTML).not.toContain(
       "https://images.example.test/bag.jpg",
     );
-    expect(image.getAttribute("loading")).toBe("lazy");
-    expect(image.getAttribute("decoding")).toBe("async");
-    expect(image.getAttribute("referrerpolicy")).toBe("no-referrer");
     expect(document.querySelector("script")).toBeNull();
+  });
+
+  it.each(["UTC", "America/Los_Angeles"])(
+    "keeps the New Zealand event date when the runtime timezone is %s",
+    async (runtimeTimeZone) => {
+      const previousTimeZone = process.env.TZ;
+      process.env.TZ = runtimeTimeZone;
+      vi.resetModules();
+
+      try {
+        const { ReportCard: TimeZoneReportCard } = await import("./report-card");
+        render(
+          <TimeZoneReportCard
+            report={{
+              ...memberReport,
+              occurredAt: "2026-08-15T02:05:00.000Z",
+            }}
+            categoryName="Electronics"
+            campusLocationName="Location hidden"
+          />,
+        );
+
+        expect(screen.getByText("15 Aug 2026")).toBeTruthy();
+      } finally {
+        if (previousTimeZone === undefined) {
+          delete process.env.TZ;
+        } else {
+          process.env.TZ = previousTimeZone;
+        }
+        vi.resetModules();
+      }
+    },
+  );
+
+  it("encodes the report id before building the detail route", () => {
+    render(
+      <ReportCard
+        report={{ ...memberReport, id: "id/with spaces" }}
+        categoryName="Electronics"
+        campusLocationName="Location hidden"
+      />,
+    );
+
+    expect(
+      screen
+        .getByRole("link", { name: /Black laptop bag/ })
+        .getAttribute("href"),
+    ).toBe("/reports/id%2Fwith%20spaces");
   });
 
   it("keeps the linked card operable and single-column on narrow screens", () => {
@@ -128,7 +173,7 @@ describe("ReportCard", () => {
     expect(linkRule).toMatch(/min-height:\s*44px/);
     expect(css).toMatch(/overflow-wrap:\s*anywhere/);
     expect(narrowCss).toMatch(
-      /\.cardLink,\s*\.cardFacts\s*\{[^}]*grid-template-columns:\s*1fr/,
+      /\.cardFacts\s*\{[^}]*grid-template-columns:\s*1fr/,
     );
     expect(css).toContain("@media (max-width: 20rem)");
   });
