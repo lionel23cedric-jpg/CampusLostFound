@@ -41,6 +41,49 @@ export type CreatedReport = {
   updatedAt: string;
 };
 
+export type MemberReport = {
+  id: string;
+  reportType: "lost" | "found";
+  title: string;
+  publicDescription: string;
+  categoryId: string;
+  campusLocationId: string | null;
+  occurredAt: string | null;
+  colors: string[];
+  tags: string[];
+  photoUrls: string[];
+  status: "open" | "claim_pending" | "resolved" | "closed";
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isOwner: boolean;
+};
+
+export type ReportPagination = {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type ReportPage = {
+  reports: MemberReport[];
+  pagination: ReportPagination;
+};
+
+export type ReportBrowseRequest = {
+  q?: string;
+  reportType?: "lost" | "found";
+  categoryId?: string;
+  campusLocationId?: string;
+  status?: MemberReport["status"];
+  color?: string;
+  occurredFrom?: string;
+  occurredTo?: string;
+  hasPhoto?: boolean;
+  page?: number;
+};
+
 const categorySchema = z.strictObject({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -76,6 +119,40 @@ const createdReportSchema = z.strictObject({
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 }) satisfies z.ZodType<CreatedReport>;
+
+const memberReportSchema = z.strictObject({
+  id: z.string().min(1),
+  reportType: z.enum(["lost", "found"]),
+  title: z.string(),
+  publicDescription: z.string(),
+  categoryId: z.string().min(1),
+  campusLocationId: z.string().min(1).nullable(),
+  occurredAt: z.string().datetime({ offset: true }).nullable(),
+  colors: z.array(z.string()),
+  tags: z.array(z.string()),
+  photoUrls: z.array(z.string()),
+  status: z.enum(["open", "claim_pending", "resolved", "closed"]),
+  resolvedAt: z.string().datetime({ offset: true }).nullable(),
+  createdAt: z.string().datetime({ offset: true }),
+  updatedAt: z.string().datetime({ offset: true }),
+  isOwner: z.boolean(),
+}) satisfies z.ZodType<MemberReport>;
+
+const reportPaginationSchema = z.strictObject({
+  page: z.number().int().positive(),
+  pageSize: z.number().int().positive(),
+  total: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+}) satisfies z.ZodType<ReportPagination>;
+
+const reportPageSchema = z.strictObject({
+  reports: z.array(memberReportSchema),
+  pagination: reportPaginationSchema,
+}) satisfies z.ZodType<ReportPage>;
+
+const memberReportResponseSchema = z.strictObject({
+  report: memberReportSchema,
+});
 
 const categoryResponseSchema = z.strictObject({
   categories: z.array(categorySchema),
@@ -187,6 +264,41 @@ export async function getReportCampusLocations(): Promise<
   });
   const data = await parseResponse(response, campusLocationResponseSchema);
   return data.campusLocations;
+}
+
+export async function getReports(
+  input: ReportBrowseRequest,
+): Promise<ReportPage> {
+  const search = new URLSearchParams();
+  if (input.q) search.set("q", input.q);
+  if (input.reportType) search.set("reportType", input.reportType);
+  if (input.categoryId) search.set("categoryId", input.categoryId);
+  if (input.campusLocationId) {
+    search.set("campusLocationId", input.campusLocationId);
+  }
+  if (input.status) search.set("status", input.status);
+  if (input.color) search.set("color", input.color);
+  if (input.occurredFrom) search.set("occurredFrom", input.occurredFrom);
+  if (input.occurredTo) search.set("occurredTo", input.occurredTo);
+  if (input.hasPhoto !== undefined) {
+    search.set("hasPhoto", String(input.hasPhoto));
+  }
+  if (input.page && input.page !== 1) search.set("page", String(input.page));
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  const response = await fetchSameOrigin(`/api/reports${suffix}`, {
+    method: "GET",
+  });
+  return parseResponse(response, reportPageSchema);
+}
+
+export async function getReportById(id: string): Promise<MemberReport> {
+  const response = await fetchSameOrigin(
+    `/api/reports/${encodeURIComponent(id)}`,
+    { method: "GET" },
+  );
+  const data = await parseResponse(response, memberReportResponseSchema);
+  return data.report;
 }
 
 export async function submitReport(
