@@ -2,6 +2,234 @@
   min-width: 0;
 }
 
+.browserPage,
+.loading,
+.statePanel {
+  width: min(100% - 2rem, 76rem);
+  margin-inline: auto;
+}
+
+.browserPage {
+  display: grid;
+  gap: 2rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.introduction {
+  max-width: 48rem;
+}
+
+.kicker {
+  margin: 0 0 0.75rem;
+  color: var(--campus-green-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.introduction h1,
+.statePanel h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.introduction h1 {
+  font-size: clamp(2.35rem, 6vw, 4.5rem);
+}
+
+.introduction > p:last-child,
+.statePanel > p:not(.kicker) {
+  max-width: 64ch;
+  margin: 1rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.loading,
+.statePanel {
+  margin-block: clamp(3rem, 10vw, 7rem);
+}
+
+.statePanel {
+  max-width: 48rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.4rem, 4vw, 2.75rem);
+  box-shadow: var(--shadow);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.filters,
+.results {
+  min-width: 0;
+}
+
+.filters {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: 1.25rem;
+}
+
+.filters h2,
+.results h2,
+.errorSummary h3 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.filters label {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.filters input,
+.filters select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: white;
+  color: var(--ink);
+  padding: 0.65rem 0.7rem;
+}
+
+.filters [aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.filters label > span {
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.filterActions {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.primaryButton,
+.secondaryLink,
+.inlineState button,
+.emptyState a,
+.pagination a,
+.pagination span {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.85rem;
+}
+
+.primaryButton {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+}
+
+.primaryButton:hover {
+  background: var(--campus-green-dark);
+}
+
+.secondaryLink,
+.inlineState button,
+.emptyState a,
+.pagination a {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green-dark);
+  text-decoration: none;
+}
+
+.queryNotice,
+.inlineState,
+.emptyState,
+.errorSummary {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-light);
+  padding: 1rem;
+}
+
+.queryNotice,
+.inlineState p,
+.emptyState p,
+.errorSummary p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.errorSummary {
+  border-color: var(--danger);
+}
+
+.errorSummary p {
+  margin-top: 0.5rem;
+}
+
+.inlineState,
+.emptyState {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+}
+
+.inlineState button {
+  cursor: pointer;
+}
+
+.results {
+  display: grid;
+  gap: 1rem;
+}
+
+.reportList {
+  display: grid;
+  gap: 1rem;
+}
+
+.pagination {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pagination > :first-child {
+  justify-self: start;
+}
+
+.pagination > :last-child {
+  justify-self: end;
+}
+
+.pagination [aria-disabled="true"] {
+  color: var(--ink-soft);
+}
+
 .cardLink {
   display: grid;
   min-height: 44px;
@@ -143,8 +371,30 @@
   }
 }
 
+@media (max-width: 48rem) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 20rem) {
+  .browserPage,
+  .loading,
+  .statePanel {
+    width: min(100% - 1rem, 76rem);
+  }
+
+  .filters,
+  .statePanel,
   .cardContent {
     padding: 1rem;
+  }
+
+  .pagination {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination > * {
+    width: 100%;
   }
 }
