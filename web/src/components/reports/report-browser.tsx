@@ -192,7 +192,10 @@ function ActiveReportBrowser() {
 
         setReportState({ status: "ready", queryKey, page });
         if (focusResults) {
-          window.requestAnimationFrame(() => resultsHeadingRef.current?.focus());
+          window.requestAnimationFrame(() => {
+            const heading = resultsHeadingRef.current;
+            if (heading?.dataset.queryKey === queryKey) heading.focus();
+          });
         }
       } catch (error) {
         if (!mounted.current || currentRequest !== reportRequestId.current) return;
@@ -637,7 +640,12 @@ function ActiveReportBrowser() {
         </form>
 
         <section aria-labelledby="report-results-heading" className={styles.results}>
-          <h2 id="report-results-heading" ref={resultsHeadingRef} tabIndex={-1}>
+          <h2
+            id="report-results-heading"
+            ref={resultsHeadingRef}
+            data-query-key={queryKey}
+            tabIndex={-1}
+          >
             <span aria-live="polite">{totalLabel}</span>
           </h2>
           {referenceWarning}

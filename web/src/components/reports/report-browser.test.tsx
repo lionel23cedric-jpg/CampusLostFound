@@ -472,6 +472,51 @@ describe("ReportBrowser filters, results and pagination", () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("heading", { name: "1 report" })));
   });
 
+  it("does not let an old queued focus announce the next query before it completes", async () => {
+    const user = userEvent.setup();
+    const oldRequest = deferred<ReportPage>();
+    const newRequest = deferred<ReportPage>();
+    const animationFrames: FrameRequestCallback[] = [];
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      animationFrames.push(callback);
+      return animationFrames.length;
+    });
+    vi.mocked(getReports)
+      .mockResolvedValueOnce(readyPage)
+      .mockReturnValueOnce(oldRequest.promise)
+      .mockReturnValueOnce(newRequest.promise);
+    const { rerender } = render(<ReportBrowser />);
+    await screen.findByText(memberReport.title);
+
+    await user.type(screen.getByLabelText("Keyword"), "old query");
+    await user.click(screen.getByRole("button", { name: "Search reports" }));
+    currentSearch = new URLSearchParams("q=old+query");
+    rerender(<ReportBrowser />);
+    await waitFor(() => expect(getReports).toHaveBeenCalledTimes(2));
+    await act(async () => oldRequest.resolve(readyPage));
+    expect(animationFrames).toHaveLength(1);
+
+    const keyword = screen.getByLabelText("Keyword");
+    await user.clear(keyword);
+    await user.type(keyword, "new query");
+    await user.click(screen.getByRole("button", { name: "Search reports" }));
+    currentSearch = new URLSearchParams("q=new+query");
+    rerender(<ReportBrowser />);
+
+    act(() => animationFrames[0](0));
+    expect(document.activeElement).not.toBe(
+      screen.getByRole("heading", { name: "Reports" }),
+    );
+
+    await waitFor(() => expect(getReports).toHaveBeenCalledTimes(3));
+    await act(async () => newRequest.resolve(readyPage));
+    expect(animationFrames).toHaveLength(2);
+    act(() => animationFrames[1](1));
+    expect(document.activeElement).toBe(
+      screen.getByRole("heading", { name: "1 report" }),
+    );
+  });
+
   it("prevents an old query response from overwriting the current result", async () => {
     const first = deferred<ReportPage>();
     const newReport = { ...memberReport, id: "new-report", title: "Current result" };
