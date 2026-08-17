@@ -58,7 +58,7 @@ const memberReport = {
   occurredAt: null,
   colors: ["black"],
   tags: ["laptop", "bag"],
-  photoUrls: [],
+  photoUrls: ["https://example.com/laptop-bag.jpg"],
   status: "open",
   resolvedAt: null,
   createdAt: "2026-08-15T02:05:00.000Z",
@@ -189,6 +189,56 @@ describe("report browser client", () => {
         code: "REQUEST_FAILED",
         status: 200,
         message: "We could not complete that request. Please try again.",
+      }),
+    );
+  });
+
+  it.each([
+    [
+      "list malformed URL",
+      () => getReports({}),
+      {
+        reports: [{ ...memberReport, photoUrls: ["not a URL"] }],
+        pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+      },
+    ],
+    [
+      "list javascript URL",
+      () => getReports({}),
+      {
+        reports: [
+          { ...memberReport, photoUrls: ["javascript:alert(1)"] },
+        ],
+        pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+      },
+    ],
+    [
+      "detail insecure HTTP URL",
+      () => getReportById(memberReport.id),
+      {
+        report: {
+          ...memberReport,
+          photoUrls: ["http://example.com/private.jpg"],
+        },
+      },
+    ],
+    [
+      "detail data URL",
+      () => getReportById(memberReport.id),
+      {
+        report: {
+          ...memberReport,
+          photoUrls: ["data:image/svg+xml,<svg></svg>"],
+        },
+      },
+    ],
+  ])("rejects %s in member photo URLs", async (_name, request, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+
+    await expect(request()).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REQUEST_FAILED",
+        status: 200,
       }),
     );
   });
