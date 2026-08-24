@@ -18,6 +18,7 @@ import {
   useAuthSession,
 } from "@/components/auth/auth-session-provider";
 
+import styles from "./site-header.module.css";
 import { SiteHeader } from "./site-header";
 
 const replace = vi.fn();
@@ -102,7 +103,9 @@ it("shows signed-out navigation", () => {
   render(<SiteHeader />);
 
   expect(screen.getByRole("link", { name: "Campus Find home" }).getAttribute("href")).toBe("/");
-  expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/login");
+  const signIn = screen.getByRole("link", { name: "Sign in" });
+  expect(signIn.getAttribute("href")).toBe("/login");
+  expect(signIn.classList.contains(styles.navLink)).toBe(true);
   expect(screen.getByRole("link", { name: "Create account" }).getAttribute("href")).toBe(
     "/register",
   );

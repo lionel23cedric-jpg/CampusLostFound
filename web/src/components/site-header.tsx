@@ -46,7 +46,7 @@ export function SiteHeader() {
 
           {status === "unauthenticated" ? (
             <>
-              <Link className="text-link" href="/login">
+              <Link className={`${styles.navLink} text-link`} href="/login">
                 Sign in
               </Link>
               <Link className="primary-action" href="/register">
