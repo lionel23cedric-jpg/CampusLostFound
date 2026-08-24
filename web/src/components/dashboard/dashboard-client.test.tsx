@@ -109,10 +109,26 @@ it("renders safe account details and the available report actions", () => {
   expect(
     screen.getByRole("link", { name: "Search possible matches" }).getAttribute("href"),
   ).toBe("/reports");
-  expect(screen.getAllByText("Available now")).toHaveLength(2);
-  expect(screen.getAllByText("Upcoming")).toHaveLength(1);
+  expect(
+    screen.getByRole("link", { name: "Manage recovery requests" }).getAttribute("href"),
+  ).toBe("/claims");
+  expect(screen.getAllByText("Available now")).toHaveLength(3);
+  expect(screen.queryByText("Upcoming")).toBeNull();
   expect(container.textContent).not.toMatch(/password|token|session hash/i);
   expect(container.textContent).not.toContain("user-id");
+});
+
+it.each([
+  ["staff", { ...safeUser, role: "staff" as const }],
+  ["administrator", { ...safeUser, role: "administrator" as const }],
+  ["suspended student", { ...safeUser, status: "suspended" as const }],
+])("keeps claimant recovery upcoming for a %s", (_label, user) => {
+  mockSession({ status: "authenticated", user });
+  render(<DashboardClient />);
+
+  expect(screen.queryByRole("link", { name: "Manage recovery requests" })).toBeNull();
+  expect(screen.getAllByText("Available now")).toHaveLength(2);
+  expect(screen.getAllByText("Upcoming")).toHaveLength(1);
 });
 
 it("shows unverified and first-sign-in fallbacks", () => {

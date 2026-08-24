@@ -193,6 +193,34 @@ describe("ReportDetailClient route and session boundary", () => {
 });
 
 describe("ReportDetailClient data and privacy", () => {
+  it.each([
+    ["found", "open", false, "student", true],
+    ["lost", "open", false, "student", false],
+    ["found", "claim_pending", false, "student", false],
+    ["found", "open", true, "student", false],
+    ["found", "open", false, "staff", false],
+  ] as const)(
+    "gates the claim entry for %s %s owner=%s role=%s",
+    async (reportType, status, isOwner, role, expected) => {
+      mockAuthenticatedSession({ ...safeUser, role });
+      mockReadyResponses({
+        ...memberReport,
+        reportType,
+        status,
+        isOwner,
+      });
+      render(<ReportDetailClient reportId={memberReport.id} />);
+      await screen.findByRole("heading", { name: memberReport.title });
+      const link = screen.queryByRole("link", { name: "Claim this item" });
+      expect(link !== null).toBe(expected);
+      if (link) {
+        expect(link.getAttribute("href")).toBe(
+          `/reports/${memberReport.id}/claim`,
+        );
+      }
+    },
+  );
+
   it("starts detail and both reference requests in parallel", async () => {
     const reportRequest = deferred<MemberReport>();
     const categoryRequest = deferred<typeof categories>();

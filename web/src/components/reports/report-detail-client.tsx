@@ -90,6 +90,7 @@ export function ReportDetailClient({ reportId }: { reportId: string }) {
     <ActiveReportDetail
       key={`${session.user.id}-${reportId}`}
       reportId={reportId}
+      canClaim={session.user.role === "student"}
     />
   );
 }
@@ -111,7 +112,13 @@ function PermissionUnavailable() {
   );
 }
 
-function ActiveReportDetail({ reportId }: { reportId: string }) {
+function ActiveReportDetail({
+  reportId,
+  canClaim,
+}: {
+  reportId: string;
+  canClaim: boolean;
+}) {
   const router = useRouter();
   const [reportState, setReportState] = useState<ReportState>({
     status: "loading",
@@ -330,6 +337,18 @@ function ActiveReportDetail({ reportId }: { reportId: string }) {
           <h1>{report.title}</h1>
           <p>{report.publicDescription}</p>
         </header>
+
+        {canClaim &&
+        report.reportType === "found" &&
+        report.status === "open" &&
+        !report.isOwner ? (
+          <Link
+            className={styles.primaryButton}
+            href={`/reports/${encodeURIComponent(report.id)}/claim`}
+          >
+            Claim this item
+          </Link>
+        ) : null}
 
         <dl className={styles.detailFacts}>
           <div>

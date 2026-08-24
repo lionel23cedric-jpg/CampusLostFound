@@ -68,6 +68,9 @@
   min-width: 44px;
   min-height: 44px;
   align-items: center;
+  justify-content: center;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .navLink:active {
@@ -155,6 +158,7 @@
 
   .navigation {
     flex-wrap: wrap;
+    min-width: 0;
   }
 
   .navigation :global(.primary-action),
