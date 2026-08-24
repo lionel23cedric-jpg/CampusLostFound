@@ -240,6 +240,7 @@
 .claimStatus {
   margin: 0.35rem 0 0;
   color: var(--ink-soft);
+  font-size: 1rem;
   line-height: 1.5;
 }
 
@@ -536,14 +537,162 @@
   white-space: pre-wrap;
 }
 
+.actionSection {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  border-block-end: 1px solid var(--line);
+  padding-block-end: 1.5rem;
+}
+
+.actionSection > h2,
+.confirmationPanel h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.25;
+}
+
+.actionSection > h2 {
+  font-size: 1.35rem;
+}
+
+.actionSection > p,
+.confirmationPanel p,
+.noteMeta p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.noteField {
+  display: grid;
+  min-width: 0;
+  gap: 0.4rem;
+  font-weight: 700;
+}
+
+.noteField textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 8rem;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 400;
+  line-height: 1.55;
+  padding: 0.75rem;
+}
+
+.noteField textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.noteField textarea:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.noteMeta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.noteMeta p:last-child {
+  font-variant-numeric: tabular-nums;
+}
+
+.decisionButtons,
+.confirmationButtons {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.primaryButton,
+.dangerButton {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.primaryButton {
+  border: 1px solid var(--campus-green);
+  background: var(--campus-green);
+  color: white;
+}
+
+.dangerButton {
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+}
+
+.primaryButton:disabled,
+.dangerButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.confirmationPanel {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-light);
+  padding: 1rem;
+}
+
+.confirmationPanel h3 {
+  font-size: 1.15rem;
+}
+
 .detailActions {
   display: grid;
   justify-items: start;
   gap: 0.75rem;
 }
 
-.inlineMessage {
+.inlineMessage,
+.workflowLock {
   max-width: 75ch;
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.workflowLock {
+  color: var(--ink-soft);
+  font-weight: 700;
 }
 
 .secondaryButton:disabled {
@@ -553,7 +702,10 @@
 
 .detailPage a:focus-visible,
 .detailPage button:focus-visible,
+.detailPage textarea:focus-visible,
 .detailHeader h1:focus,
+.detailHeader .claimStatus:focus,
+.confirmationPanel h3:focus,
 .detailSection h2:focus {
   border-radius: 4px;
   outline: 3px solid var(--campus-green-dark);
@@ -635,6 +787,18 @@
   .detailHeader .claimStatus,
   .secondaryLink,
   .secondaryButton {
+    width: 100%;
+  }
+
+  .decisionButtons,
+  .confirmationButtons {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .dangerButton,
+  .confirmationButtons .secondaryButton {
     width: 100%;
   }
 }

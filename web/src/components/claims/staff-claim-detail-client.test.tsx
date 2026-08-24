@@ -4,7 +4,15 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ReactNode } from "react";
 
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,7 +24,12 @@ vi.mock("@/lib/claims/staff-browser-client", async () => {
   const actual = await vi.importActual<
     typeof import("@/lib/claims/staff-browser-client")
   >("@/lib/claims/staff-browser-client");
-  return { ...actual, getStaffClaim: vi.fn() };
+  return {
+    ...actual,
+    getStaffClaim: vi.fn(),
+    decideStaffClaim: vi.fn(),
+    completeStaffClaim: vi.fn(),
+  };
 });
 
 import { useRouter } from "next/navigation";
@@ -24,6 +37,8 @@ import { useRouter } from "next/navigation";
 import StaffClaimDetailPage, { metadata } from "@/app/staff/claims/[id]/page";
 import { ClaimBrowserError } from "@/lib/claims/browser-client";
 import {
+  completeStaffClaim,
+  decideStaffClaim,
   getStaffClaim,
   type StaffClaimDetail,
 } from "@/lib/claims/staff-browser-client";
@@ -89,6 +104,16 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(useRouter).mockReturnValue({ replace } as never);
   vi.mocked(getStaffClaim).mockResolvedValue(staffDetail);
+  vi.mocked(decideStaffClaim).mockResolvedValue({
+    ...staffDetail,
+    status: "approved",
+    reviewedAt: "2026-08-25T01:00:00.000Z",
+  });
+  vi.mocked(completeStaffClaim).mockResolvedValue({
+    ...staffDetail,
+    status: "completed",
+    completedAt: "2026-08-25T02:00:00.000Z",
+  });
 });
 
 afterEach(cleanup);
@@ -158,7 +183,7 @@ describe("StaffClaimDetailClient route and controlled detail", () => {
     expect(evidence[0].textContent).toContain("Matched");
     expect(evidence[1].textContent).toContain("Where was it last used?");
     expect(evidence[1].textContent).toContain("Not matched");
-    expect(screen.getByText("Identity confirmed")).toBeTruthy();
+    expect(screen.getByText("Identity confirmed", { selector: "p" })).toBeTruthy();
     expect(container.textContent).not.toMatch(
       /expectedAnswer|password|sessionToken|activeClaimKey/,
     );
@@ -352,5 +377,481 @@ describe("StaffClaimDetailClient loading and refresh", () => {
     await user.click(screen.getByRole("button", { name: "Retry Claim review" }));
     expect(await screen.findByText(staffDetail.report.title)).toBeTruthy();
     expect(document.body.textContent).not.toContain("private load detail");
+  });
+});
+
+describe("StaffClaimDetailClient decisions", () => {
+  it("confirms approval, warns about competing Claims and posts the trimmed note once", async () => {
+    const user = userEvent.setup();
+    const pending = deferred<StaffClaimDetail>();
+    vi.mocked(decideStaffClaim).mockReturnValue(pending.promise);
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+
+    await user.type(
+      await screen.findByLabelText("Internal review note"),
+      "  Identity confirmed  ",
+    );
+    const trigger = screen.getByRole("button", { name: "Approve Claim" });
+    await user.click(trigger);
+    const confirmationHeading = screen.getByRole("heading", {
+      name: "Approve this Claim?",
+    });
+    expect(document.activeElement).toBe(confirmationHeading);
+    expect(screen.getByText(/other pending Claims.*rejected/i)).toBeTruthy();
+    await user.dblClick(
+      screen.getByRole("button", { name: "Confirm approval" }),
+    );
+
+    expect(decideStaffClaim).toHaveBeenCalledOnce();
+    expect(decideStaffClaim).toHaveBeenCalledWith(staffDetail.id, {
+      decision: "approve",
+      reviewNote: "Identity confirmed",
+    });
+    expect(
+      (screen.getByLabelText("Internal review note") as HTMLTextAreaElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: "Refresh review" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+
+    await act(async () =>
+      pending.resolve({
+        ...staffDetail,
+        status: "approved",
+        reviewNote: "Identity confirmed",
+        reviewedAt: "2026-08-25T01:00:00.000Z",
+      }),
+    );
+    const statusHeading = await screen.findByRole("heading", {
+      name: "Claim status: Approved",
+    });
+    expect(document.activeElement).toBe(statusHeading);
+  });
+
+  it("confirms rejection with a null blank note", async () => {
+    const user = userEvent.setup();
+    vi.mocked(decideStaffClaim).mockResolvedValue({
+      ...staffDetail,
+      status: "rejected",
+      reviewedAt: "2026-08-25T01:00:00.000Z",
+    });
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Reject Claim" }),
+    );
+    expect(
+      screen.getByText(/current Claim will become rejected/i),
+    ).toBeTruthy();
+    await user.click(
+      screen.getByRole("button", { name: "Confirm rejection" }),
+    );
+    expect(decideStaffClaim).toHaveBeenCalledWith(staffDetail.id, {
+      decision: "reject",
+      reviewNote: null,
+    });
+    expect(
+      await screen.findByRole("heading", {
+        name: "Claim status: Rejected",
+      }),
+    ).toBeTruthy();
+  });
+
+  it("rejects an internal note over 1000 characters locally", async () => {
+    const user = userEvent.setup();
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+    const note = await screen.findByLabelText("Internal review note");
+    fireEvent.change(note, { target: { value: "n".repeat(1001) } });
+    await user.click(screen.getByRole("button", { name: "Approve Claim" }));
+    await user.click(screen.getByRole("button", { name: "Confirm approval" }));
+
+    expect(decideStaffClaim).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Review notes must be 1000 characters or fewer.",
+    );
+  });
+
+  it("cancels a decision and restores focus to its trigger", async () => {
+    const user = userEvent.setup();
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+    const trigger = await screen.findByRole("button", { name: "Reject Claim" });
+    await user.click(trigger);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(
+      screen.queryByRole("heading", { name: "Reject this Claim?" }),
+    ).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it.each([
+    ["AUTHENTICATION_REQUIRED", 401, null],
+    ["CLAIM_FORBIDDEN", 403, "Claim review access unavailable"],
+    ["CLAIM_NOT_FOUND", 404, "Claim not found"],
+  ])(
+    "maps decision %s without retaining private detail",
+    async (code, status, safeHeading) => {
+      const user = userEvent.setup();
+      vi.mocked(decideStaffClaim).mockRejectedValue(claimError(code, status));
+      render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+      await user.click(
+        await screen.findByRole("button", { name: "Approve Claim" }),
+      );
+      await user.click(
+        screen.getByRole("button", { name: "Confirm approval" }),
+      );
+
+      if (status === 401) {
+        await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+      } else {
+        const heading = await screen.findByRole("heading", {
+          name: safeHeading as string,
+        });
+        expect(document.activeElement).toBe(heading);
+      }
+      expect(document.body.textContent).not.toContain(staffDetail.claimant.email);
+      expect(document.body.textContent).not.toContain("private service detail");
+    },
+  );
+
+  it.each([
+    [
+      "VALIDATION_ERROR",
+      400,
+      "Review the decision and internal note, then try again.",
+    ],
+    [
+      "CLAIM_OPERATION_FAILED",
+      500,
+      "We could not update this Claim. Please try again.",
+    ],
+  ])(
+    "maps recoverable decision %s and restores focus",
+    async (code, status, message) => {
+      const user = userEvent.setup();
+      vi.mocked(decideStaffClaim).mockRejectedValue(claimError(code, status));
+      render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+      const trigger = await screen.findByRole("button", {
+        name: "Approve Claim",
+      });
+      await user.click(trigger);
+      await user.click(
+        screen.getByRole("button", { name: "Confirm approval" }),
+      );
+
+      expect((await screen.findByRole("alert")).textContent).toContain(message);
+      await waitFor(() => expect(document.activeElement).toBe(trigger));
+      expect(screen.getByText(staffDetail.claimant.email)).toBeTruthy();
+      expect(document.body.textContent).not.toContain("private service detail");
+    },
+  );
+
+  it("preserves safe detail and enables refresh after a decision conflict", async () => {
+    const user = userEvent.setup();
+    vi.mocked(decideStaffClaim).mockRejectedValue(
+      claimError("CLAIM_STATE_CONFLICT", 409),
+    );
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+    const trigger = await screen.findByRole("button", { name: "Reject Claim" });
+    await user.click(trigger);
+    await user.click(screen.getByRole("button", { name: "Confirm rejection" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "This Claim changed. Refresh it before making another decision.",
+    );
+    expect(screen.getByText(staffDetail.claimant.email)).toBeTruthy();
+    expect(
+      screen.queryByRole("heading", { name: "Reject this Claim?" }),
+    ).toBeNull();
+    expect(
+      (screen.getByRole("button", { name: "Refresh review" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+    const refreshButton = screen.getByRole("button", { name: "Refresh review" });
+    await waitFor(() => expect(document.activeElement).toBe(refreshButton));
+    expect((trigger as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: "Approve Claim" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(screen.getByText(/Refresh this Claim before making another review action/i))
+      .toBeTruthy();
+    await user.click(trigger);
+    expect(decideStaffClaim).toHaveBeenCalledOnce();
+
+    vi.mocked(getStaffClaim)
+      .mockRejectedValueOnce(claimError("CLAIM_OPERATION_FAILED", 500))
+      .mockResolvedValueOnce(staffDetail);
+    await user.click(refreshButton);
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "We could not refresh this Claim. Please try again.",
+    );
+    expect((trigger as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/Refresh this Claim before making another review action/i))
+      .toBeTruthy();
+
+    await user.click(refreshButton);
+    expect(await screen.findByText("Claim review refreshed.")).toBeTruthy();
+    expect((trigger as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByText(/Refresh this Claim before making another review action/i))
+      .toBeNull();
+    await user.click(trigger);
+    expect(
+      screen.getByRole("heading", { name: "Reject this Claim?" }),
+    ).toBeTruthy();
+    expect(decideStaffClaim).toHaveBeenCalledOnce();
+  });
+
+  it("does not start a decision while refresh is running", async () => {
+    const user = userEvent.setup();
+    const refresh = deferred<StaffClaimDetail>();
+    vi.mocked(getStaffClaim)
+      .mockResolvedValueOnce(staffDetail)
+      .mockReturnValueOnce(refresh.promise);
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+    await user.click(await screen.findByRole("button", { name: "Refresh review" }));
+
+    expect(
+      (screen.getByRole("button", { name: "Approve Claim" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByLabelText("Internal review note") as HTMLTextAreaElement)
+        .disabled,
+    ).toBe(true);
+    expect(decideStaffClaim).not.toHaveBeenCalled();
+    await act(async () => refresh.resolve(staffDetail));
+  });
+});
+
+describe("StaffClaimDetailClient handover completion", () => {
+  it("completes only an approved Claim through one confirmed request", async () => {
+    const user = userEvent.setup();
+    const approved = { ...staffDetail, status: "approved" as const };
+    const completion = deferred<StaffClaimDetail>();
+    vi.mocked(getStaffClaim).mockResolvedValue(approved);
+    vi.mocked(completeStaffClaim).mockReturnValue(completion.promise);
+    render(<StaffClaimDetailClient claimId={approved.id} />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Mark handover complete" }),
+    );
+    expect(
+      screen.getByRole("heading", {
+        name: "Record this handover as complete?",
+      }),
+    ).toBe(document.activeElement);
+    expect(
+      screen.getByText(/records the item as recovered and cannot be undone here/i),
+    ).toBeTruthy();
+    await user.dblClick(
+      screen.getByRole("button", { name: "Confirm handover completion" }),
+    );
+    expect(completeStaffClaim).toHaveBeenCalledOnce();
+    expect(completeStaffClaim).toHaveBeenCalledWith(approved.id);
+
+    await act(async () =>
+      completion.resolve({
+        ...approved,
+        status: "completed",
+        completedAt: "2026-08-25T02:00:00.000Z",
+      }),
+    );
+    const statusHeading = await screen.findByRole("heading", {
+      name: "Claim status: Completed",
+    });
+    expect(document.activeElement).toBe(statusHeading);
+  });
+
+  it.each(["pending", "rejected", "withdrawn", "completed"] as const)(
+    "does not offer completion for a %s Claim",
+    async (status) => {
+      vi.mocked(getStaffClaim).mockResolvedValue({ ...staffDetail, status });
+      render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+      await screen.findByRole("heading", { name: "Claim review" });
+      expect(
+        screen.queryByRole("button", { name: "Mark handover complete" }),
+      ).toBeNull();
+    },
+  );
+
+  it("cancels completion and restores focus to its trigger", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getStaffClaim).mockResolvedValue({
+      ...staffDetail,
+      status: "approved",
+    });
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+    const trigger = await screen.findByRole("button", {
+      name: "Mark handover complete",
+    });
+    await user.click(trigger);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it("maps a recoverable completion failure and preserves safe detail", async () => {
+      const user = userEvent.setup();
+      vi.mocked(getStaffClaim).mockResolvedValue({
+        ...staffDetail,
+        status: "approved",
+      });
+      vi.mocked(completeStaffClaim).mockRejectedValue(
+        claimError("CLAIM_OPERATION_FAILED", 500),
+      );
+      render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+      const trigger = await screen.findByRole("button", {
+        name: "Mark handover complete",
+      });
+      await user.click(trigger);
+      await user.click(
+        screen.getByRole("button", { name: "Confirm handover completion" }),
+      );
+
+      expect((await screen.findByRole("alert")).textContent).toContain(
+        "We could not complete this handover. Please try again.",
+      );
+      expect(screen.getByText(staffDetail.claimant.email)).toBeTruthy();
+      await waitFor(() => expect(document.activeElement).toBe(trigger));
+      expect(
+        (screen.getByRole("button", { name: "Refresh review" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false);
+  });
+
+  it("blocks another completion after conflict until refresh succeeds", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getStaffClaim).mockResolvedValue({
+      ...staffDetail,
+      status: "approved",
+    });
+    vi.mocked(completeStaffClaim).mockRejectedValue(
+      claimError("CLAIM_STATE_CONFLICT", 409),
+    );
+    render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+    const trigger = await screen.findByRole("button", {
+      name: "Mark handover complete",
+    });
+    await user.click(trigger);
+    await user.click(
+      screen.getByRole("button", { name: "Confirm handover completion" }),
+    );
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "This Claim changed. Refresh it before recording the handover.",
+    );
+    const refreshButton = screen.getByRole("button", { name: "Refresh review" });
+    await waitFor(() => expect(document.activeElement).toBe(refreshButton));
+    expect((trigger as HTMLButtonElement).disabled).toBe(true);
+    await user.click(trigger);
+    expect(completeStaffClaim).toHaveBeenCalledOnce();
+
+    await user.click(refreshButton);
+    expect(await screen.findByText("Claim review refreshed.")).toBeTruthy();
+    expect((trigger as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByText(/Refresh this Claim before making another review action/i))
+      .toBeNull();
+    await user.click(trigger);
+    expect(
+      screen.getByRole("heading", {
+        name: "Record this handover as complete?",
+      }),
+    ).toBeTruthy();
+    expect(completeStaffClaim).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["AUTHENTICATION_REQUIRED", 401, null],
+    ["CLAIM_FORBIDDEN", 403, "Claim review access unavailable"],
+    ["CLAIM_NOT_FOUND", 404, "Claim not found"],
+  ])(
+    "maps completion %s without retaining private detail",
+    async (code, status, safeHeading) => {
+      const user = userEvent.setup();
+      vi.mocked(getStaffClaim).mockResolvedValue({
+        ...staffDetail,
+        status: "approved",
+      });
+      vi.mocked(completeStaffClaim).mockRejectedValue(claimError(code, status));
+      render(<StaffClaimDetailClient claimId={staffDetail.id} />);
+      await user.click(
+        await screen.findByRole("button", { name: "Mark handover complete" }),
+      );
+      await user.click(
+        screen.getByRole("button", { name: "Confirm handover completion" }),
+      );
+
+      if (status === 401) {
+        await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+      } else {
+        const heading = await screen.findByRole("heading", {
+          name: safeHeading as string,
+        });
+        expect(document.activeElement).toBe(heading);
+      }
+      expect(document.body.textContent).not.toContain(staffDetail.claimant.email);
+      expect(document.body.textContent).not.toContain("private service detail");
+    },
+  );
+
+  it("ignores a completion response after unmount", async () => {
+    const user = userEvent.setup();
+    const completion = deferred<StaffClaimDetail>();
+    const approved = { ...staffDetail, status: "approved" as const };
+    vi.mocked(getStaffClaim).mockResolvedValue(approved);
+    vi.mocked(completeStaffClaim).mockReturnValue(completion.promise);
+    const view = render(<StaffClaimDetailClient claimId={approved.id} />);
+    await user.click(
+      await screen.findByRole("button", { name: "Mark handover complete" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Confirm handover completion" }),
+    );
+    view.unmount();
+
+    await act(async () =>
+      completion.resolve({
+        ...approved,
+        status: "completed",
+        completedAt: "2026-08-25T02:00:00.000Z",
+      }),
+    );
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("ignores a completed response after the Claim id changes", async () => {
+    const user = userEvent.setup();
+    const completion = deferred<StaffClaimDetail>();
+    const approved = { ...staffDetail, status: "approved" as const };
+    const nextClaim = {
+      ...staffDetail,
+      id: "64b64c6f2f4d9f1a2b3c4d70",
+      report: { ...staffDetail.report, title: "Found library card" },
+    };
+    vi.mocked(getStaffClaim)
+      .mockResolvedValueOnce(approved)
+      .mockResolvedValueOnce(nextClaim);
+    vi.mocked(completeStaffClaim).mockReturnValue(completion.promise);
+    const view = render(<StaffClaimDetailClient claimId={approved.id} />);
+    await user.click(
+      await screen.findByRole("button", { name: "Mark handover complete" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Confirm handover completion" }),
+    );
+    view.rerender(<StaffClaimDetailClient claimId={nextClaim.id} />);
+
+    expect(await screen.findByText("Found library card")).toBeTruthy();
+    await act(async () =>
+      completion.resolve({
+        ...approved,
+        status: "completed",
+        completedAt: "2026-08-25T02:00:00.000Z",
+      }),
+    );
+    expect(screen.queryByText("Completed", { selector: "strong" })).toBeNull();
+    expect(screen.getByText("Pending", { selector: "strong" })).toBeTruthy();
   });
 });
