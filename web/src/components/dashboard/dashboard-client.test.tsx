@@ -112,21 +112,51 @@ it("renders safe account details and the available report actions", () => {
   expect(
     screen.getByRole("link", { name: "Manage recovery requests" }).getAttribute("href"),
   ).toBe("/claims");
+  expect(screen.queryByRole("link", { name: "Review ownership claims" })).toBeNull();
   expect(screen.getAllByText("Available now")).toHaveLength(3);
   expect(screen.queryByText("Upcoming")).toBeNull();
   expect(container.textContent).not.toMatch(/password|token|session hash/i);
   expect(container.textContent).not.toContain("user-id");
 });
 
+it.each(["staff", "administrator"] as const)(
+  "links an active %s to ownership Claim reviews",
+  (role) => {
+    mockSession({
+      status: "authenticated",
+      user: { ...safeUser, role, status: "active" },
+    });
+    render(<DashboardClient />);
+
+    expect(
+      screen.getByRole("link", { name: "Review ownership claims" }).getAttribute("href"),
+    ).toBe("/staff/claims");
+    expect(screen.queryByRole("link", { name: "Manage recovery requests" })).toBeNull();
+    expect(screen.getAllByText("Available now")).toHaveLength(3);
+    expect(screen.queryByText("Upcoming")).toBeNull();
+  },
+);
+
 it.each([
-  ["staff", { ...safeUser, role: "staff" as const }],
-  ["administrator", { ...safeUser, role: "administrator" as const }],
   ["suspended student", { ...safeUser, status: "suspended" as const }],
-])("keeps claimant recovery upcoming for a %s", (_label, user) => {
+  [
+    "suspended staff",
+    { ...safeUser, role: "staff" as const, status: "suspended" as const },
+  ],
+  [
+    "deactivated administrator",
+    {
+      ...safeUser,
+      role: "administrator" as const,
+      status: "deactivated" as const,
+    },
+  ],
+])("keeps every recovery destination unavailable for a %s", (_label, user) => {
   mockSession({ status: "authenticated", user });
   render(<DashboardClient />);
 
   expect(screen.queryByRole("link", { name: "Manage recovery requests" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Review ownership claims" })).toBeNull();
   expect(screen.getAllByText("Available now")).toHaveLength(2);
   expect(screen.getAllByText("Upcoming")).toHaveLength(1);
 });
