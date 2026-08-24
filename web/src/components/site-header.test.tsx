@@ -75,12 +75,17 @@ it("keeps compact account navigation within narrow screens", () => {
   const css = readFileSync(resolve("src/components/site-header.module.css"), "utf8");
   const navLinkRule = css.match(/\.navLink\s*\{([^}]*)\}/)?.[1];
   const accountButtonRule = css.match(/\.signOut,\s*\.retry\s*\{([^}]*)\}/)?.[1];
-  const compactCss = css.slice(css.indexOf("@media (max-width: 22rem)"));
+  const wrapRuleIndex = css.indexOf("flex-wrap: wrap");
+  const compactStart = css.lastIndexOf("@media", wrapRuleIndex);
+  const compactHeader = css.slice(compactStart, css.indexOf("{", compactStart));
+  const compactBreakpoint = compactHeader.match(/max-width:\s*([\d.]+)rem/)?.[1];
+  const compactCss = css.slice(compactStart);
 
   expect(navLinkRule).toMatch(/min-width:\s*44px/);
   expect(navLinkRule).toMatch(/min-height:\s*44px/);
   expect(accountButtonRule).toMatch(/min-width:\s*44px/);
   expect(accountButtonRule).toMatch(/min-height:\s*44px/);
+  expect(Number(compactBreakpoint)).toBeGreaterThanOrEqual(24);
   expect(compactCss).toMatch(
     /\.inner,\s*\.navigation\s*\{[^}]*gap:\s*0\.25rem/,
   );

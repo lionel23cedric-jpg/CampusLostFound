@@ -147,7 +147,7 @@
   }
 }
 
-@media (max-width: 22rem) {
+@media (max-width: 24rem) {
   .inner,
   .navigation {
     gap: 0.25rem;
