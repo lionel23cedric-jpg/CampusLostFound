@@ -99,6 +99,293 @@
   white-space: nowrap;
 }
 
+.listPage {
+  display: grid;
+  width: min(100% - 2rem, 64rem);
+  margin-inline: auto;
+  gap: 1.5rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.listHeader {
+  max-width: 70ch;
+}
+
+.listHeader h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.listHeader p,
+.emptyState p,
+.inlineState p {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.listHeader p {
+  margin: 0.75rem 0 0;
+}
+
+.queryNotice {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-light);
+  color: var(--ink-soft);
+  padding: 0.8rem 1rem;
+}
+
+.filterPanel {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-block: 1px solid var(--line);
+  padding-block: 1rem;
+}
+
+.filterPanel h2,
+.resultsHeader h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.statusControl {
+  display: grid;
+  min-width: min(100%, 14rem);
+  gap: 0.35rem;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.statusControl select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  padding-inline: 0.75rem;
+}
+
+.results {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.resultsHeader {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.resultsHeader p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.claimGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  gap: 1rem;
+}
+
+.claimCard {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  align-content: start;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.claimCardHeader {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.claimCardHeader > div {
+  min-width: 0;
+}
+
+.claimCard h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+.reportType,
+.claimStatus {
+  margin: 0.35rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.claimStatus {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  padding: 0.35rem 0.65rem;
+}
+
+.claimFacts {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.claimFacts div {
+  min-width: 0;
+}
+
+.claimFacts dt {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.claimFacts dd {
+  margin: 0.2rem 0 0;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.detailLink,
+.inlineState button,
+.pagination a,
+.pagination > span:first-child,
+.pagination > span:last-child {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.detailLink,
+.pagination a {
+  width: fit-content;
+  background: var(--campus-green);
+  color: white;
+}
+
+.detailLink:hover,
+.pagination a:hover,
+.inlineState button:hover {
+  background: var(--campus-green-dark);
+  color: white;
+}
+
+.emptyState,
+.inlineState {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.emptyState p,
+.inlineState p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.emptyState p + p {
+  margin-block-start: 0.4rem;
+}
+
+.inlineState button {
+  margin-block-start: 1rem;
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+}
+
+.pagination {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) auto minmax(7rem, 1fr);
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-start: 0.5rem;
+}
+
+.pagination a:last-child,
+.pagination > span:last-child {
+  justify-self: end;
+}
+
+.pagination > span:nth-child(2) {
+  text-align: center;
+}
+
+.pagination > span[aria-disabled="true"] {
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
+.listPage a:focus-visible,
+.listPage button:focus-visible,
+.listPage select:focus-visible {
+  outline: 3px solid var(--campus-green-dark);
+  outline-offset: 3px;
+}
+
+@media (max-width: 48rem) {
+  .claimGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 30rem) {
+  .filterPanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .statusControl {
+    width: 100%;
+  }
+
+  .pagination {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pagination > span:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
 @media (max-width: 20rem) {
   .loading,
   .statePanel {
@@ -111,6 +398,24 @@
 
   .statePanel a,
   .statePanel button {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .listPage {
+    width: min(100% - 1rem, 64rem);
+  }
+
+  .claimCard {
+    padding: 1rem;
+  }
+
+  .claimCardHeader {
+    flex-direction: column;
+  }
+
+  .claimStatus,
+  .detailLink {
     box-sizing: border-box;
     width: 100%;
   }
