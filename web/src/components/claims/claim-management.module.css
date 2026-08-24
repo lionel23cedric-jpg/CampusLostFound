@@ -6,6 +6,180 @@
   overflow-wrap: anywhere;
 }
 
+.submissionPage {
+  display: grid;
+  width: min(100% - 2rem, 48rem);
+  margin-inline: auto;
+  gap: 1rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.backLink {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  color: var(--campus-green-dark);
+  font-weight: 800;
+}
+
+.submissionPanel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.submissionHeader h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.submissionHeader > p:last-child,
+.privacyNotice {
+  margin: 0.75rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.claimForm {
+  display: grid;
+  gap: 1.25rem;
+  margin-block-start: 2rem;
+}
+
+.claimForm fieldset {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.claimForm legend,
+.errorSummary h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.answerField {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.answerField label {
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.answerField textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 8rem;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.5;
+  padding: 0.75rem;
+}
+
+.answerField textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.answerField span {
+  color: var(--danger);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.errorSummary {
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.errorSummary p {
+  margin: 0.5rem 0 0;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.primaryButton,
+.secondaryLink {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.primaryButton {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+}
+
+.secondaryLink {
+  border: 1px solid var(--campus-green);
+  color: var(--campus-green-dark);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.primaryButton:disabled,
+.claimForm [aria-disabled="true"],
+.backLink[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.claimForm textarea:disabled {
+  background: var(--paper);
+}
+
+@media (max-width: 20rem) {
+  .submissionPage {
+    width: min(100% - 1rem, 48rem);
+  }
+
+  .submissionPanel {
+    padding: 1rem;
+  }
+
+  .formActions > * {
+    width: 100%;
+  }
+}
+
 .loading {
   margin-block: clamp(3rem, 10vw, 7rem);
   color: var(--ink-soft);
