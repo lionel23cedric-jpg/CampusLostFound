@@ -360,6 +360,206 @@
   outline-offset: 3px;
 }
 
+.detailPage {
+  display: grid;
+  width: min(100% - 2rem, 64rem);
+  margin-inline: auto;
+  gap: 1rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.backLink,
+.secondaryLink,
+.secondaryButton {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.backLink {
+  color: var(--campus-green-dark);
+  padding-inline: 0;
+}
+
+.detailPanel {
+  display: grid;
+  min-width: 0;
+  gap: 1.5rem;
+}
+
+.detailHeader {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-block-end: 1px solid var(--line);
+  padding-block-end: 1.25rem;
+}
+
+.detailHeader > div {
+  min-width: 0;
+}
+
+.detailHeader h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.detailTitle {
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.detailSection {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  border-block-end: 1px solid var(--line);
+  padding-block-end: 1.5rem;
+}
+
+.detailSection h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.detailFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  gap: 1rem;
+  margin: 0;
+}
+
+.detailFacts > div {
+  min-width: 0;
+}
+
+.detailFacts dt {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.detailFacts dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.secondaryLink,
+.secondaryButton {
+  border: 1px solid var(--campus-green-dark);
+  background: transparent;
+  color: var(--campus-green-dark);
+}
+
+.secondaryButton {
+  cursor: pointer;
+}
+
+.secondaryLink:hover,
+.secondaryButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+  color: white;
+}
+
+.verificationSummary,
+.reviewNote,
+.detailActions p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.evidenceList {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  margin: 0;
+  padding-inline-start: 1.5rem;
+}
+
+.evidenceList li {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-light);
+  padding: 1rem;
+}
+
+.evidenceQuestion,
+.evidenceAnswer,
+.matchResult {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.evidenceQuestion {
+  font-weight: 700;
+}
+
+.evidenceAnswer,
+.matchResult {
+  margin-block-start: 0.55rem;
+}
+
+.matchResult {
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+
+.reviewNote {
+  max-width: 75ch;
+  white-space: pre-wrap;
+}
+
+.detailActions {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+}
+
+.inlineMessage {
+  max-width: 75ch;
+}
+
+.secondaryButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.detailPage a:focus-visible,
+.detailPage button:focus-visible,
+.detailHeader h1:focus,
+.detailSection h2:focus {
+  border-radius: 4px;
+  outline: 3px solid var(--campus-green-dark);
+  outline-offset: 3px;
+}
+
 @media (max-width: 48rem) {
   .claimGrid {
     grid-template-columns: 1fr;
@@ -384,6 +584,10 @@
     grid-column: 1 / -1;
     grid-row: 1;
   }
+
+  .detailFacts {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 20rem) {
@@ -406,6 +610,10 @@
     width: min(100% - 1rem, 64rem);
   }
 
+  .detailPage {
+    width: min(100% - 1rem, 64rem);
+  }
+
   .claimCard {
     padding: 1rem;
   }
@@ -417,6 +625,16 @@
   .claimStatus,
   .detailLink {
     box-sizing: border-box;
+    width: 100%;
+  }
+
+  .detailHeader {
+    flex-direction: column;
+  }
+
+  .detailHeader .claimStatus,
+  .secondaryLink,
+  .secondaryButton {
     width: 100%;
   }
 }
