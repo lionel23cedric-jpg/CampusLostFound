@@ -13,6 +13,10 @@ export function SiteHeader() {
   const { status, user, refreshSession, logout } = useAuthSession();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState(false);
+  const isActive = user?.status === "active";
+  const canReviewClaims =
+    isActive && (user?.role === "staff" || user?.role === "administrator");
+  const canManageOwnClaims = isActive && user?.role === "student";
 
   async function handleSignOut() {
     setLogoutError(false);
@@ -57,9 +61,14 @@ export function SiteHeader() {
               <Link className={`${styles.navLink} text-link`} href="/reports">
                 Browse
               </Link>
-              {user.role === "student" && user.status === "active" ? (
+              {canManageOwnClaims ? (
                 <Link className={`${styles.navLink} text-link`} href="/claims">
                   My claims
+                </Link>
+              ) : null}
+              {canReviewClaims ? (
+                <Link className={`${styles.navLink} text-link`} href="/staff/claims">
+                  Claim reviews
                 </Link>
               ) : null}
               <Link className={`${styles.navLink} text-link`} href="/reports/new">

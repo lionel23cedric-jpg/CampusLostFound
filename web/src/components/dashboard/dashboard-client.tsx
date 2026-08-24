@@ -76,15 +76,28 @@ export function DashboardClient() {
 
   if (!user) return null;
 
-  const canManageClaims = user.role === "student" && user.status === "active";
+  const recoveryAction =
+    user.status === "active" && user.role === "student"
+      ? {
+          title: "Manage recovery requests",
+          description: "Track verification, handover arrangements and recovery progress.",
+          href: "/claims",
+        }
+      : user.status === "active" &&
+          (user.role === "staff" || user.role === "administrator")
+        ? {
+            title: "Review ownership claims",
+            description: "Review ownership evidence and record recovery handovers.",
+            href: "/staff/claims",
+          }
+        : {
+            title: "Manage recovery requests",
+            description: "Track verification, handover arrangements and recovery progress.",
+          };
   const workflow = [
     recoveryWorkflow[0],
     recoveryWorkflow[1],
-    {
-      title: "Manage recovery requests",
-      description: "Track verification, handover arrangements and recovery progress.",
-      ...(canManageClaims ? { href: "/claims" } : {}),
-    },
+    recoveryAction,
   ];
 
   return (

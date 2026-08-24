@@ -128,25 +128,52 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
     "/reports/new",
   );
   expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
 });
 
+it.each(["staff", "administrator"] as const)(
+  "shows Claim reviews only to an active %s",
+  (role) => {
+    mockSession({
+      status: "authenticated",
+      user: { ...safeUser, role, status: "active" },
+    });
+    render(<SiteHeader />);
+
+    expect(
+      screen.getByRole("link", { name: "Claim reviews" }).getAttribute("href"),
+    ).toBe("/staff/claims");
+    expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
+  },
+);
+
 it.each([
-  ["staff", { status: "authenticated", user: { ...safeUser, role: "staff" } }],
-  [
-    "administrator",
-    { status: "authenticated", user: { ...safeUser, role: "administrator" } },
-  ],
   [
     "suspended student",
     { status: "authenticated", user: { ...safeUser, status: "suspended" } },
   ],
+  [
+    "suspended staff",
+    {
+      status: "authenticated",
+      user: { ...safeUser, role: "staff", status: "suspended" },
+    },
+  ],
+  [
+    "deactivated administrator",
+    {
+      status: "authenticated",
+      user: { ...safeUser, role: "administrator", status: "deactivated" },
+    },
+  ],
   ["signed-out visitor", { status: "unauthenticated", user: null }],
   ["unavailable session", { status: "unavailable", user: null }],
-] as const)("does not show claimant navigation for a %s", (_label, session) => {
+] as const)("does not show Claim navigation for a %s", (_label, session) => {
   mockSession(session as Partial<AuthSessionContextValue>);
   render(<SiteHeader />);
 
   expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
 });
 
 it("signs out and replaces navigation with home", async () => {
