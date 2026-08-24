@@ -65,6 +65,7 @@
 **Files:**
 - Create: `web/src/lib/claims/browser-client.ts`
 - Create: `web/src/lib/claims/browser-client.test.ts`
+- Modify: `docs/superpowers/plans/2026-08-24-claimant-claims-frontend.md`: align the reviewed local error whitelist and explicit request-field projection.
 
 **Interfaces:**
 - Consumes: Issue #19 JSON contracts at `/api/reports/[id]/claim-questions`, `/api/reports/[id]/claims`, `/api/claims/mine`, `/api/claims/[id]` and `/api/claims/[id]/withdraw`.
@@ -221,6 +222,24 @@ import { z } from "zod";
 
 const GENERIC_MESSAGE = "We could not complete that request. Please try again.";
 const NETWORK_MESSAGE = "We could not reach the service. Please try again.";
+const VALIDATION_RESPONSES_MESSAGE = "Check every answer and try again.";
+
+const claimErrorDefinitions = {
+  VALIDATION_ERROR: { status: 400, message: "Invalid claim request" },
+  AUTHENTICATION_REQUIRED: { status: 401, message: "Authentication required" },
+  CLAIM_FORBIDDEN: { status: 403, message: "Claim action is not permitted" },
+  CLAIM_NOT_FOUND: { status: 404, message: "Claim not found" },
+  CLAIM_ALREADY_EXISTS: {
+    status: 409,
+    message: "An active claim already exists",
+  },
+  REPORT_NOT_CLAIMABLE: {
+    status: 409,
+    message: "Report is not available for claiming",
+  },
+  CLAIM_STATE_CONFLICT: { status: 409, message: "Claim state has changed" },
+  CLAIM_OPERATION_FAILED: { status: 500, message: "Claim operation failed" },
+} as const;
 
 export const CLAIM_STATUSES = [
   "pending",
@@ -334,9 +353,20 @@ const claimPageSchema = z.strictObject({
 }) satisfies z.ZodType<ClaimPage>;
 const errorResponseSchema = z.strictObject({
   error: z.strictObject({
-    code: z.string().min(1),
+    code: z.enum([
+      "VALIDATION_ERROR",
+      "AUTHENTICATION_REQUIRED",
+      "CLAIM_FORBIDDEN",
+      "CLAIM_NOT_FOUND",
+      "CLAIM_ALREADY_EXISTS",
+      "REPORT_NOT_CLAIMABLE",
+      "CLAIM_STATE_CONFLICT",
+      "CLAIM_OPERATION_FAILED",
+    ]),
     message: z.string().min(1),
-    fields: z.record(z.string(), z.array(z.string())).optional(),
+    fields: z
+      .strictObject({ responses: z.array(z.string()).min(1).optional() })
+      .optional(),
   }),
 });
 ```
@@ -396,11 +426,26 @@ async function parseResponse<T>(response: Response, schema: z.ZodType<T>) {
         message: GENERIC_MESSAGE,
       });
     }
+    const definition = claimErrorDefinitions[parsed.data.error.code];
+    if (
+      response.status !== definition.status ||
+      (parsed.data.error.code !== "VALIDATION_ERROR" &&
+        parsed.data.error.fields !== undefined)
+    ) {
+      throw new ClaimBrowserError({
+        code: "REQUEST_FAILED",
+        status: response.status,
+        message: GENERIC_MESSAGE,
+      });
+    }
+    const fields = parsed.data.error.fields?.responses
+      ? { responses: [VALIDATION_RESPONSES_MESSAGE] }
+      : undefined;
     throw new ClaimBrowserError({
       code: parsed.data.error.code,
       status: response.status,
-      message: parsed.data.error.message,
-      fields: parsed.data.error.fields,
+      message: definition.message,
+      fields,
     });
   }
 
@@ -434,7 +479,12 @@ export async function submitClaim(
     {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ responses }),
+      body: JSON.stringify({
+        responses: responses.map(({ questionIndex, answer }) => ({
+          questionIndex,
+          answer,
+        })),
+      }),
     },
   );
   return (await parseResponse(response, claimResponseSchema)).claim;
@@ -492,7 +542,7 @@ Expected: all commands PASS; privacy-shaped success objects fail closed.
 - [ ] **Step 5: Commit Task 1**
 
 ```powershell
-git add web/src/lib/claims/browser-client.ts web/src/lib/claims/browser-client.test.ts
+git add docs/superpowers/plans/2026-08-24-claimant-claims-frontend.md web/src/lib/claims/browser-client.ts web/src/lib/claims/browser-client.test.ts
 git diff --cached --check
 git commit -m "feat(claim-ui): add claimant browser contracts" -m "Refs #21"
 ```
