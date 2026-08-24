@@ -57,6 +57,11 @@ export function SiteHeader() {
               <Link className={`${styles.navLink} text-link`} href="/reports">
                 Browse
               </Link>
+              {user.role === "student" && user.status === "active" ? (
+                <Link className={`${styles.navLink} text-link`} href="/claims">
+                  My claims
+                </Link>
+              ) : null}
               <Link className={`${styles.navLink} text-link`} href="/reports/new">
                 Report item
               </Link>

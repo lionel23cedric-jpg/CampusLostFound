@@ -90,6 +90,7 @@ it("keeps compact account navigation within narrow screens", () => {
     /\.inner,\s*\.navigation\s*\{[^}]*gap:\s*0\.25rem/,
   );
   expect(compactCss).toMatch(/\.navigation\s*\{[^}]*flex-wrap:\s*wrap/);
+  expect(compactCss).toMatch(/\.navigation\s*\{[^}]*min-width:\s*0/);
   expect(compactCss).toMatch(
     /\.navigation :global\(\.primary-action\),\s*\.navLink,\s*\.signOut,\s*\.retry\s*\{[^}]*min-width:\s*44px[^}]*padding-inline:\s*0\.25rem/,
   );
@@ -120,10 +121,32 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   expect(screen.getByRole("link", { name: "Browse" }).getAttribute("href")).toBe(
     "/reports",
   );
+  expect(screen.getByRole("link", { name: "My claims" }).getAttribute("href")).toBe(
+    "/claims",
+  );
   expect(screen.getByRole("link", { name: "Report item" }).getAttribute("href")).toBe(
     "/reports/new",
   );
   expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
+});
+
+it.each([
+  ["staff", { status: "authenticated", user: { ...safeUser, role: "staff" } }],
+  [
+    "administrator",
+    { status: "authenticated", user: { ...safeUser, role: "administrator" } },
+  ],
+  [
+    "suspended student",
+    { status: "authenticated", user: { ...safeUser, status: "suspended" } },
+  ],
+  ["signed-out visitor", { status: "unauthenticated", user: null }],
+  ["unavailable session", { status: "unavailable", user: null }],
+] as const)("does not show claimant navigation for a %s", (_label, session) => {
+  mockSession(session as Partial<AuthSessionContextValue>);
+  render(<SiteHeader />);
+
+  expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
 });
 
 it("signs out and replaces navigation with home", async () => {

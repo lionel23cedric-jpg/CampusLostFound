@@ -19,10 +19,6 @@ const recoveryWorkflow = [
     description: "Search privacy-safe lost and found reports across campus.",
     href: "/reports",
   },
-  {
-    title: "Manage recovery requests",
-    description: "Track verification, handover arrangements and recovery progress.",
-  },
 ];
 
 const dateFormatter = new Intl.DateTimeFormat("en-NZ", {
@@ -80,6 +76,17 @@ export function DashboardClient() {
 
   if (!user) return null;
 
+  const canManageClaims = user.role === "student" && user.status === "active";
+  const workflow = [
+    recoveryWorkflow[0],
+    recoveryWorkflow[1],
+    {
+      title: "Manage recovery requests",
+      description: "Track verification, handover arrangements and recovery progress.",
+      ...(canManageClaims ? { href: "/claims" } : {}),
+    },
+  ];
+
   return (
     <div className={styles.dashboard}>
       <section className={styles.introduction}>
@@ -120,7 +127,7 @@ export function DashboardClient() {
           <p>Start a report now. More recovery actions will arrive in later features.</p>
         </div>
         <div className={styles.upcomingGrid}>
-          {recoveryWorkflow.map((item) => (
+          {workflow.map((item) => (
             <article key={item.title}>
               <p className={item.href ? styles.availableLabel : styles.upcomingLabel}>
                 {item.href ? "Available now" : "Upcoming"}
