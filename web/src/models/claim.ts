@@ -72,8 +72,8 @@ export const claimSchema = new Schema(
   { collection: "claims", timestamps: true },
 );
 
-claimSchema.index({ claimantId: 1, createdAt: -1 });
-claimSchema.index({ status: 1, createdAt: 1 });
+claimSchema.index({ claimantId: 1, createdAt: -1, _id: -1 });
+claimSchema.index({ status: 1, createdAt: 1, _id: 1 });
 claimSchema.index({ reportId: 1, status: 1, createdAt: 1 });
 claimSchema.index(
   { activeClaimKey: 1 },

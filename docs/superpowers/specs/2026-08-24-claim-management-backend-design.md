@@ -111,8 +111,8 @@ The `claims` collection stores workflow state but not claimant answers.
 
 Indexes:
 
-- `{ claimantId: 1, createdAt: -1 }` for a claimant's history;
-- `{ status: 1, createdAt: 1 }` for the review queue;
+- `{ claimantId: 1, createdAt: -1, _id: -1 }` for a claimant's newest-first history with stable pagination;
+- `{ status: 1, createdAt: 1, _id: 1 }` for the oldest-first review queue with stable pagination (and reverse terminal-state traversal);
 - `{ reportId: 1, status: 1, createdAt: 1 }` for competing claims;
 - unique `{ activeClaimKey: 1 }` with a partial filter that indexes string values only.
 

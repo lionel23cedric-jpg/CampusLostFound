@@ -132,9 +132,12 @@ describe("Claim model", () => {
   });
 
   it("defines claimant, queue, report and unique active-key indexes", () => {
-    expect(claimSchema.indexes()).toEqual(expect.arrayContaining([
-      [{ claimantId: 1, createdAt: -1 }, expect.any(Object)],
-      [{ status: 1, createdAt: 1 }, expect.any(Object)],
+    const indexes = claimSchema.indexes();
+
+    expect(indexes).toHaveLength(4);
+    expect(indexes).toEqual(expect.arrayContaining([
+      [{ claimantId: 1, createdAt: -1, _id: -1 }, expect.any(Object)],
+      [{ status: 1, createdAt: 1, _id: 1 }, expect.any(Object)],
       [{ reportId: 1, status: 1, createdAt: 1 }, expect.any(Object)],
       [
         { activeClaimKey: 1 },
@@ -255,8 +258,8 @@ export const claimSchema = new Schema(
   { collection: "claims", timestamps: true },
 );
 
-claimSchema.index({ claimantId: 1, createdAt: -1 });
-claimSchema.index({ status: 1, createdAt: 1 });
+claimSchema.index({ claimantId: 1, createdAt: -1, _id: -1 });
+claimSchema.index({ status: 1, createdAt: 1, _id: 1 });
 claimSchema.index({ reportId: 1, status: 1, createdAt: 1 });
 claimSchema.index(
   { activeClaimKey: 1 },
