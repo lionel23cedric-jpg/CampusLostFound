@@ -332,7 +332,7 @@ describe("claimant claim routes", () => {
   it.each([
     [
       "creation",
-      () => claimsPost({ json: () => Promise.reject(new Error("PRIVATE-BODY")) } as Request, context(reportId)),
+      () => claimsPost({ text: () => Promise.reject(new Error("PRIVATE-BODY")) } as Request, context(reportId)),
       createClaim,
     ],
     [
@@ -341,6 +341,22 @@ describe("claimant claim routes", () => {
       withdrawOwnClaim,
     ],
   ] as const)("hides %s body stream failures", async (_case, invoke, service) => {
+    await expectOperationFailed(await invoke(), "PRIVATE-BODY");
+    expect(service).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "creation",
+      () => claimsPost({ text: () => Promise.reject(new SyntaxError("PRIVATE-BODY")) } as Request, context(reportId)),
+      createClaim,
+    ],
+    [
+      "withdrawal",
+      () => withdrawPost({ text: () => Promise.reject(new SyntaxError("PRIVATE-BODY")) } as Request, context(claimId)),
+      withdrawOwnClaim,
+    ],
+  ] as const)("hides a SyntaxError while reading the %s body stream", async (_case, invoke, service) => {
     await expectOperationFailed(await invoke(), "PRIVATE-BODY");
     expect(service).not.toHaveBeenCalled();
   });

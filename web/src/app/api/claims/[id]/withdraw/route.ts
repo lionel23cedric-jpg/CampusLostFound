@@ -34,14 +34,22 @@ export async function POST(request: Request, context: Context) {
   const parsedId = claimIdSchema.safeParse(rawId);
   if (!parsedId.success) return invalidClaimResponse();
 
-  let body: unknown = {};
+  let text: string;
   try {
-    const text = await request.text();
-    body = text.trim() === "" ? {} : JSON.parse(text);
+    text = await request.text();
   } catch (error) {
-    return error instanceof SyntaxError
-      ? invalidClaimResponse()
-      : claimErrorResponse(error);
+    return claimErrorResponse(error);
+  }
+
+  let body: unknown = {};
+  if (text.trim() !== "") {
+    try {
+      body = JSON.parse(text);
+    } catch (error) {
+      return error instanceof SyntaxError
+        ? invalidClaimResponse()
+        : claimErrorResponse(error);
+    }
   }
 
   const parsed = emptyClaimBodySchema.safeParse(body);

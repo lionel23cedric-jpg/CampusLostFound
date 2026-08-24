@@ -34,9 +34,16 @@ export async function POST(request: Request, context: Context) {
   const parsedId = claimIdSchema.safeParse(rawId);
   if (!parsedId.success) return invalidClaimResponse();
 
+  let text: string;
+  try {
+    text = await request.text();
+  } catch (error) {
+    return claimErrorResponse(error);
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = JSON.parse(text);
   } catch (error) {
     return error instanceof SyntaxError
       ? invalidClaimResponse()
