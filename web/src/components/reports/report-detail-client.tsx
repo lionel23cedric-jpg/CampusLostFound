@@ -167,12 +167,39 @@ function ActiveReportDetail({ reportId }: { reportId: string }) {
     setReferenceState({ status: "loading" });
 
     try {
-      const [categories, campusLocations] = await Promise.all([
+      const [categories, campusLocations] = await Promise.allSettled([
         getReportCategories(),
         getReportCampusLocations(),
       ]);
       if (!mounted.current || currentRequest !== referenceRequestId.current) return;
-      setReferenceState({ status: "ready", categories, campusLocations });
+
+      const failures = [categories, campusLocations].flatMap((result) =>
+        result.status === "rejected" ? [result.reason as unknown] : [],
+      );
+      const authenticationError = failures.find(
+        (error) =>
+          error instanceof BrowserReportError &&
+          (error.status === 401 || error.code === "AUTHENTICATION_REQUIRED"),
+      );
+      const permissionError = failures.find(
+        (error) =>
+          error instanceof BrowserReportError &&
+          (error.status === 403 || error.code === "ACCOUNT_UNAVAILABLE"),
+      );
+      const accessError = authenticationError ?? permissionError;
+      if (accessError) {
+        classifyError(accessError);
+        return;
+      }
+      if (categories.status === "rejected" || campusLocations.status === "rejected") {
+        setReferenceState({ status: "error" });
+        return;
+      }
+      setReferenceState({
+        status: "ready",
+        categories: categories.value,
+        campusLocations: campusLocations.value,
+      });
     } catch (error) {
       if (!mounted.current || currentRequest !== referenceRequestId.current) return;
       if (!classifyError(error)) setReferenceState({ status: "error" });

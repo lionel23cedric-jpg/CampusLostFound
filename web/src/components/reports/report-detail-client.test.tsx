@@ -410,6 +410,64 @@ describe("ReportDetailClient errors and stale requests", () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
   });
 
+  it("prioritizes a later reference authentication error over an earlier generic failure", async () => {
+    const locationRequest = deferred<typeof campusLocations>();
+    vi.mocked(getReportCategories).mockRejectedValueOnce(
+      new Error("category labels failed"),
+    );
+    vi.mocked(getReportCampusLocations).mockReturnValueOnce(
+      locationRequest.promise,
+    );
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    expect(
+      await screen.findByRole("heading", { name: memberReport.title }),
+    ).toBeTruthy();
+    await act(async () => Promise.resolve());
+    await act(async () => {
+      locationRequest.reject(
+        new BrowserReportError({
+          code: "AUTHENTICATION_REQUIRED",
+          status: 401,
+          message: "Sign in",
+        }),
+      );
+    });
+
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+  });
+
+  it("prioritizes a later reference permission error over an earlier generic failure", async () => {
+    const locationRequest = deferred<typeof campusLocations>();
+    vi.mocked(getReportCategories).mockRejectedValueOnce(
+      new Error("category labels failed"),
+    );
+    vi.mocked(getReportCampusLocations).mockReturnValueOnce(
+      locationRequest.promise,
+    );
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    expect(
+      await screen.findByRole("heading", { name: memberReport.title }),
+    ).toBeTruthy();
+    await act(async () => Promise.resolve());
+    await act(async () => {
+      locationRequest.reject(
+        new BrowserReportError({
+          code: "ACCOUNT_UNAVAILABLE",
+          status: 403,
+          message: "Unavailable",
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Report details unavailable",
+      ),
+    );
+  });
+
   it("ignores an older report response after the report id changes", async () => {
     const firstRequest = deferred<MemberReport>();
     const secondReport = { ...memberReport, id: "second", title: "Second report" };
