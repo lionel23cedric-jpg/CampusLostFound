@@ -12,6 +12,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import type { PublicUser } from "@/lib/auth/public-user";
 import { ClaimError, type ClaimErrorCode } from "@/lib/claims/errors";
 import type { StaffClaimDetail, StaffClaimSummary } from "@/lib/claims/public-claim";
+import { BodyTooLarge } from "@/lib/claims/request-body";
 import { completeClaim, decideClaim, getStaffClaim, listStaffClaims } from "@/lib/claims/staff-service";
 
 import { GET as detailGet } from "./[id]/route";
@@ -105,6 +106,25 @@ const malformedPost = (url: string) => new Request(url, {
   method: "POST", headers: { "content-type": "application/json" }, body: "{",
 });
 const emptyPost = (url: string) => new Request(url, { method: "POST" });
+const failingBodyPost = (error: Error) => ({
+  headers: new Headers(),
+  body: new ReadableStream<Uint8Array>({
+    pull() {
+      throw error;
+    },
+  }),
+}) as Request;
+const oversizedJsonRequest = (url: string, body: unknown) =>
+  new Request(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: `${JSON.stringify(body)}${" ".repeat(16 * 1024)}`,
+  });
+const invalidUtf8Post = (url: string) =>
+  new Request(url, {
+    method: "POST",
+    body: new Blob([new Uint8Array([0xff])]),
+  });
 
 function expectNoStaffSecrets(value: unknown) {
   expect(JSON.stringify(value)).not.toMatch(
@@ -265,11 +285,19 @@ describe("staff claim routes", () => {
 
   it.each([
     ["decision", () => decisionPost(
-      { text: () => Promise.reject(new Error("PRIVATE-BODY")) } as Request,
+      failingBodyPost(new Error("PRIVATE-BODY")),
       context(claimId),
     ), decideClaim],
     ["completion", () => completePost(
-      { text: () => Promise.reject(new Error("PRIVATE-BODY")) } as Request,
+      failingBodyPost(new Error("PRIVATE-BODY")),
+      context(claimId),
+    ), completeClaim],
+    ["decision with a size-shaped stream error", () => decisionPost(
+      failingBodyPost(new BodyTooLarge()),
+      context(claimId),
+    ), decideClaim],
+    ["completion with a size-shaped stream error", () => completePost(
+      failingBodyPost(new BodyTooLarge()),
       context(claimId),
     ), completeClaim],
   ] as const)("hides %s body stream failures", async (_case, invoke, service) => {
@@ -279,15 +307,69 @@ describe("staff claim routes", () => {
 
   it.each([
     ["decision", () => decisionPost(
-      { text: () => Promise.reject(new SyntaxError("PRIVATE-BODY")) } as Request,
+      failingBodyPost(new SyntaxError("PRIVATE-BODY")),
       context(claimId),
     ), decideClaim],
     ["completion", () => completePost(
-      { text: () => Promise.reject(new SyntaxError("PRIVATE-BODY")) } as Request,
+      failingBodyPost(new SyntaxError("PRIVATE-BODY")),
       context(claimId),
     ), completeClaim],
   ] as const)("hides a SyntaxError while reading the %s body stream", async (_case, invoke, service) => {
     await expectOperationFailed(await invoke(), "PRIVATE-BODY");
+    expect(service).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "decision",
+      () => decisionPost(
+        oversizedJsonRequest(
+          `http://localhost/api/staff/claims/${claimId}/decision`,
+          { decision: "approve" },
+        ),
+        context(claimId),
+      ),
+      decideClaim,
+    ],
+    [
+      "completion",
+      () => completePost(
+        oversizedJsonRequest(
+          `http://localhost/api/staff/claims/${claimId}/complete`,
+          {},
+        ),
+        context(claimId),
+      ),
+      completeClaim,
+    ],
+  ] as const)("rejects an oversized %s body", async (_case, invoke, service) => {
+    await expectValidationError(await invoke());
+    expect(service).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "decision",
+      () => decisionPost(
+        invalidUtf8Post(
+          `http://localhost/api/staff/claims/${claimId}/decision`,
+        ),
+        context(claimId),
+      ),
+      decideClaim,
+    ],
+    [
+      "completion",
+      () => completePost(
+        invalidUtf8Post(
+          `http://localhost/api/staff/claims/${claimId}/complete`,
+        ),
+        context(claimId),
+      ),
+      completeClaim,
+    ],
+  ] as const)("rejects invalid UTF-8 in the %s body", async (_case, invoke, service) => {
+    await expectValidationError(await invoke());
     expect(service).not.toHaveBeenCalled();
   });
 

@@ -6,6 +6,11 @@ import {
   claimErrorResponse,
   invalidClaimResponse,
 } from "@/lib/claims/errors";
+import {
+  BodyTooLarge,
+  InvalidBodyEncoding,
+  readClaimRequestBody,
+} from "@/lib/claims/request-body";
 import { completeClaim } from "@/lib/claims/staff-service";
 import {
   claimIdSchema,
@@ -35,9 +40,11 @@ export async function POST(request: Request, context: Context) {
 
   let text: string;
   try {
-    text = await request.text();
+    text = await readClaimRequestBody(request);
   } catch (error) {
-    return claimErrorResponse(error);
+    return error instanceof BodyTooLarge || error instanceof InvalidBodyEncoding
+      ? invalidClaimResponse()
+      : claimErrorResponse(error);
   }
 
   let body: unknown = {};

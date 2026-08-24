@@ -22,6 +22,7 @@ import {
 } from "@/lib/claims/claimant-service";
 import { ClaimError, type ClaimErrorCode } from "@/lib/claims/errors";
 import type { ClaimantClaim } from "@/lib/claims/public-claim";
+import { BodyTooLarge } from "@/lib/claims/request-body";
 
 import { GET as questionsGet } from "../reports/[id]/claim-questions/route";
 import { POST as claimsPost } from "../reports/[id]/claims/route";
@@ -111,6 +112,25 @@ const malformedPost = (url: string) =>
     body: "{",
   });
 const emptyPost = (url: string) => new Request(url, { method: "POST" });
+const failingBodyPost = (error: Error) => ({
+  headers: new Headers(),
+  body: new ReadableStream<Uint8Array>({
+    pull() {
+      throw error;
+    },
+  }),
+}) as Request;
+const oversizedJsonRequest = (url: string, body: unknown) =>
+  new Request(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: `${JSON.stringify(body)}${" ".repeat(16 * 1024)}`,
+  });
+const invalidUtf8Post = (url: string) =>
+  new Request(url, {
+    method: "POST",
+    body: new Blob([new Uint8Array([0xff])]),
+  });
 
 function expectNoClaimSecrets(value: unknown) {
   expect(JSON.stringify(value)).not.toMatch(
@@ -332,12 +352,22 @@ describe("claimant claim routes", () => {
   it.each([
     [
       "creation",
-      () => claimsPost({ text: () => Promise.reject(new Error("PRIVATE-BODY")) } as Request, context(reportId)),
+      () => claimsPost(failingBodyPost(new Error("PRIVATE-BODY")), context(reportId)),
       createClaim,
     ],
     [
       "withdrawal",
-      () => withdrawPost({ text: () => Promise.reject(new Error("PRIVATE-BODY")) } as Request, context(claimId)),
+      () => withdrawPost(failingBodyPost(new Error("PRIVATE-BODY")), context(claimId)),
+      withdrawOwnClaim,
+    ],
+    [
+      "creation with a size-shaped stream error",
+      () => claimsPost(failingBodyPost(new BodyTooLarge()), context(reportId)),
+      createClaim,
+    ],
+    [
+      "withdrawal with a size-shaped stream error",
+      () => withdrawPost(failingBodyPost(new BodyTooLarge()), context(claimId)),
       withdrawOwnClaim,
     ],
   ] as const)("hides %s body stream failures", async (_case, invoke, service) => {
@@ -348,16 +378,66 @@ describe("claimant claim routes", () => {
   it.each([
     [
       "creation",
-      () => claimsPost({ text: () => Promise.reject(new SyntaxError("PRIVATE-BODY")) } as Request, context(reportId)),
+      () => claimsPost(failingBodyPost(new SyntaxError("PRIVATE-BODY")), context(reportId)),
       createClaim,
     ],
     [
       "withdrawal",
-      () => withdrawPost({ text: () => Promise.reject(new SyntaxError("PRIVATE-BODY")) } as Request, context(claimId)),
+      () => withdrawPost(failingBodyPost(new SyntaxError("PRIVATE-BODY")), context(claimId)),
       withdrawOwnClaim,
     ],
   ] as const)("hides a SyntaxError while reading the %s body stream", async (_case, invoke, service) => {
     await expectOperationFailed(await invoke(), "PRIVATE-BODY");
+    expect(service).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "creation",
+      () => claimsPost(
+        oversizedJsonRequest(
+          `http://localhost/api/reports/${reportId}/claims`,
+          { responses: [{ questionIndex: 0, answer: "Blue mark" }] },
+        ),
+        context(reportId),
+      ),
+      createClaim,
+    ],
+    [
+      "withdrawal",
+      () => withdrawPost(
+        oversizedJsonRequest(
+          `http://localhost/api/claims/${claimId}/withdraw`,
+          {},
+        ),
+        context(claimId),
+      ),
+      withdrawOwnClaim,
+    ],
+  ] as const)("rejects an oversized %s body", async (_case, invoke, service) => {
+    await expectValidationError(await invoke());
+    expect(service).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "creation",
+      () => claimsPost(
+        invalidUtf8Post(`http://localhost/api/reports/${reportId}/claims`),
+        context(reportId),
+      ),
+      createClaim,
+    ],
+    [
+      "withdrawal",
+      () => withdrawPost(
+        invalidUtf8Post(`http://localhost/api/claims/${claimId}/withdraw`),
+        context(claimId),
+      ),
+      withdrawOwnClaim,
+    ],
+  ] as const)("rejects invalid UTF-8 in the %s body", async (_case, invoke, service) => {
+    await expectValidationError(await invoke());
     expect(service).not.toHaveBeenCalled();
   });
 
