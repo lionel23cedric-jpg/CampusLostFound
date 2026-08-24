@@ -27,6 +27,51 @@ describe("claim validation", () => {
     });
   });
 
+  it("rejects an answer containing only Unicode whitespace", () => {
+    expect(
+      createClaimSchema.safeParse({ responses: [response(0, "\u0085")] })
+        .success,
+    ).toBe(false);
+  });
+
+  it("rejects an answer containing only a byte-order mark", () => {
+    expect(
+      createClaimSchema.safeParse({ responses: [response(0, "\uFEFF")] })
+        .success,
+    ).toBe(false);
+  });
+
+  it("trims mixed Unicode edge whitespace but preserves internal whitespace", () => {
+    expect(
+      createClaimSchema.parse({
+        responses: [response(0, "\uFEFF\u0085\u2003Blue\u00a0\t mark\u3000\u0085\uFEFF")],
+      }),
+    ).toEqual({
+      responses: [response(0, "Blue\u00a0\t mark")],
+    });
+  });
+
+  it("checks the answer length after Unicode edge whitespace is trimmed", () => {
+    expect(
+      createClaimSchema.parse({
+        responses: [response(0, `\u0085${"x".repeat(500)}\u0085`)],
+      }),
+    ).toEqual({ responses: [response(0, "x".repeat(500))] });
+    expect(
+      createClaimSchema.safeParse({
+        responses: [response(0, `\u0085${"x".repeat(501)}\u0085`)],
+      }).success,
+    ).toBe(false);
+  });
+
+  it("leaves an ASCII answer without edge whitespace unchanged", () => {
+    const answer = "Blue paint mark";
+
+    expect(
+      createClaimSchema.parse({ responses: [response(0, answer)] }),
+    ).toEqual({ responses: [response(0, answer)] });
+  });
+
   it.each([
     ["empty responses", { responses: [] }],
     ["missing zero index", { responses: [response(1)] }],

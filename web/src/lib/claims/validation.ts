@@ -10,10 +10,16 @@ const positiveInteger = z
   .regex(/^[1-9]\d*$/)
   .transform(Number)
   .pipe(z.number().int().min(1).max(Number.MAX_SAFE_INTEGER));
+const claimAnswerSchema = z
+  .string()
+  .transform((value) =>
+    value.replace(/^[\p{White_Space}\uFEFF]+|[\p{White_Space}\uFEFF]+$/gu, ""),
+  )
+  .pipe(z.string().min(1).max(500));
 
 const responseSchema = z.strictObject({
   questionIndex: z.number().int().min(0).max(4),
-  answer: z.string().trim().min(1).max(500),
+  answer: claimAnswerSchema,
 });
 
 export const createClaimSchema = z

@@ -11,6 +11,7 @@ describe("claim verification matching", () => {
     ["Small\u00a0blue\u2003mark", "small blue mark"],
     ["Small\u0085blue\u0085mark", "small blue mark"],
     ["\u0085Blue mark\u0085", "blue mark"],
+    ["\uFEFF\u0085Blue mark\u0085\uFEFF", "blue mark"],
     ["ＢＬＵＥ", "blue"],
     ["CAFÉ", "café"],
     ["CAFE\u0301", "café"],
