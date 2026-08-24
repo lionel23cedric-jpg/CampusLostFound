@@ -524,3 +524,207 @@
     box-sizing: border-box;
   }
 }
+
+.detailPage {
+  display: grid;
+  width: min(100% - 2rem, 56rem);
+  margin-inline: auto;
+  gap: 1rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.detailPanel {
+  display: grid;
+  min-width: 0;
+  gap: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.detailHeader {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.detailHeader > div {
+  min-width: 0;
+}
+
+.detailHeader h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.detailTitle {
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.statusSummary {
+  min-width: 0;
+  border-block: 1px solid var(--line);
+  padding-block: 1rem;
+}
+
+.statusSummary p,
+.inlineMessage,
+.detailActions > p,
+.confirmation p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  gap: 1rem;
+  margin: 0;
+}
+
+.factGrid div {
+  min-width: 0;
+}
+
+.factGrid dt,
+.timeline dt {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.factGrid dd,
+.timeline dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.timeline {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.timeline h2,
+.confirmation h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.detailActions,
+.withdrawalArea {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.secondaryButton,
+.dangerButton {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.secondaryButton {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green-dark);
+}
+
+.dangerButton {
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+  color: white;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+}
+
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.confirmation {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.confirmationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.detailPage a:focus-visible,
+.detailPage button:focus-visible {
+  outline: 3px solid var(--campus-green-dark);
+  outline-offset: 3px;
+}
+
+@media (max-width: 30rem) {
+  .factGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 20rem) {
+  .detailPage {
+    width: min(100% - 1rem, 56rem);
+  }
+
+  .detailPanel {
+    padding: 1rem;
+  }
+
+  .detailHeader,
+  .claimDates,
+  .confirmationActions {
+    flex-direction: column;
+  }
+
+  .detailHeader .claimStatus,
+  .detailActions button,
+  .confirmationActions button {
+    box-sizing: border-box;
+    width: 100%;
+  }
+}
