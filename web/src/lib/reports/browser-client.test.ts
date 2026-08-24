@@ -4,9 +4,12 @@ import type { CreateReportInput } from "./validation";
 
 import {
   BrowserReportError,
+  getReportById,
   getReportCampusLocations,
   getReportCategories,
+  getReports,
   submitReport,
+  type MemberReport,
 } from "./browser-client";
 
 const category = {
@@ -45,6 +48,24 @@ const report = {
   updatedAt: "2026-08-15T00:00:00.000Z",
 } as const;
 
+const memberReport = {
+  id: "64b64c6f2f4d9f1a2b3c4d54",
+  reportType: "lost",
+  title: "Black laptop bag",
+  publicDescription: "Black laptop bag with a shoulder strap.",
+  categoryId: "64b64c6f2f4d9f1a2b3c4d52",
+  campusLocationId: null,
+  occurredAt: null,
+  colors: ["black"],
+  tags: ["laptop", "bag"],
+  photoUrls: ["https://example.com/laptop-bag.jpg"],
+  status: "open",
+  resolvedAt: null,
+  createdAt: "2026-08-15T02:05:00.000Z",
+  updatedAt: "2026-08-15T02:05:00.000Z",
+  isOwner: false,
+} satisfies MemberReport;
+
 const input: CreateReportInput = {
   reportType: "lost",
   title: report.title,
@@ -72,6 +93,186 @@ afterEach(() => {
 });
 
 describe("report browser client", () => {
+  it("loads a canonical member report page with same-origin credentials", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        reports: [memberReport],
+        pagination: { page: 2, pageSize: 12, total: 13, totalPages: 2 },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getReports({
+        q: "laptop bag",
+        reportType: "lost",
+        status: "open",
+        hasPhoto: false,
+        page: 2,
+      }),
+    ).resolves.toEqual({
+      reports: [memberReport],
+      pagination: { page: 2, pageSize: 12, total: 13, totalPages: 2 },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/reports?q=laptop+bag&reportType=lost&status=open&hasPhoto=false&page=2",
+      { method: "GET", credentials: "same-origin" },
+    );
+  });
+
+  it("encodes the report id before loading detail", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json({ report: memberReport }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getReportById("id/with spaces")).resolves.toEqual(
+      memberReport,
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/reports/id%2Fwith%20spaces",
+      { method: "GET", credentials: "same-origin" },
+    );
+  });
+
+  it.each([
+    [
+      "list reporterId",
+      () => getReports({}),
+      {
+        reports: [{ ...memberReport, reporterId: "private-user-id" }],
+        pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+      },
+    ],
+    [
+      "detail privacySettings",
+      () => getReportById(memberReport.id),
+      { report: { ...memberReport, privacySettings: { showPhoto: true } } },
+    ],
+    [
+      "detail serialNumber",
+      () => getReportById(memberReport.id),
+      { report: { ...memberReport, serialNumber: "private-serial" } },
+    ],
+    [
+      "malformed dates",
+      () => getReportById(memberReport.id),
+      { report: { ...memberReport, createdAt: "not-a-date" } },
+    ],
+    [
+      "unknown pagination fields",
+      () => getReports({}),
+      {
+        reports: [memberReport],
+        pagination: {
+          page: 1,
+          pageSize: 12,
+          total: 1,
+          totalPages: 1,
+          cursor: "private-cursor",
+        },
+      },
+    ],
+    [
+      "non-integer page",
+      () => getReports({}),
+      {
+        reports: [memberReport],
+        pagination: { page: 1.5, pageSize: 12, total: 1, totalPages: 1 },
+      },
+    ],
+  ])("rejects member responses containing %s", async (_name, request, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+
+    await expect(request()).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REQUEST_FAILED",
+        status: 200,
+        message: "We could not complete that request. Please try again.",
+      }),
+    );
+  });
+
+  it.each([
+    [
+      "list malformed URL",
+      () => getReports({}),
+      {
+        reports: [{ ...memberReport, photoUrls: ["not a URL"] }],
+        pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+      },
+    ],
+    [
+      "list javascript URL",
+      () => getReports({}),
+      {
+        reports: [
+          { ...memberReport, photoUrls: ["javascript:alert(1)"] },
+        ],
+        pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+      },
+    ],
+    [
+      "detail insecure HTTP URL",
+      () => getReportById(memberReport.id),
+      {
+        report: {
+          ...memberReport,
+          photoUrls: ["http://example.com/private.jpg"],
+        },
+      },
+    ],
+    [
+      "detail data URL",
+      () => getReportById(memberReport.id),
+      {
+        report: {
+          ...memberReport,
+          photoUrls: ["data:image/svg+xml,<svg></svg>"],
+        },
+      },
+    ],
+  ])("rejects %s in member photo URLs", async (_name, request, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+
+    await expect(request()).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REQUEST_FAILED",
+        status: 200,
+      }),
+    );
+  });
+
+  it.each([
+    ["AUTHENTICATION_REQUIRED", 401, () => getReports({})],
+    ["ACCOUNT_UNAVAILABLE", 403, () => getReports({})],
+    ["REPORT_NOT_FOUND", 404, () => getReportById(memberReport.id)],
+    ["REPORT_BROWSE_FAILED", 500, () => getReports({})],
+  ])(
+    "preserves public %s errors without leaking raw response details",
+    async (code, status, request) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json(
+            { error: { code, message: `Public ${status} message` } },
+            { status },
+          ),
+        ),
+      );
+
+      const error = await request().catch((reason: unknown) => reason);
+      expect(error).toEqual(
+        expect.objectContaining<Partial<BrowserReportError>>({
+          code,
+          status,
+          message: `Public ${status} message`,
+        }),
+      );
+      expect(String(error)).not.toContain("private");
+    },
+  );
+
   it("loads strict category values with same-origin credentials", async () => {
     const fetchMock = vi
       .fn()

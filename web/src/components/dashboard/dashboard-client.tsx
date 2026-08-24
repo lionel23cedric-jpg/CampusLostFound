@@ -16,11 +16,8 @@ const recoveryWorkflow = [
   },
   {
     title: "Search possible matches",
-    description: "Review suitable campus matches once report browsing is available.",
-  },
-  {
-    title: "Manage recovery requests",
-    description: "Track verification, handover arrangements and recovery progress.",
+    description: "Search privacy-safe lost and found reports across campus.",
+    href: "/reports",
   },
 ];
 
@@ -79,6 +76,30 @@ export function DashboardClient() {
 
   if (!user) return null;
 
+  const recoveryAction =
+    user.status === "active" && user.role === "student"
+      ? {
+          title: "Manage recovery requests",
+          description: "Track verification, handover arrangements and recovery progress.",
+          href: "/claims",
+        }
+      : user.status === "active" &&
+          (user.role === "staff" || user.role === "administrator")
+        ? {
+            title: "Review ownership claims",
+            description: "Review ownership evidence and record recovery handovers.",
+            href: "/staff/claims",
+          }
+        : {
+            title: "Manage recovery requests",
+            description: "Track verification, handover arrangements and recovery progress.",
+          };
+  const workflow = [
+    recoveryWorkflow[0],
+    recoveryWorkflow[1],
+    recoveryAction,
+  ];
+
   return (
     <div className={styles.dashboard}>
       <section className={styles.introduction}>
@@ -119,7 +140,7 @@ export function DashboardClient() {
           <p>Start a report now. More recovery actions will arrive in later features.</p>
         </div>
         <div className={styles.upcomingGrid}>
-          {recoveryWorkflow.map((item) => (
+          {workflow.map((item) => (
             <article key={item.title}>
               <p className={item.href ? styles.availableLabel : styles.upcomingLabel}>
                 {item.href ? "Available now" : "Upcoming"}

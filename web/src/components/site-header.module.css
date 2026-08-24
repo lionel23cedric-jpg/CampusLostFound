@@ -68,6 +68,9 @@
   min-width: 44px;
   min-height: 44px;
   align-items: center;
+  justify-content: center;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .navLink:active {
@@ -147,13 +150,19 @@
   }
 }
 
-@media (max-width: 22rem) {
+@media (max-width: 24rem) {
   .inner,
   .navigation {
     gap: 0.25rem;
   }
 
+  .navigation {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
   .navigation :global(.primary-action),
+  .navLink,
   .signOut,
   .retry {
     min-width: 44px;

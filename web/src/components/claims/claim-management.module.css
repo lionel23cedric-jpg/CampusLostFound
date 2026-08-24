@@ -1,0 +1,730 @@
+.loading,
+.statePanel {
+  box-sizing: border-box;
+  width: min(100% - 2rem, 38rem);
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+
+.submissionPage {
+  display: grid;
+  width: min(100% - 2rem, 48rem);
+  margin-inline: auto;
+  gap: 1rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.backLink {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  color: var(--campus-green-dark);
+  font-weight: 800;
+}
+
+.submissionPanel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.submissionHeader h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.submissionHeader > p:last-child,
+.privacyNotice {
+  margin: 0.75rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.claimForm {
+  display: grid;
+  gap: 1.25rem;
+  margin-block-start: 2rem;
+}
+
+.claimForm fieldset {
+  display: grid;
+  min-width: 0;
+  gap: 1.25rem;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.claimForm legend,
+.errorSummary h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.answerField {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.answerField label {
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.answerField textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 8rem;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.5;
+  padding: 0.75rem;
+}
+
+.answerField textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.answerField span {
+  color: var(--danger);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.errorSummary {
+  border: 1px solid var(--danger);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.errorSummary p {
+  margin: 0.5rem 0 0;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.primaryButton,
+.secondaryLink {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.primaryButton {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+}
+
+.secondaryLink {
+  border: 1px solid var(--campus-green);
+  color: var(--campus-green-dark);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.primaryButton:disabled,
+.claimForm [aria-disabled="true"],
+.backLink[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.claimForm textarea:disabled {
+  background: var(--paper);
+}
+
+@media (max-width: 20rem) {
+  .submissionPage {
+    width: min(100% - 1rem, 48rem);
+  }
+
+  .submissionPanel {
+    padding: 1rem;
+  }
+
+  .formActions > * {
+    width: 100%;
+  }
+}
+
+.loading {
+  margin-block: clamp(3rem, 10vw, 7rem);
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.statePanel {
+  margin-block: clamp(3rem, 10vw, 7rem);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.statePanel h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.2;
+}
+
+.statePanel p {
+  max-width: 65ch;
+  margin: 0.75rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.statePanel a,
+.statePanel button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-block-start: 1.25rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.statePanel a:hover,
+.statePanel button:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.statePanel button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.statePanel button:disabled {
+  cursor: wait;
+}
+
+.listPage {
+  display: grid;
+  width: min(100% - 2rem, 64rem);
+  margin-inline: auto;
+  gap: 1.5rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.listHeader {
+  max-width: 70ch;
+}
+
+.listHeader h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.listHeader p,
+.emptyState p,
+.inlineState p {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.listHeader p {
+  margin: 0.75rem 0 0;
+}
+
+.queryNotice {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-light);
+  color: var(--ink-soft);
+  padding: 0.8rem 1rem;
+}
+
+.filterPanel {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-block: 1px solid var(--line);
+  padding-block: 1rem;
+}
+
+.filterPanel h2,
+.results > h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+}
+
+.statusControl {
+  display: grid;
+  min-width: min(100%, 14rem);
+  gap: 0.35rem;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.statusControl select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  padding-inline: 0.75rem;
+}
+
+.results {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.claimGrid {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.claimCard {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  box-shadow: var(--shadow);
+}
+
+.claimCardHeader {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+}
+
+.claimCardHeader > div {
+  min-width: 0;
+}
+
+.claimCard h3 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+.reportType,
+.claimStatus {
+  margin: 0.35rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.claimStatus {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  padding: 0.35rem 0.65rem;
+}
+
+.claimDates {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+  margin: 0;
+}
+
+.claimDates div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.claimDates dt {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.claimDates dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.detailLink,
+.emptyState a,
+.inlineState button,
+.pagination a,
+.pagination > span:first-child,
+.pagination > span:last-child {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.detailLink,
+.emptyState a,
+.pagination a {
+  width: fit-content;
+  background: var(--campus-green);
+  color: white;
+}
+
+.detailLink:hover,
+.emptyState a:hover,
+.pagination a:hover,
+.inlineState button:hover {
+  background: var(--campus-green-dark);
+  color: white;
+}
+
+.emptyState,
+.inlineState {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.emptyState p,
+.inlineState p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.emptyState p + p {
+  margin-block-start: 0.4rem;
+}
+
+.emptyState a,
+.inlineState button {
+  margin-block-start: 1rem;
+}
+
+.inlineState button {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+}
+
+.pagination {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) auto minmax(7rem, 1fr);
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+  margin-block-start: 0.5rem;
+}
+
+.pagination a:last-child,
+.pagination > span:last-child {
+  justify-self: end;
+}
+
+.pagination > span:nth-child(2) {
+  text-align: center;
+}
+
+.pagination > span[aria-disabled="true"] {
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
+@media (max-width: 30rem) {
+  .filterPanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .statusControl {
+    width: 100%;
+  }
+
+  .pagination {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pagination > span:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 20rem) {
+  .listPage {
+    width: min(100% - 1rem, 64rem);
+  }
+
+  .claimCardHeader,
+  .claimDates {
+    flex-direction: column;
+  }
+
+  .claimStatus,
+  .detailLink {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+.detailPage {
+  display: grid;
+  width: min(100% - 2rem, 56rem);
+  margin-inline: auto;
+  gap: 1rem;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.detailPanel {
+  display: grid;
+  min-width: 0;
+  gap: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.detailHeader {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.detailHeader > div {
+  min-width: 0;
+}
+
+.detailHeader h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.detailTitle {
+  margin: 0.75rem 0 0;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.statusSummary {
+  min-width: 0;
+  border-block: 1px solid var(--line);
+  padding-block: 1rem;
+}
+
+.statusSummary p,
+.inlineMessage,
+.detailActions > p,
+.confirmation p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  gap: 1rem;
+  margin: 0;
+}
+
+.factGrid div {
+  min-width: 0;
+}
+
+.factGrid dt,
+.timeline dt {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.factGrid dd,
+.timeline dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.timeline {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.timeline h2,
+.confirmation h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+
+.detailActions,
+.withdrawalArea {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.secondaryButton,
+.dangerButton {
+  display: inline-flex;
+  width: fit-content;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.secondaryButton {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green-dark);
+}
+
+.dangerButton {
+  border: 1px solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+  color: white;
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: var(--danger);
+  color: white;
+}
+
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.confirmation {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.confirmationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.detailPage a:focus-visible,
+.detailPage button:focus-visible {
+  outline: 3px solid var(--campus-green-dark);
+  outline-offset: 3px;
+}
+
+@media (max-width: 30rem) {
+  .factGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 20rem) {
+  .detailPage {
+    width: min(100% - 1rem, 56rem);
+  }
+
+  .detailPanel {
+    padding: 1rem;
+  }
+
+  .detailHeader,
+  .claimDates,
+  .confirmationActions {
+    flex-direction: column;
+  }
+
+  .detailHeader .claimStatus,
+  .detailActions button,
+  .confirmationActions button {
+    box-sizing: border-box;
+    width: 100%;
+  }
+}

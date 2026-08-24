@@ -18,6 +18,7 @@ import {
   useAuthSession,
 } from "@/components/auth/auth-session-provider";
 
+import styles from "./site-header.module.css";
 import { SiteHeader } from "./site-header";
 
 const replace = vi.fn();
@@ -75,16 +76,26 @@ it("keeps compact account navigation within narrow screens", () => {
   const css = readFileSync(resolve("src/components/site-header.module.css"), "utf8");
   const navLinkRule = css.match(/\.navLink\s*\{([^}]*)\}/)?.[1];
   const accountButtonRule = css.match(/\.signOut,\s*\.retry\s*\{([^}]*)\}/)?.[1];
-  const compactCss = css.slice(css.indexOf("@media (max-width: 22rem)"));
+  const wrapRuleIndex = css.indexOf("flex-wrap: wrap");
+  const compactStart = css.lastIndexOf("@media", wrapRuleIndex);
+  const compactHeader = css.slice(compactStart, css.indexOf("{", compactStart));
+  const compactBreakpoint = compactHeader.match(/max-width:\s*([\d.]+)rem/)?.[1];
+  const compactCss = css.slice(compactStart);
 
   expect(navLinkRule).toMatch(/min-width:\s*44px/);
+  expect(navLinkRule).toMatch(/min-height:\s*44px/);
   expect(accountButtonRule).toMatch(/min-width:\s*44px/);
+  expect(accountButtonRule).toMatch(/min-height:\s*44px/);
+  expect(Number(compactBreakpoint)).toBeGreaterThanOrEqual(24);
   expect(compactCss).toMatch(
     /\.inner,\s*\.navigation\s*\{[^}]*gap:\s*0\.25rem/,
   );
+  expect(compactCss).toMatch(/\.navigation\s*\{[^}]*flex-wrap:\s*wrap/);
+  expect(compactCss).toMatch(/\.navigation\s*\{[^}]*min-width:\s*0/);
   expect(compactCss).toMatch(
-    /\.navigation :global\(\.primary-action\),\s*\.signOut,\s*\.retry\s*\{[^}]*min-width:\s*44px[^}]*padding-inline:\s*0\.25rem/,
+    /\.navigation :global\(\.primary-action\),\s*\.navLink,\s*\.signOut,\s*\.retry\s*\{[^}]*min-width:\s*44px[^}]*padding-inline:\s*0\.25rem/,
   );
+  expect(compactCss).not.toMatch(/\.(?:navLink|signOut)\s*\{[^}]*display:\s*none/);
 });
 
 it("shows signed-out navigation", () => {
@@ -92,11 +103,14 @@ it("shows signed-out navigation", () => {
   render(<SiteHeader />);
 
   expect(screen.getByRole("link", { name: "Campus Find home" }).getAttribute("href")).toBe("/");
-  expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/login");
+  const signIn = screen.getByRole("link", { name: "Sign in" });
+  expect(signIn.getAttribute("href")).toBe("/login");
+  expect(signIn.classList.contains(styles.navLink)).toBe(true);
   expect(screen.getByRole("link", { name: "Create account" }).getAttribute("href")).toBe(
     "/register",
   );
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
 });
 
 it("shows the safe display name and dashboard for an authenticated user", () => {
@@ -107,10 +121,62 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
     "/dashboard",
   );
+  expect(screen.getByRole("link", { name: "Browse" }).getAttribute("href")).toBe(
+    "/reports",
+  );
+  expect(screen.getByRole("link", { name: "My claims" }).getAttribute("href")).toBe(
+    "/claims",
+  );
   expect(screen.getByRole("link", { name: "Report item" }).getAttribute("href")).toBe(
     "/reports/new",
   );
   expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
+  expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
+});
+
+it.each(["staff", "administrator"] as const)(
+  "shows Claim reviews only to an active %s",
+  (role) => {
+    mockSession({
+      status: "authenticated",
+      user: { ...safeUser, role, status: "active" },
+    });
+    render(<SiteHeader />);
+
+    expect(
+      screen.getByRole("link", { name: "Claim reviews" }).getAttribute("href"),
+    ).toBe("/staff/claims");
+    expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
+  },
+);
+
+it.each([
+  [
+    "suspended student",
+    { status: "authenticated", user: { ...safeUser, status: "suspended" } },
+  ],
+  [
+    "suspended staff",
+    {
+      status: "authenticated",
+      user: { ...safeUser, role: "staff", status: "suspended" },
+    },
+  ],
+  [
+    "deactivated administrator",
+    {
+      status: "authenticated",
+      user: { ...safeUser, role: "administrator", status: "deactivated" },
+    },
+  ],
+  ["signed-out visitor", { status: "unauthenticated", user: null }],
+  ["unavailable session", { status: "unavailable", user: null }],
+] as const)("does not show Claim navigation for a %s", (_label, session) => {
+  mockSession(session as Partial<AuthSessionContextValue>);
+  render(<SiteHeader />);
+
+  expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
 });
 
 it("signs out and replaces navigation with home", async () => {
@@ -132,6 +198,7 @@ it("keeps an accessible retry action when session resolution is unavailable", as
   await user.click(screen.getByRole("button", { name: "Retry session check" }));
   expect(refreshSession).toHaveBeenCalledOnce();
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
 });
 
 it("announces session loading without navigation links", () => {
@@ -141,6 +208,7 @@ it("announces session loading without navigation links", () => {
   expect(screen.getByText("Checking session")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
 });
 
 it("shows only a generic logout failure message", async () => {
