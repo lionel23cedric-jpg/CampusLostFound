@@ -95,7 +95,7 @@ it("shows a retryable unavailable state without redirecting", async () => {
   expect(replace).not.toHaveBeenCalled();
 });
 
-it("renders safe account details and the available report action", () => {
+it("renders safe account details and the available report actions", () => {
   mockSession({ status: "authenticated", user: safeUser });
   const { container } = render(<DashboardClient />);
 
@@ -106,8 +106,11 @@ it("renders safe account details and the available report action", () => {
   expect(
     screen.getByRole("link", { name: "Report an item" }).getAttribute("href"),
   ).toBe("/reports/new");
-  expect(screen.getByText("Available now")).toBeTruthy();
-  expect(screen.getAllByText("Upcoming")).toHaveLength(2);
+  expect(
+    screen.getByRole("link", { name: "Search possible matches" }).getAttribute("href"),
+  ).toBe("/reports");
+  expect(screen.getAllByText("Available now")).toHaveLength(2);
+  expect(screen.getAllByText("Upcoming")).toHaveLength(1);
   expect(container.textContent).not.toMatch(/password|token|session hash/i);
   expect(container.textContent).not.toContain("user-id");
 });

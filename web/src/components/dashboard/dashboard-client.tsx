@@ -16,7 +16,8 @@ const recoveryWorkflow = [
   },
   {
     title: "Search possible matches",
-    description: "Review suitable campus matches once report browsing is available.",
+    description: "Search privacy-safe lost and found reports across campus.",
+    href: "/reports",
   },
   {
     title: "Manage recovery requests",
