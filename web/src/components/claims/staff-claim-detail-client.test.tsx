@@ -303,7 +303,7 @@ describe("StaffClaimDetailClient loading and refresh", () => {
     vi.mocked(getStaffClaim).mockRejectedValue(claimError(code, status));
     render(<StaffClaimDetailClient claimId={staffDetail.id} />);
     const safeHeading = await screen.findByRole("heading", { name: heading });
-    expect(document.activeElement).toBe(safeHeading);
+    await waitFor(() => expect(document.activeElement).toBe(safeHeading));
     expect(document.body.textContent).not.toContain("private service detail");
   });
 
