@@ -78,13 +78,17 @@ it("keeps compact account navigation within narrow screens", () => {
   const compactCss = css.slice(css.indexOf("@media (max-width: 22rem)"));
 
   expect(navLinkRule).toMatch(/min-width:\s*44px/);
+  expect(navLinkRule).toMatch(/min-height:\s*44px/);
   expect(accountButtonRule).toMatch(/min-width:\s*44px/);
+  expect(accountButtonRule).toMatch(/min-height:\s*44px/);
   expect(compactCss).toMatch(
     /\.inner,\s*\.navigation\s*\{[^}]*gap:\s*0\.25rem/,
   );
+  expect(compactCss).toMatch(/\.navigation\s*\{[^}]*flex-wrap:\s*wrap/);
   expect(compactCss).toMatch(
-    /\.navigation :global\(\.primary-action\),\s*\.signOut,\s*\.retry\s*\{[^}]*min-width:\s*44px[^}]*padding-inline:\s*0\.25rem/,
+    /\.navigation :global\(\.primary-action\),\s*\.navLink,\s*\.signOut,\s*\.retry\s*\{[^}]*min-width:\s*44px[^}]*padding-inline:\s*0\.25rem/,
   );
+  expect(compactCss).not.toMatch(/\.(?:navLink|signOut)\s*\{[^}]*display:\s*none/);
 });
 
 it("shows signed-out navigation", () => {
@@ -97,6 +101,7 @@ it("shows signed-out navigation", () => {
     "/register",
   );
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
 });
 
 it("shows the safe display name and dashboard for an authenticated user", () => {
@@ -106,6 +111,9 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   expect(screen.getByText("Student Name")).toBeTruthy();
   expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
     "/dashboard",
+  );
+  expect(screen.getByRole("link", { name: "Browse" }).getAttribute("href")).toBe(
+    "/reports",
   );
   expect(screen.getByRole("link", { name: "Report item" }).getAttribute("href")).toBe(
     "/reports/new",
@@ -132,6 +140,7 @@ it("keeps an accessible retry action when session resolution is unavailable", as
   await user.click(screen.getByRole("button", { name: "Retry session check" }));
   expect(refreshSession).toHaveBeenCalledOnce();
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
 });
 
 it("announces session loading without navigation links", () => {
@@ -141,6 +150,7 @@ it("announces session loading without navigation links", () => {
   expect(screen.getByText("Checking session")).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
 });
 
 it("shows only a generic logout failure message", async () => {
