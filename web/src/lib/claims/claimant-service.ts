@@ -2,6 +2,10 @@ import type { ClientSession } from "mongoose";
 
 import type { PublicUser } from "@/lib/auth/public-user";
 import { connectToDatabase } from "@/lib/db";
+import {
+  createNotificationPlan,
+  deliverNotifications,
+} from "@/lib/notifications/delivery";
 import { ClaimEvidenceModel } from "@/models/claim-evidence";
 import { ClaimModel } from "@/models/claim";
 import { ItemReportModel } from "@/models/item-report";
@@ -19,11 +23,16 @@ import { matchesVerificationAnswer } from "./verification";
 
 const CLAIM_REPORT_PROJECTION = {
   _id: 1,
+  reporterId: 1,
   title: 1,
   reportType: 1,
   status: 1,
 } as const;
 const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
+
+type ClaimReportWithOwner = ClaimReportRecord & {
+  reporterId: { toString(): string };
+};
 
 function requireStudent(user: PublicUser) {
   if (user.status !== "active" || user.role !== "student") {
@@ -61,7 +70,7 @@ async function loadReport(
   return ItemReportModel.findById(reportId, CLAIM_REPORT_PROJECTION, {
     session,
   })
-    .lean<ClaimReportRecord | null>()
+    .lean<ClaimReportWithOwner | null>()
     .exec();
 }
 
@@ -140,6 +149,8 @@ export async function createClaim(
         },
       ).exec();
       if (!report) throw new ClaimError("REPORT_NOT_CLAIMABLE");
+      const reportWithOwner =
+        report as unknown as ClaimReportWithOwner;
 
       const key = activeClaimKey(reportId, user.id);
       if (
@@ -200,9 +211,20 @@ export async function createClaim(
         [{ claimId: claim._id, responses }],
         { session: transaction },
       );
+      await deliverNotifications(
+        [
+          createNotificationPlan({
+            kind: "claim_received",
+            recipientId: reportWithOwner.reporterId.toString(),
+            reportId: reportWithOwner._id.toString(),
+            claimId: claim._id.toString(),
+          }),
+        ],
+        transaction,
+      );
       result = toClaimantClaim(
         claim as unknown as ClaimViewRecord,
-        report as unknown as ClaimReportRecord,
+        reportWithOwner,
       );
     });
   } catch (error) {
@@ -344,6 +366,17 @@ export async function withdrawOwnClaim(
 
       const report = await loadReport(updated.reportId, transaction);
       if (!report) throw new Error("Claim report is missing");
+      await deliverNotifications(
+        [
+          createNotificationPlan({
+            kind: "claim_withdrawn",
+            recipientId: report.reporterId.toString(),
+            reportId: report._id.toString(),
+            claimId: updated._id.toString(),
+          }),
+        ],
+        transaction,
+      );
       result = toClaimantClaim(
         updated as unknown as ClaimViewRecord,
         report,
