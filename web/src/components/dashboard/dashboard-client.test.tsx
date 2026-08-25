@@ -138,10 +138,38 @@ it.each(["staff", "administrator"] as const)(
     expect(
       screen.getByRole("link", { name: "Manage profile settings" }).getAttribute("href"),
     ).toBe("/profile");
-    expect(screen.getAllByText("Available now")).toHaveLength(4);
+    expect(screen.getAllByText("Available now")).toHaveLength(
+      role === "administrator" ? 5 : 4,
+    );
     expect(screen.queryByText("Upcoming")).toBeNull();
   },
 );
+
+it("links an active administrator to the system overview", () => {
+  mockSession({
+    status: "authenticated",
+    user: { ...safeUser, role: "administrator", status: "active" },
+  });
+  render(<DashboardClient />);
+
+  expect(
+    screen.getByRole("link", { name: "Review system overview" }).getAttribute("href"),
+  ).toBe("/admin");
+});
+
+it.each([
+  ["student", { ...safeUser, role: "student" as const, status: "active" as const }],
+  ["staff", { ...safeUser, role: "staff" as const, status: "active" as const }],
+  [
+    "inactive administrator",
+    { ...safeUser, role: "administrator" as const, status: "suspended" as const },
+  ],
+])("does not link a %s to the system overview", (_label, user) => {
+  mockSession({ status: "authenticated", user });
+  render(<DashboardClient />);
+
+  expect(screen.queryByRole("link", { name: "Review system overview" })).toBeNull();
+});
 
 it.each([
   ["suspended student", { ...safeUser, status: "suspended" as const }],
