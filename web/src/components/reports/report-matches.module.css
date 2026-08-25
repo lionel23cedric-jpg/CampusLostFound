@@ -1,0 +1,262 @@
+.panel {
+  display: grid;
+  min-width: 0;
+  gap: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #edf3ef;
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+}
+
+.header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.header > div {
+  min-width: 0;
+  max-width: 70ch;
+}
+
+.header h2,
+.inlineState h3,
+.errorState h3,
+.matchHeading h3,
+.explanations h4 {
+  margin: 0;
+}
+
+.header h2,
+.matchHeading h3 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.header h2 {
+  font-size: clamp(1.55rem, 4vw, 2rem);
+  letter-spacing: -0.02em;
+}
+
+.header p,
+.inlineState p,
+.errorState p,
+.description,
+.resultSummary {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.header p {
+  margin: 0.65rem 0 0;
+}
+
+.actionButton,
+.detailLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+}
+
+.actionButton {
+  flex: 0 0 auto;
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+}
+
+.actionButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.actionButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.actionButton:focus-visible,
+.detailLink:focus-visible {
+  outline: 3px solid var(--warm-accent);
+  outline-offset: 3px;
+}
+
+.inlineState,
+.errorState {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+}
+
+.inlineState p,
+.errorState p,
+.resultSummary {
+  margin: 0;
+}
+
+.errorState {
+  color: var(--danger);
+}
+
+.results {
+  display: grid;
+  gap: 1rem;
+}
+
+.resultSummary {
+  font-weight: 700;
+}
+
+.matchList,
+.explanations ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.matchList {
+  display: grid;
+}
+
+.matchItem {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-block: 1.5rem;
+}
+
+.matchItem:last-child {
+  padding-bottom: 0;
+}
+
+.matchItem article {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.matchHeading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.matchHeading > div {
+  min-width: 0;
+}
+
+.reportMeta {
+  width: fit-content;
+  margin: 0 0 0.6rem;
+  color: var(--campus-green-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.matchHeading h3 {
+  overflow-wrap: anywhere;
+  font-size: clamp(1.3rem, 3vw, 1.65rem);
+}
+
+.score {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--paper-light);
+  color: var(--campus-green-dark);
+  font-variant-numeric: tabular-nums;
+  padding: 0.45rem 0.7rem;
+}
+
+.description {
+  max-width: 70ch;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.explanations {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.explanations h4 {
+  font-size: 1rem;
+}
+
+.explanations ul {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.explanations li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgb(23 55 47 / 14%);
+  padding-top: 0.5rem;
+}
+
+.explanations li span {
+  overflow-wrap: anywhere;
+}
+
+.explanations li strong {
+  flex: 0 0 auto;
+  color: var(--campus-green-dark);
+  font-variant-numeric: tabular-nums;
+}
+
+.detailLink {
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--campus-green);
+  color: var(--campus-green-dark);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.detailLink:hover {
+  background: var(--paper-light);
+}
+
+@media (max-width: 40rem) {
+  .header,
+  .matchHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+
+  .score {
+    width: fit-content;
+  }
+}
+
+@media (max-width: 20rem) {
+  .panel {
+    gap: 1.25rem;
+    padding: 1rem;
+  }
+
+  .explanations li {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .detailLink {
+    width: 100%;
+  }
+}

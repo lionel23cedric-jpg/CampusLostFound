@@ -194,6 +194,23 @@ describe("ReportDetailClient route and session boundary", () => {
 
 describe("ReportDetailClient data and privacy", () => {
   it.each([
+    ["open owner report", "open", true, true],
+    ["open report owned by someone else", "open", false, false],
+    ["closed owner report", "closed", true, false],
+  ] as const)(
+    "shows matching only for an %s",
+    async (_case, status, isOwner, expected) => {
+      mockReadyResponses({ ...memberReport, status, isOwner });
+      render(<ReportDetailClient reportId={memberReport.id} />);
+      await screen.findByRole("heading", { name: memberReport.title });
+
+      expect(
+        screen.queryByRole("heading", { name: "Possible matches" }) !== null,
+      ).toBe(expected);
+    },
+  );
+
+  it.each([
     ["found", "open", false, "student", true],
     ["lost", "open", false, "student", false],
     ["found", "claim_pending", false, "student", false],

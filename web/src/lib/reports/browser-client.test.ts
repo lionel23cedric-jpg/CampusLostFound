@@ -7,9 +7,11 @@ import {
   getReportById,
   getReportCampusLocations,
   getReportCategories,
+  getReportMatches,
   getReports,
   submitReport,
   type MemberReport,
+  type ReportMatches,
 } from "./browser-client";
 
 const category = {
@@ -65,6 +67,60 @@ const memberReport = {
   updatedAt: "2026-08-15T02:05:00.000Z",
   isOwner: false,
 } satisfies MemberReport;
+
+const reportMatches = {
+  sourceReportId: memberReport.id,
+  matches: [
+    {
+      report: {
+        ...memberReport,
+        id: "64b64c6f2f4d9f1a2b3c4d55",
+        reportType: "found",
+        title: "Black laptop charger",
+        publicDescription: "Found beside the library desk.",
+      },
+      score: 100,
+      factors: [
+        {
+          key: "category",
+          points: 25,
+          maximum: 25,
+          explanation: "Same category",
+        },
+        {
+          key: "location",
+          points: 15,
+          maximum: 15,
+          explanation: "Same public campus location",
+        },
+        {
+          key: "date",
+          points: 15,
+          maximum: 15,
+          explanation: "Reports occurred on the same day",
+        },
+        {
+          key: "colors",
+          points: 15,
+          maximum: 15,
+          explanation: "Shared colours: black",
+        },
+        {
+          key: "tags",
+          points: 10,
+          maximum: 10,
+          explanation: "Shared tags: laptop, charger",
+        },
+        {
+          key: "text",
+          points: 20,
+          maximum: 20,
+          explanation: "Similar report wording",
+        },
+      ],
+    },
+  ],
+} satisfies ReportMatches;
 
 const input: CreateReportInput = {
   reportType: "lost",
@@ -419,6 +475,219 @@ describe("report browser client", () => {
         code: "NETWORK_ERROR",
         status: 0,
         message: "We could not reach the service. Please try again.",
+      }),
+    );
+  });
+
+  it("loads strict matching results from an encoded report path", async () => {
+    const encodedReportMatches = {
+      ...reportMatches,
+      sourceReportId: "source/report id",
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(Response.json(encodedReportMatches));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getReportMatches("source/report id")).resolves.toEqual(
+      encodedReportMatches,
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/reports/source%2Freport%20id/matches",
+      { method: "GET", credentials: "same-origin" },
+    );
+  });
+
+  it.each([
+    [
+      "score below the backend threshold",
+      {
+        ...reportMatches,
+        matches: [{ ...reportMatches.matches[0], score: 34 }],
+      },
+    ],
+    [
+      "score above the fixed maximum",
+      {
+        ...reportMatches,
+        matches: [{ ...reportMatches.matches[0], score: 101 }],
+      },
+    ],
+    [
+      "zero factor points",
+      {
+        ...reportMatches,
+        matches: [
+          {
+            ...reportMatches.matches[0],
+            score: 75,
+            factors: [
+              ...reportMatches.matches[0].factors.slice(0, 5),
+              { ...reportMatches.matches[0].factors[5], points: 0 },
+            ],
+          },
+        ],
+      },
+    ],
+    [
+      "incorrect factor maximum",
+      {
+        ...reportMatches,
+        matches: [
+          {
+            ...reportMatches.matches[0],
+            factors: [
+              { ...reportMatches.matches[0].factors[0], maximum: 24 },
+              ...reportMatches.matches[0].factors.slice(1),
+            ],
+          },
+        ],
+      },
+    ],
+    [
+      "factor points above maximum",
+      {
+        ...reportMatches,
+        matches: [
+          {
+            ...reportMatches.matches[0],
+            score: 100,
+            factors: [
+              { ...reportMatches.matches[0].factors[0], points: 26 },
+              { ...reportMatches.matches[0].factors[1], points: 14 },
+              ...reportMatches.matches[0].factors.slice(2),
+            ],
+          },
+        ],
+      },
+    ],
+    [
+      "duplicate factor keys",
+      {
+        ...reportMatches,
+        matches: [
+          {
+            ...reportMatches.matches[0],
+            factors: [
+              reportMatches.matches[0].factors[0],
+              { ...reportMatches.matches[0].factors[1], key: "category" },
+              ...reportMatches.matches[0].factors.slice(2),
+            ],
+          },
+        ],
+      },
+    ],
+    [
+      "factor sum different from score",
+      {
+        ...reportMatches,
+        matches: [{ ...reportMatches.matches[0], score: 99 }],
+      },
+    ],
+    [
+      "duplicate candidate reports",
+      {
+        ...reportMatches,
+        matches: [reportMatches.matches[0], reportMatches.matches[0]],
+      },
+    ],
+    [
+      "more than five candidates",
+      {
+        ...reportMatches,
+        matches: Array.from({ length: 6 }, (_, index) => ({
+          ...reportMatches.matches[0],
+          report: {
+            ...reportMatches.matches[0].report,
+            id: `candidate-${index}`,
+          },
+        })),
+      },
+    ],
+    [
+      "private reporter identity",
+      {
+        ...reportMatches,
+        matches: [
+          {
+            ...reportMatches.matches[0],
+            report: {
+              ...reportMatches.matches[0].report,
+              reporterId: "private-user-id",
+            },
+          },
+        ],
+      },
+    ],
+    [
+      "private verification evidence",
+      {
+        ...reportMatches,
+        matches: [
+          {
+            ...reportMatches.matches[0],
+            expectedAnswer: "private answer",
+          },
+        ],
+      },
+    ],
+    [
+      "unknown top-level field",
+      { ...reportMatches, internalVersion: 1 },
+    ],
+  ])("rejects matching responses containing %s", async (_case, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+
+    await expect(getReportMatches(memberReport.id)).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REQUEST_FAILED",
+        status: 200,
+        message: "We could not complete that request. Please try again.",
+      }),
+    );
+  });
+
+  it("preserves a safe matching API error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: {
+              code: "REPORT_NOT_MATCHABLE",
+              message: "Report is not available for matching",
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+
+    await expect(getReportMatches(memberReport.id)).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REPORT_NOT_MATCHABLE",
+        status: 409,
+        message: "Report is not available for matching",
+      }),
+    );
+  });
+
+  it("rejects matching results for a different source report", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          ...reportMatches,
+          sourceReportId: "different-report-id",
+        }),
+      ),
+    );
+
+    await expect(getReportMatches(memberReport.id)).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REQUEST_FAILED",
+        status: 200,
+        message: "We could not complete that request. Please try again.",
       }),
     );
   });
