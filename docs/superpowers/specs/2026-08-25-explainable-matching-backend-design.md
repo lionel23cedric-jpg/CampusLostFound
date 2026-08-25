@@ -97,8 +97,13 @@ The candidate database projection is limited to fields required by the public re
 - private verification questions or expected answers;
 - exact private location details, serial numbers or private notes;
 - claimant evidence or staff review notes;
-- contact details, email addresses or reporter IDs;
+- contact details or email addresses;
 - password hashes, session tokens or token hashes.
+
+`reporterId` is used only at the database boundary to prove source ownership,
+exclude the source owner's own candidate reports and construct the existing
+member-visible mapper result. It is never passed to the scorer, explanation or
+HTTP response.
 
 A candidate campus location contributes only when `showCampusLocation` is true. A candidate date contributes only when `showEventDate` is true. A hidden value produces neither points nor an explanation, and the fixed 100-point denominator is not renormalised. Hidden values therefore cannot be inferred from a score increase.
 

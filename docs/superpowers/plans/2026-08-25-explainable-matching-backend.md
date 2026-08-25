@@ -16,7 +16,8 @@
 - Candidates are opposite-type `open` reports, exclude the source owner, and are bounded to the 500 newest eligible records.
 - Scores use the fixed 100-point design weights and a minimum threshold of 35; return at most five matches.
 - Hidden candidate dates and locations contribute no points or explanations and the denominator is never renormalised.
-- Never select, read, log or return verification evidence, contacts, reporter IDs or authentication secrets.
+- Use reporter IDs only for source ownership, candidate exclusion and the existing public mapper; never pass them to scoring, explanations or responses.
+- Never select, read, log or return verification evidence, contacts or authentication secrets.
 - Tests mock database operations; never read `.env.local` or write live Atlas records.
 - Every commit references Issue #25.
 
