@@ -16,6 +16,7 @@ import {
 } from "@/lib/reports/browser-client";
 
 import styles from "./report-browsing.module.css";
+import { ReportMatchesPanel } from "./report-matches-panel";
 
 type ReportState =
   | { status: "loading" }
@@ -421,6 +422,10 @@ function ActiveReportDetail({
           </section>
         ) : null}
       </article>
+
+      {report.isOwner && report.status === "open" ? (
+        <ReportMatchesPanel reportId={report.id} />
+      ) : null}
     </div>
   );
 }
