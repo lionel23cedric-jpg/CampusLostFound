@@ -2,6 +2,11 @@ import type { ClientSession } from "mongoose";
 
 import type { PublicUser } from "@/lib/auth/public-user";
 import { connectToDatabase } from "@/lib/db";
+import {
+  createNotificationPlan,
+  deliverNotifications,
+  type NotificationPlan,
+} from "@/lib/notifications/delivery";
 import { ClaimEvidenceModel } from "@/models/claim-evidence";
 import { ClaimModel } from "@/models/claim";
 import { ItemReportModel } from "@/models/item-report";
@@ -24,6 +29,7 @@ import type { ClaimDecisionInput, ClaimListQuery } from "./validation";
 
 const CLAIM_REPORT_PROJECTION = {
   _id: 1,
+  reporterId: 1,
   title: 1,
   reportType: 1,
   status: 1,
@@ -44,6 +50,13 @@ type SafeProfileRow = {
   userId: { toString(): string };
   displayName: string;
   preferredContactMethod: "in_app" | "email";
+};
+type ClaimReportWithOwner = ClaimReportRecord & {
+  reporterId: { toString(): string };
+};
+type CompetingClaimRow = {
+  _id: { toString(): string };
+  claimantId: { toString(): string };
 };
 export type StaffClaimPage = {
   claims: StaffClaimSummary[];
@@ -111,7 +124,7 @@ async function loadStaffDetailRecords(
     CLAIM_REPORT_PROJECTION,
   )
     .session(session ?? null)
-    .lean<ClaimReportRecord | null>()
+    .lean<ClaimReportWithOwner | null>()
     .exec();
   const user = await UserModel.findById(
     claim.claimantId.toString(),
@@ -175,7 +188,7 @@ export async function listStaffClaims(
       { _id: { $in: reportIds } },
       CLAIM_REPORT_PROJECTION,
     )
-      .lean<ClaimReportRecord[]>()
+      .lean<ClaimReportWithOwner[]>()
       .exec(),
     UserModel.find(
       { _id: { $in: claimantIdStrings } },
@@ -258,6 +271,7 @@ export async function decideClaim(
         throw new ClaimError("CLAIM_STATE_CONFLICT");
       }
 
+      const plans: NotificationPlan[] = [];
       const now = new Date();
       const nextStatus =
         input.decision === "approve" ? "approved" : "rejected";
@@ -292,22 +306,61 @@ export async function decideClaim(
         ).exec();
         if (!updated) throw new ClaimError("CLAIM_STATE_CONFLICT");
 
-        await ClaimModel.updateMany(
+        const competing = await ClaimModel.find(
           {
             reportId: current.reportId,
             _id: { $ne: current._id },
             status: "pending",
           },
-          {
-            $set: {
-              status: "rejected",
-              activeClaimKey: null,
-              reviewedBy: user.id,
-              reviewedAt: now,
-              reviewNote: null,
+          { _id: 1, claimantId: 1 },
+        )
+          .session(transaction)
+          .lean<CompetingClaimRow[]>()
+          .exec();
+
+        if (competing.length > 0) {
+          const rejected = await ClaimModel.updateMany(
+            {
+              _id: { $in: competing.map(({ _id }) => _id) },
+              status: "pending",
             },
-          },
-          { session: transaction },
+            {
+              $set: {
+                status: "rejected",
+                activeClaimKey: null,
+                reviewedBy: user.id,
+                reviewedAt: now,
+                reviewNote: null,
+              },
+            },
+            { session: transaction },
+          );
+          if (rejected.modifiedCount !== competing.length) {
+            throw new ClaimError("CLAIM_STATE_CONFLICT");
+          }
+        }
+
+        plans.push(
+          createNotificationPlan({
+            kind: "claim_approved",
+            recipientId: current.claimantId.toString(),
+            reportId: current.reportId.toString(),
+            claimId: current._id.toString(),
+          }),
+          createNotificationPlan({
+            kind: "claim_handover_ready",
+            recipientId: current.claimantId.toString(),
+            reportId: current.reportId.toString(),
+            claimId: current._id.toString(),
+          }),
+          ...competing.map((claim) =>
+            createNotificationPlan({
+              kind: "claim_rejected",
+              recipientId: claim.claimantId.toString(),
+              reportId: current.reportId.toString(),
+              claimId: claim._id.toString(),
+            }),
+          ),
         );
       } else {
         const updated = await ClaimModel.findOneAndUpdate(
@@ -324,8 +377,18 @@ export async function decideClaim(
           { new: true, session: transaction },
         ).exec();
         if (!updated) throw new ClaimError("CLAIM_STATE_CONFLICT");
+
+        plans.push(
+          createNotificationPlan({
+            kind: "claim_rejected",
+            recipientId: current.claimantId.toString(),
+            reportId: current.reportId.toString(),
+            claimId: current._id.toString(),
+          }),
+        );
       }
 
+      await deliverNotifications(plans, transaction);
       const records = await loadStaffDetailRecords(claimId, transaction);
       result = toStaffClaimDetail(
         records.claim,
@@ -378,6 +441,24 @@ export async function completeClaim(user: PublicUser, claimId: string) {
         { new: true, session: transaction },
       ).exec();
       if (!updated) throw new ClaimError("CLAIM_STATE_CONFLICT");
+
+      await deliverNotifications(
+        [
+          createNotificationPlan({
+            kind: "claim_completed",
+            recipientId: current.claimantId.toString(),
+            reportId: current.reportId.toString(),
+            claimId: current._id.toString(),
+          }),
+          createNotificationPlan({
+            kind: "report_recovered",
+            recipientId: report.reporterId.toString(),
+            reportId: report._id.toString(),
+            claimId: current._id.toString(),
+          }),
+        ],
+        transaction,
+      );
 
       const records = await loadStaffDetailRecords(claimId, transaction);
       result = toStaffClaimDetail(

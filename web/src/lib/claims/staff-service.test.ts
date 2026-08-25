@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({ connectToDatabase: vi.fn() }));
+vi.mock("@/lib/notifications/delivery", () => ({
+  createNotificationPlan: vi.fn((input) => input),
+  deliverNotifications: vi.fn(),
+}));
 vi.mock("@/models/claim", () => ({
   ClaimModel: {
     find: vi.fn(),
@@ -32,6 +36,10 @@ vi.mock("./public-claim", () => ({
 }));
 
 import { connectToDatabase } from "@/lib/db";
+import {
+  createNotificationPlan,
+  deliverNotifications,
+} from "@/lib/notifications/delivery";
 import { ClaimEvidenceModel } from "@/models/claim-evidence";
 import { ClaimModel } from "@/models/claim";
 import { ItemReportModel } from "@/models/item-report";
@@ -92,6 +100,11 @@ const student = { ...staff, role: "student" as const };
 const claimantId = "64b64c6f2f4d9f1a2b3c4d51";
 const reportId = "64b64c6f2f4d9f1a2b3c4d52";
 const claimId = "64b64c6f2f4d9f1a2b3c4d53";
+const reportOwnerId = "64b64c6f2f4d9f1a2b3c4d54";
+const competingClaimId = "64b64c6f2f4d9f1a2b3c4d55";
+const competingClaimantId = "64b64c6f2f4d9f1a2b3c4d56";
+const secondCompetingClaimId = "64b64c6f2f4d9f1a2b3c4d57";
+const secondCompetingClaimantId = "64b64c6f2f4d9f1a2b3c4d58";
 const now = new Date("2026-08-24T05:00:00.000Z");
 
 const pendingClaim = {
@@ -119,11 +132,22 @@ const completedClaim = {
 };
 const report = {
   _id: identifier(reportId),
+  reporterId: identifier(reportOwnerId),
   title: "Black charger",
   reportType: "found" as const,
   status: "open" as const,
 };
 const resolvedReport = { ...report, status: "resolved" as const };
+const competingClaims = [
+  {
+    _id: identifier(competingClaimId),
+    claimantId: identifier(competingClaimantId),
+  },
+  {
+    _id: identifier(secondCompetingClaimId),
+    claimantId: identifier(secondCompetingClaimantId),
+  },
+];
 const account = {
   _id: identifier(claimantId),
   email: "claimant@example.com",
@@ -243,6 +267,8 @@ describe("staff claim service", () => {
     vi.mocked(connectToDatabase).mockResolvedValue({ startSession } as never);
     vi.mocked(toStaffClaimSummary).mockReturnValue(staffSummary as never);
     vi.mocked(toStaffClaimDetail).mockReturnValue(staffDetail as never);
+    vi.mocked(createNotificationPlan).mockImplementation((input) => input);
+    vi.mocked(deliverNotifications).mockResolvedValue(undefined);
     configureQueue();
     configureDetail();
   });
@@ -308,7 +334,7 @@ describe("staff claim service", () => {
     await listStaffClaims(staff, { page: 1, pageSize: 20 });
     expect(ItemReportModel.find).toHaveBeenCalledWith(
       { _id: { $in: [pendingClaim.reportId] } },
-      { _id: 1, title: 1, reportType: 1, status: 1 },
+      { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
     );
     expect(UserModel.find).toHaveBeenCalledWith(
       { _id: { $in: [claimantId] } },
@@ -405,8 +431,10 @@ describe("staff claim service", () => {
     );
   });
 
-  it("approves atomically, preserves the active key and rejects all competitors", async () => {
+  it("approves atomically, preserves the active key and rejects only selected competitors", async () => {
     const currentChain = configureDetail();
+    const competingChain = queryChain(competingClaims);
+    vi.mocked(ClaimModel.find).mockReturnValue(competingChain as never);
     vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
       queryChain({ ...report, status: "claim_pending" }) as never,
     );
@@ -415,8 +443,8 @@ describe("staff claim service", () => {
     );
     vi.mocked(ClaimModel.updateMany).mockResolvedValue({
       acknowledged: true,
-      matchedCount: 1,
-      modifiedCount: 1,
+      matchedCount: 2,
+      modifiedCount: 2,
     } as never);
 
     await expect(
@@ -429,7 +457,6 @@ describe("staff claim service", () => {
     expect(currentChain.select).toHaveBeenCalledWith(
       "+verificationMatchedCount",
     );
-    expect(ClaimModel.find).not.toHaveBeenCalled();
     expect(ItemReportModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: pendingClaim.reportId, status: "open" },
       { $set: { status: "claim_pending", resolvedAt: null } },
@@ -449,10 +476,20 @@ describe("staff claim service", () => {
     });
     expect(selectedUpdate.$set.reviewedAt).toBeInstanceOf(Date);
 
+    expect(ClaimModel.find).toHaveBeenCalledWith(
+      {
+        reportId: pendingClaim.reportId,
+        _id: { $ne: pendingClaim._id },
+        status: "pending",
+      },
+      { _id: 1, claimantId: 1 },
+    );
+    expect(competingChain.session).toHaveBeenCalledWith(transaction);
+    expect(competingChain.lean).toHaveBeenCalledOnce();
+
     const competitorUpdate = vi.mocked(ClaimModel.updateMany).mock.calls[0];
     expect(competitorUpdate[0]).toEqual({
-      reportId: pendingClaim.reportId,
-      _id: { $ne: pendingClaim._id },
+      _id: { $in: competingClaims.map(({ _id }) => _id) },
       status: "pending",
     });
     expect(competitorUpdate[1]).toEqual({
@@ -465,6 +502,35 @@ describe("staff claim service", () => {
       },
     });
     expect(competitorUpdate[2]).toEqual({ session: transaction });
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      [
+        {
+          kind: "claim_approved",
+          recipientId: claimantId,
+          reportId,
+          claimId,
+        },
+        {
+          kind: "claim_handover_ready",
+          recipientId: claimantId,
+          reportId,
+          claimId,
+        },
+        {
+          kind: "claim_rejected",
+          recipientId: competingClaimantId,
+          reportId,
+          claimId: competingClaimId,
+        },
+        {
+          kind: "claim_rejected",
+          recipientId: secondCompetingClaimantId,
+          reportId,
+          claimId: secondCompetingClaimId,
+        },
+      ],
+      transaction,
+    );
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -486,23 +552,110 @@ describe("staff claim service", () => {
 
   it("approves safely when there are no competing claims", async () => {
     configureDetail();
+    const competingChain = queryChain([]);
+    vi.mocked(ClaimModel.find).mockReturnValue(competingChain as never);
     vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
       queryChain({ ...report, status: "claim_pending" }) as never,
     );
     vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
       queryChain(approvedClaim) as never,
     );
-    vi.mocked(ClaimModel.updateMany).mockResolvedValue({
-      matchedCount: 0,
-    } as never);
     await expect(
       decideClaim(staff, claimId, {
         decision: "approve",
         reviewNote: null,
       }),
     ).resolves.toBe(staffDetail);
-    expect(ClaimModel.updateMany).toHaveBeenCalledOnce();
-    expect(ClaimModel.find).not.toHaveBeenCalled();
+    expect(ClaimModel.updateMany).not.toHaveBeenCalled();
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      [
+        {
+          kind: "claim_approved",
+          recipientId: claimantId,
+          reportId,
+          claimId,
+        },
+        {
+          kind: "claim_handover_ready",
+          recipientId: claimantId,
+          reportId,
+          claimId,
+        },
+      ],
+      transaction,
+    );
+  });
+
+  it("delivers approval notifications only after every conditional write", async () => {
+    const order: string[] = [];
+    configureDetail();
+    vi.mocked(ClaimModel.find).mockReturnValue(
+      queryChain([competingClaims[0]]) as never,
+    );
+    const reportWrite = queryChain({
+      ...report,
+      status: "claim_pending" as const,
+    });
+    reportWrite.exec.mockImplementation(async () => {
+      order.push("report");
+      return { ...report, status: "claim_pending" as const };
+    });
+    vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+      reportWrite as never,
+    );
+    const claimWrite = queryChain(approvedClaim);
+    claimWrite.exec.mockImplementation(async () => {
+      order.push("claim");
+      return approvedClaim;
+    });
+    vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+      claimWrite as never,
+    );
+    vi.mocked(ClaimModel.updateMany).mockImplementation(
+      (async () => {
+        order.push("competitors");
+        return { modifiedCount: 1 };
+      }) as never,
+    );
+    vi.mocked(deliverNotifications).mockImplementation(async () => {
+      order.push("notifications");
+    });
+
+    await decideClaim(staff, claimId, {
+      decision: "approve",
+      reviewNote: null,
+    });
+
+    expect(order).toEqual([
+      "report",
+      "claim",
+      "competitors",
+      "notifications",
+    ]);
+  });
+
+  it("aborts approval when the competing update count changes", async () => {
+    configureDetail();
+    vi.mocked(ClaimModel.find).mockReturnValue(
+      queryChain([competingClaims[0]]) as never,
+    );
+    vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+      queryChain({ ...report, status: "claim_pending" as const }) as never,
+    );
+    vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+      queryChain(approvedClaim) as never,
+    );
+    vi.mocked(ClaimModel.updateMany).mockResolvedValue({
+      modifiedCount: 0,
+    } as never);
+
+    await expect(
+      decideClaim(staff, claimId, {
+        decision: "approve",
+        reviewNote: null,
+      }),
+    ).rejects.toMatchObject({ code: "CLAIM_STATE_CONFLICT" });
+    expect(deliverNotifications).not.toHaveBeenCalled();
   });
 
   it("does not approve a pending claim whose active key is corrupt", async () => {
@@ -544,6 +697,17 @@ describe("staff claim service", () => {
     expect(ItemReportModel.findOneAndUpdate).not.toHaveBeenCalled();
     expect(ClaimModel.find).not.toHaveBeenCalled();
     expect(ClaimModel.updateMany).not.toHaveBeenCalled();
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      [
+        {
+          kind: "claim_rejected",
+          recipientId: claimantId,
+          reportId,
+          claimId,
+        },
+      ],
+      transaction,
+    );
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -573,6 +737,7 @@ describe("staff claim service", () => {
         reviewNote: null,
       }),
     ).rejects.toMatchObject({ code: "CLAIM_STATE_CONFLICT" });
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -609,6 +774,7 @@ describe("staff claim service", () => {
         reviewNote: null,
       }),
     ).rejects.toMatchObject({ code: "CLAIM_STATE_CONFLICT" });
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -677,6 +843,23 @@ describe("staff claim service", () => {
       },
       { new: true, session: transaction },
     );
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      [
+        {
+          kind: "claim_completed",
+          recipientId: claimantId,
+          reportId,
+          claimId,
+        },
+        {
+          kind: "report_recovered",
+          recipientId: reportOwnerId,
+          reportId,
+          claimId,
+        },
+      ],
+      transaction,
+    );
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -704,8 +887,47 @@ describe("staff claim service", () => {
     await expect(completeClaim(staff, claimId)).rejects.toMatchObject({
       code: "CLAIM_STATE_CONFLICT",
     });
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
+
+  it.each(["rejection", "completion"] as const)(
+    "preserves %s notification delivery failures for transaction rollback",
+    async (operation) => {
+      const failure = new Error("notification write failed");
+      if (operation === "rejection") {
+        configureDetail();
+        vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+          queryChain({ ...pendingClaim, status: "rejected" as const }) as never,
+        );
+      } else {
+        configureDetail(approvedClaim, resolvedReport);
+        vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+          queryChain(resolvedReport) as never,
+        );
+        vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+          queryChain(completedClaim) as never,
+        );
+      }
+      vi.mocked(deliverNotifications).mockRejectedValueOnce(failure);
+
+      const operationPromise =
+        operation === "rejection"
+          ? decideClaim(staff, claimId, {
+              decision: "reject",
+              reviewNote: null,
+            })
+          : completeClaim(staff, claimId);
+
+      await expect(operationPromise).rejects.toBe(failure);
+      expect(deliverNotifications).toHaveBeenCalledWith(
+        expect.any(Array),
+        transaction,
+      );
+      expect(toStaffClaimDetail).not.toHaveBeenCalled();
+      expect(transaction.endSession).toHaveBeenCalledOnce();
+    },
+  );
 
   it.each(["decision", "completion"])(
     "preserves a %s transaction failure and always ends the session",
