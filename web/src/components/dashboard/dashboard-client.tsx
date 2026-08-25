@@ -98,6 +98,15 @@ export function DashboardClient() {
     recoveryWorkflow[0],
     recoveryWorkflow[1],
     recoveryAction,
+    ...(user.status === "active"
+      ? [
+          {
+            title: "Manage profile settings",
+            description: "Update your contact, campus and notification preferences.",
+            href: "/profile",
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -137,7 +146,7 @@ export function DashboardClient() {
       <section className={styles.upcoming} aria-labelledby="upcoming-heading">
         <div className={styles.upcomingHeading}>
           <h2 id="upcoming-heading">Recovery workflow</h2>
-          <p>Start a report now. More recovery actions will arrive in later features.</p>
+          <p>Choose the next useful action for your campus recovery work.</p>
         </div>
         <div className={styles.upcomingGrid}>
           {workflow.map((item) => (

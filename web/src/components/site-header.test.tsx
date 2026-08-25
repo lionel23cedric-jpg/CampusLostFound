@@ -121,6 +121,9 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
     "/dashboard",
   );
+  expect(screen.getByRole("link", { name: "Profile" }).getAttribute("href")).toBe(
+    "/profile",
+  );
   expect(screen.getByRole("link", { name: "Browse" }).getAttribute("href")).toBe(
     "/reports",
   );
@@ -146,6 +149,9 @@ it.each(["staff", "administrator"] as const)(
     expect(
       screen.getByRole("link", { name: "Claim reviews" }).getAttribute("href"),
     ).toBe("/staff/claims");
+    expect(screen.getByRole("link", { name: "Profile" }).getAttribute("href")).toBe(
+      "/profile",
+    );
     expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
   },
 );
@@ -177,6 +183,7 @@ it.each([
 
   expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
 });
 
 it("signs out and replaces navigation with home", async () => {
@@ -199,6 +206,7 @@ it("keeps an accessible retry action when session resolution is unavailable", as
   expect(refreshSession).toHaveBeenCalledOnce();
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
 });
 
 it("announces session loading without navigation links", () => {
@@ -209,6 +217,7 @@ it("announces session loading without navigation links", () => {
   expect(screen.queryByRole("link", { name: "Sign in" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
 });
 
 it("shows only a generic logout failure message", async () => {
