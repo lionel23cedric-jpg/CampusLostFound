@@ -188,11 +188,10 @@ The profile module defines exact public errors:
 | --- | ---: | --- |
 | `VALIDATION_ERROR` | 400 | `Invalid profile settings` |
 | `AUTHENTICATION_REQUIRED` | 401 | Existing authentication message |
-| `ACCOUNT_UNAVAILABLE` | 403 | Existing account message |
 | `PROFILE_CHANGED` | 409 | `Profile settings changed in another session` |
 | `PROFILE_FAILED` | 500 | `Unable to manage profile settings` |
 
-Only actual profile and authentication error instances may preserve their public details. Malformed JSON, Mongoose exceptions, forged error-shaped objects and arbitrary exceptions become the generic profile failure. Field errors contain only approved field paths.
+Only actual profile and authentication error instances may preserve their public details. `getCurrentUser()` already revokes suspended or deactivated account sessions and returns no user, so the API returns `AUTHENTICATION_REQUIRED` rather than adding a second unavailable-account contract. Malformed JSON, Mongoose exceptions, forged error-shaped objects and arbitrary exceptions become the generic profile failure. Field errors contain only approved field paths.
 
 The read route uses a generic safe service failure if the authenticated account has no Profile, because that state is an internal data-integrity problem rather than a user-visible absence.
 
@@ -275,7 +274,7 @@ All service tests mock Mongoose models and never connect to or mutate MongoDB At
 
 - GET and PATCH authentication boundaries;
 - strict request parsing and exact safe responses;
-- active roles allowed, inactive accounts rejected;
+- active roles allowed, and missing, expired or revoked sessions rejected with the existing authentication response;
 - malformed JSON, service errors and forged errors sanitised;
 - response scans for password hashes, tokens, user IDs and MongoDB internals.
 
