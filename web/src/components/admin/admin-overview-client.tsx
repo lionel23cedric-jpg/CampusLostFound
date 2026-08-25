@@ -221,7 +221,6 @@ export function AdminOverviewClient() {
     <article className={styles.overview}>
       <header className={styles.overviewHeader}>
         <div className={styles.headingCopy}>
-          <p className={styles.eyebrow}>System activity</p>
           <h1>Administrator overview</h1>
           <p>
             Monitor report recovery, ownership Claims and account availability
@@ -256,10 +255,7 @@ export function AdminOverviewClient() {
 
       <section className={`${styles.metricSection} ${styles.reportSection}`} aria-labelledby="report-overview">
         <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.sectionIndex}>01</p>
-            <h2 id="report-overview">Reports</h2>
-          </div>
+          <h2 id="report-overview">Reports</h2>
           <p>Submitted reports and recovery outcomes.</p>
         </div>
         <MetricList entries={reportMetrics} values={data.reports} />
@@ -267,10 +263,7 @@ export function AdminOverviewClient() {
 
       <section className={styles.metricSection} aria-labelledby="claim-overview">
         <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.sectionIndex}>02</p>
-            <h2 id="claim-overview">Ownership Claims</h2>
-          </div>
+          <h2 id="claim-overview">Ownership Claims</h2>
           <Link href="/staff/claims">Review ownership Claims</Link>
         </div>
         <MetricList entries={claimMetrics} values={data.claims} />
@@ -278,10 +271,7 @@ export function AdminOverviewClient() {
 
       <section className={styles.metricSection} aria-labelledby="account-overview">
         <div className={styles.sectionHeading}>
-          <div>
-            <p className={styles.sectionIndex}>03</p>
-            <h2 id="account-overview">Accounts</h2>
-          </div>
+          <h2 id="account-overview">Accounts</h2>
           <p>Current access states across all registered accounts.</p>
         </div>
         <MetricList entries={accountMetrics} values={data.accounts} />

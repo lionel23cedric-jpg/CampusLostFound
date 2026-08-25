@@ -114,19 +114,9 @@
   max-width: 48rem;
 }
 
-.eyebrow,
-.sectionIndex {
-  margin: 0;
-  color: var(--campus-green-dark);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 .headingCopy h1 {
   max-width: 16ch;
-  margin: 0.55rem 0 0;
+  margin: 0;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(2.25rem, 7vw, 4.5rem);
@@ -227,8 +217,8 @@
 }
 
 .reportSection {
-  border-inline-start: 4px solid var(--campus-green);
-  padding-inline-start: clamp(1rem, 3vw, 1.75rem);
+  border-block-start: 2px solid var(--ink);
+  padding-block-start: clamp(1.25rem, 3vw, 1.75rem);
 }
 
 .sectionHeading {
@@ -240,7 +230,7 @@
 }
 
 .sectionHeading h2 {
-  margin: 0.35rem 0 0;
+  margin: 0;
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.65rem, 4vw, 2.25rem);
@@ -363,9 +353,6 @@
     width: 100%;
   }
 
-  .reportSection {
-    padding-inline-start: 0.75rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
