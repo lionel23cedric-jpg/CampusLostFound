@@ -77,6 +77,11 @@ export function SiteHeader() {
               <Link className={`${styles.navLink} text-link`} href="/dashboard">
                 Dashboard
               </Link>
+              {isActive ? (
+                <Link className={`${styles.navLink} text-link`} href="/profile">
+                  Profile
+                </Link>
+              ) : null}
               <button
                 className={styles.signOut}
                 type="button"

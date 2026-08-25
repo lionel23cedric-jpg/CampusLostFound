@@ -2,6 +2,11 @@ import { z } from "zod";
 
 import type { PublicUser } from "./public-user";
 import type { LoginInput, RegisterInput } from "./validation";
+import {
+  editableProfileSchema,
+  type EditableProfile,
+  type UpdateProfileInput,
+} from "@/lib/profile/validation";
 
 const publicUserSchema = z.strictObject({
   id: z.string().min(1),
@@ -24,6 +29,15 @@ const publicUserSchema = z.strictObject({
 });
 
 const userResponseSchema = z.strictObject({ user: publicUserSchema });
+
+const editableProfileResponseSchema = z.strictObject({
+  profile: editableProfileSchema,
+});
+
+const updateProfileResponseSchema = z.strictObject({
+  user: publicUserSchema,
+  profileUpdatedAt: z.string().datetime({ offset: true }),
+});
 
 const errorResponseSchema = z.strictObject({
   error: z.strictObject({
@@ -104,17 +118,22 @@ async function responseError(response: Response): Promise<BrowserAuthError> {
   return requestFailedError(response.status);
 }
 
-async function userFromResponse(response: Response): Promise<PublicUser> {
+async function parseResponse<T>(response: Response, schema: z.ZodType<T>) {
   if (!response.ok) {
     throw await responseError(response);
   }
 
-  const parsed = userResponseSchema.safeParse(await readJson(response));
+  const parsed = schema.safeParse(await readJson(response));
   if (!parsed.success) {
     throw requestFailedError(response.status);
   }
 
-  return parsed.data.user as PublicUser;
+  return parsed.data;
+}
+
+async function userFromResponse(response: Response): Promise<PublicUser> {
+  const result = await parseResponse(response, userResponseSchema);
+  return result.user as PublicUser;
 }
 
 export async function registerAccount(
@@ -155,4 +174,19 @@ export async function logoutAccount(): Promise<void> {
   }
 
   throw await responseError(response);
+}
+
+export async function getProfileSettings(): Promise<EditableProfile> {
+  const response = await fetchSameOrigin("/api/profile", { method: "GET" });
+  return (await parseResponse(response, editableProfileResponseSchema)).profile;
+}
+
+export async function updateProfileSettings(input: UpdateProfileInput) {
+  const response = await fetchSameOrigin("/api/profile", {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  return parseResponse(response, updateProfileResponseSchema);
 }
