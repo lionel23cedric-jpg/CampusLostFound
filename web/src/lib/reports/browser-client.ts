@@ -79,6 +79,32 @@ export type ReportPage = {
   pagination: ReportPagination;
 };
 
+export type MatchFactorKey =
+  | "category"
+  | "location"
+  | "date"
+  | "colors"
+  | "tags"
+  | "text";
+
+export type MatchFactor = {
+  key: MatchFactorKey;
+  points: number;
+  maximum: number;
+  explanation: string;
+};
+
+export type ReportMatch = {
+  report: MemberReport;
+  score: number;
+  factors: MatchFactor[];
+};
+
+export type ReportMatches = {
+  sourceReportId: string;
+  matches: ReportMatch[];
+};
+
 export type ReportBrowseRequest = {
   q?: string;
   reportType?: "lost" | "found";
@@ -157,6 +183,85 @@ const reportPageSchema = z.strictObject({
   reports: z.array(memberReportSchema),
   pagination: reportPaginationSchema,
 }) satisfies z.ZodType<ReportPage>;
+
+const matchFactorMaximums = {
+  category: 25,
+  location: 15,
+  date: 15,
+  colors: 15,
+  tags: 10,
+  text: 20,
+} as const satisfies Record<MatchFactorKey, number>;
+
+const matchFactorSchema = z
+  .strictObject({
+    key: z.enum(["category", "location", "date", "colors", "tags", "text"]),
+    points: z.number().int().positive(),
+    maximum: z.number().int().positive(),
+    explanation: z.string().trim().min(1).max(80),
+  })
+  .superRefine((factor, context) => {
+    if (factor.maximum !== matchFactorMaximums[factor.key]) {
+      context.addIssue({
+        code: "custom",
+        path: ["maximum"],
+        message: "Factor maximum does not match the fixed score",
+      });
+    }
+
+    if (factor.points > factor.maximum) {
+      context.addIssue({
+        code: "custom",
+        path: ["points"],
+        message: "Factor points exceed the factor maximum",
+      });
+    }
+  }) satisfies z.ZodType<MatchFactor>;
+
+const reportMatchSchema = z
+  .strictObject({
+    report: memberReportSchema,
+    score: z.number().int().min(35).max(100),
+    factors: z.array(matchFactorSchema).min(1).max(6),
+  })
+  .superRefine((match, context) => {
+    const keys = match.factors.map((factor) => factor.key);
+    if (new Set(keys).size !== keys.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["factors"],
+        message: "Match factor keys must be unique",
+      });
+    }
+
+    const score = match.factors.reduce(
+      (total, factor) => total + factor.points,
+      0,
+    );
+    if (score !== match.score) {
+      context.addIssue({
+        code: "custom",
+        path: ["score"],
+        message: "Match score must equal its factor total",
+      });
+    }
+  }) satisfies z.ZodType<ReportMatch>;
+
+const reportMatchesSchema = z
+  .strictObject({
+    sourceReportId: z.string().min(1),
+    matches: z.array(reportMatchSchema).max(5),
+  })
+  .superRefine((data, context) => {
+    const reportIds = data.matches.map((match) => match.report.id);
+    if (new Set(reportIds).size !== reportIds.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["matches"],
+        message: "Match candidate reports must be unique",
+      });
+    }
+  }) satisfies z.ZodType<ReportMatches>;
 
 const memberReportResponseSchema = z.strictObject({
   report: memberReportSchema,
@@ -307,6 +412,18 @@ export async function getReportById(id: string): Promise<MemberReport> {
   );
   const data = await parseResponse(response, memberReportResponseSchema);
   return data.report;
+}
+
+export async function getReportMatches(id: string): Promise<ReportMatches> {
+  const response = await fetchSameOrigin(
+    `/api/reports/${encodeURIComponent(id)}/matches`,
+    { method: "GET" },
+  );
+  const data = await parseResponse(response, reportMatchesSchema);
+  if (data.sourceReportId !== id) {
+    throw requestFailedError(response.status);
+  }
+  return data;
 }
 
 export async function submitReport(

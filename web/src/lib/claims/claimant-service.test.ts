@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({ connectToDatabase: vi.fn() }));
+vi.mock("@/lib/notifications/delivery", () => ({
+  createNotificationPlan: vi.fn((input: unknown) => input),
+  deliverNotifications: vi.fn(),
+}));
 vi.mock("@/models/claim", () => ({
   ClaimModel: {
     exists: vi.fn(),
@@ -28,6 +32,10 @@ vi.mock("@/models/private-verification-details", () => ({
 vi.mock("./public-claim", () => ({ toClaimantClaim: vi.fn() }));
 
 import { connectToDatabase } from "@/lib/db";
+import {
+  createNotificationPlan,
+  deliverNotifications,
+} from "@/lib/notifications/delivery";
 import { ClaimEvidenceModel } from "@/models/claim-evidence";
 import { ClaimModel } from "@/models/claim";
 import { ItemReportModel } from "@/models/item-report";
@@ -87,12 +95,14 @@ const student = {
 
 const reportId = "64b64c6f2f4d9f1a2b3c4d52";
 const claimId = "64b64c6f2f4d9f1a2b3c4d53";
+const reportOwnerId = "64b64c6f2f4d9f1a2b3c4d50";
 const reportObjectId = identifier(reportId);
 const claimObjectId = identifier(claimId);
 const now = new Date("2026-08-24T04:00:00.000Z");
 
 const foundReport = {
   _id: reportObjectId,
+  reporterId: identifier(reportOwnerId),
   title: "Black charger",
   reportType: "found" as const,
   status: "open" as const,
@@ -206,6 +216,8 @@ describe("claimant service", () => {
       async (work: () => Promise<unknown>) => await work(),
     );
     vi.mocked(connectToDatabase).mockResolvedValue({ startSession } as never);
+    vi.mocked(createNotificationPlan).mockImplementation((input) => input);
+    vi.mocked(deliverNotifications).mockResolvedValue(undefined);
     vi.mocked(toClaimantClaim).mockReturnValue(mappedClaim);
   });
 
@@ -250,7 +262,7 @@ describe("claimant service", () => {
         status: "open",
         reporterId: { $ne: student.id },
       },
-      { _id: 1, title: 1, reportType: 1, status: 1 },
+      { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
     );
     expect(PrivateVerificationDetailsModel.findOne).toHaveBeenCalledWith(
       { reportId },
@@ -359,6 +371,75 @@ describe("claimant service", () => {
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
+  it("notifies the report owner after Claim evidence is created", async () => {
+    configureCreate();
+
+    await expect(
+      createClaim(student, reportId, validInput),
+    ).resolves.toBe(mappedClaim);
+
+    expect(createNotificationPlan).toHaveBeenCalledWith({
+      kind: "claim_received",
+      recipientId: reportOwnerId,
+      reportId,
+      claimId,
+    });
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      [
+        {
+          kind: "claim_received",
+          recipientId: reportOwnerId,
+          reportId,
+          claimId,
+        },
+      ],
+      transaction,
+    );
+    expect(
+      vi.mocked(ClaimEvidenceModel.create).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(deliverNotifications).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("does not deliver when Claim creation fails before persistence", async () => {
+    configureCreate();
+    vi.mocked(ClaimModel.create).mockRejectedValueOnce(
+      new Error("claim insert failed"),
+    );
+
+    await expect(
+      createClaim(student, reportId, validInput),
+    ).rejects.toThrow("claim insert failed");
+
+    expect(deliverNotifications).not.toHaveBeenCalled();
+  });
+
+  it("does not deliver when Claim evidence creation fails", async () => {
+    configureCreate();
+    vi.mocked(ClaimEvidenceModel.create).mockRejectedValueOnce(
+      new Error("evidence insert failed"),
+    );
+
+    await expect(
+      createClaim(student, reportId, validInput),
+    ).rejects.toThrow("evidence insert failed");
+
+    expect(deliverNotifications).not.toHaveBeenCalled();
+  });
+
+  it("rejects Claim creation when notification delivery fails", async () => {
+    configureCreate();
+    const failure = new Error("notification delivery failed");
+    vi.mocked(deliverNotifications).mockRejectedValueOnce(failure);
+
+    await expect(createClaim(student, reportId, validInput)).rejects.toBe(
+      failure,
+    );
+
+    expect(transaction.endSession).toHaveBeenCalledOnce();
+  });
+
   it("stores a canonical active key for uppercase ObjectId creation", async () => {
     configureCreate();
     const uppercaseReportId = reportId.toUpperCase();
@@ -399,6 +480,7 @@ describe("claimant service", () => {
 
     expect(ClaimModel.create).not.toHaveBeenCalled();
     expect(ClaimEvidenceModel.create).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -412,6 +494,7 @@ describe("claimant service", () => {
 
     expect(PrivateVerificationDetailsModel.findOne).not.toHaveBeenCalled();
     expect(ClaimModel.create).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -427,6 +510,7 @@ describe("claimant service", () => {
     await expect(
       createClaim(student, reportId, validInput),
     ).rejects.toMatchObject({ code: "CLAIM_ALREADY_EXISTS" });
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -463,6 +547,7 @@ describe("claimant service", () => {
       createClaim(student, reportId, validInput),
     ).rejects.toMatchObject({ code: "REPORT_NOT_CLAIMABLE" });
     expect(ClaimModel.create).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
 
     vi.clearAllMocks();
@@ -474,6 +559,7 @@ describe("claimant service", () => {
       createClaim(student, reportId, validInput),
     ).rejects.toMatchObject({ code: "REPORT_NOT_CLAIMABLE" });
     expect(ClaimModel.create).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -511,7 +597,7 @@ describe("claimant service", () => {
     expect(claimsQuery.limit).toHaveBeenCalledWith(10);
     expect(ItemReportModel.find).toHaveBeenCalledWith(
       { _id: { $in: [reportObjectId] } },
-      { _id: 1, title: 1, reportType: 1, status: 1 },
+      { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
     );
     expect(ClaimEvidenceModel.create).not.toHaveBeenCalled();
   });
@@ -563,7 +649,7 @@ describe("claimant service", () => {
     });
     expect(ItemReportModel.findById).toHaveBeenCalledWith(
       reportObjectId,
-      { _id: 1, title: 1, reportType: 1, status: 1 },
+      { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
       { session: undefined },
     );
     expect(toClaimantClaim).toHaveBeenCalledWith(pendingClaim, foundReport);
@@ -606,9 +692,63 @@ describe("claimant service", () => {
     );
     expect(ItemReportModel.findById).toHaveBeenCalledWith(
       reportObjectId,
-      { _id: 1, title: 1, reportType: 1, status: 1 },
+      { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
       { session: transaction },
     );
+    expect(transaction.endSession).toHaveBeenCalledOnce();
+  });
+
+  it("notifies the report owner after a successful withdrawal", async () => {
+    const reportQuery = queryChain(foundReport);
+    vi.mocked(ClaimModel.findOne).mockReturnValue(
+      queryChain(pendingClaim) as never,
+    );
+    vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+      queryChain(withdrawnClaim) as never,
+    );
+    vi.mocked(ItemReportModel.findById).mockReturnValue(reportQuery as never);
+
+    await expect(
+      withdrawOwnClaim(student, claimId),
+    ).resolves.toBe(mappedClaim);
+
+    expect(createNotificationPlan).toHaveBeenCalledWith({
+      kind: "claim_withdrawn",
+      recipientId: reportOwnerId,
+      reportId,
+      claimId,
+    });
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      [
+        {
+          kind: "claim_withdrawn",
+          recipientId: reportOwnerId,
+          reportId,
+          claimId,
+        },
+      ],
+      transaction,
+    );
+    expect(reportQuery.exec.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deliverNotifications).mock.invocationCallOrder[0],
+    );
+  });
+
+  it("rejects withdrawal when notification delivery fails", async () => {
+    vi.mocked(ClaimModel.findOne).mockReturnValue(
+      queryChain(pendingClaim) as never,
+    );
+    vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+      queryChain(withdrawnClaim) as never,
+    );
+    vi.mocked(ItemReportModel.findById).mockReturnValue(
+      queryChain(foundReport) as never,
+    );
+    const failure = new Error("notification delivery failed");
+    vi.mocked(deliverNotifications).mockRejectedValueOnce(failure);
+
+    await expect(withdrawOwnClaim(student, claimId)).rejects.toBe(failure);
+
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -659,6 +799,7 @@ describe("claimant service", () => {
 
       expect(ClaimModel.findOneAndUpdate).not.toHaveBeenCalled();
       expect(ItemReportModel.findOneAndUpdate).not.toHaveBeenCalled();
+      expect(deliverNotifications).not.toHaveBeenCalled();
       expect(transaction.endSession).toHaveBeenCalledOnce();
     },
   );
@@ -669,6 +810,7 @@ describe("claimant service", () => {
     await expect(withdrawOwnClaim(student, claimId)).rejects.toMatchObject({
       code: "CLAIM_NOT_FOUND",
     });
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
@@ -683,6 +825,7 @@ describe("claimant service", () => {
     await expect(withdrawOwnClaim(student, claimId)).rejects.toMatchObject({
       code: "CLAIM_STATE_CONFLICT",
     });
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
 
     vi.clearAllMocks();
@@ -698,6 +841,7 @@ describe("claimant service", () => {
       code: "CLAIM_STATE_CONFLICT",
     });
     expect(ClaimModel.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
