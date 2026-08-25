@@ -156,6 +156,36 @@ it.each(["staff", "administrator"] as const)(
   },
 );
 
+it("shows Admin overview only to an active administrator", () => {
+  mockSession({
+    status: "authenticated",
+    user: { ...safeUser, role: "administrator", status: "active" },
+  });
+  render(<SiteHeader />);
+
+  expect(
+    screen.getByRole("link", { name: "Admin overview" }).getAttribute("href"),
+  ).toBe("/admin");
+});
+
+it.each([
+  ["student", { ...safeUser, role: "student" as const, status: "active" as const }],
+  ["staff", { ...safeUser, role: "staff" as const, status: "active" as const }],
+  [
+    "suspended administrator",
+    { ...safeUser, role: "administrator" as const, status: "suspended" as const },
+  ],
+  [
+    "deactivated administrator",
+    { ...safeUser, role: "administrator" as const, status: "deactivated" as const },
+  ],
+])("hides Admin overview from a %s", (_label, user) => {
+  mockSession({ status: "authenticated", user });
+  render(<SiteHeader />);
+
+  expect(screen.queryByRole("link", { name: "Admin overview" })).toBeNull();
+});
+
 it.each([
   [
     "suspended student",

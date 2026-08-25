@@ -17,6 +17,7 @@ export function SiteHeader() {
   const canReviewClaims =
     isActive && (user?.role === "staff" || user?.role === "administrator");
   const canManageOwnClaims = isActive && user?.role === "student";
+  const canViewAdminOverview = isActive && user?.role === "administrator";
 
   async function handleSignOut() {
     setLogoutError(false);
@@ -74,6 +75,11 @@ export function SiteHeader() {
               <Link className={`${styles.navLink} text-link`} href="/reports/new">
                 Report item
               </Link>
+              {canViewAdminOverview ? (
+                <Link className={`${styles.navLink} text-link`} href="/admin">
+                  Admin overview
+                </Link>
+              ) : null}
               <Link className={`${styles.navLink} text-link`} href="/dashboard">
                 Dashboard
               </Link>

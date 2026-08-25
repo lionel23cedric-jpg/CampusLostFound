@@ -107,6 +107,16 @@ export function DashboardClient() {
           },
         ]
       : []),
+    ...(user.status === "active" && user.role === "administrator"
+      ? [
+          {
+            title: "Review system overview",
+            description:
+              "Review current report, recovery, Claim and account statistics.",
+            href: "/admin",
+          },
+        ]
+      : []),
   ];
 
   return (
