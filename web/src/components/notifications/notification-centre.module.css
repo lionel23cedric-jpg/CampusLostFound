@@ -1,0 +1,93 @@
+.loading,
+.statePanel {
+  box-sizing: border-box;
+  width: min(100% - 2rem, 38rem);
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+
+.loading {
+  margin-block: clamp(3rem, 10vw, 7rem);
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.statePanel {
+  margin-block: clamp(3rem, 10vw, 7rem);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+  box-shadow: var(--shadow);
+}
+
+.statePanel h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1.2;
+}
+
+.statePanel p {
+  max-width: 65ch;
+  margin: 0.75rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.statePanel a,
+.statePanel button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-block-start: 1.25rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.statePanel a:hover,
+.statePanel button:hover {
+  background: var(--campus-green-dark);
+}
+
+.statePanel a:focus-visible,
+.statePanel button:focus-visible {
+  outline: 3px solid var(--campus-green-dark);
+  outline-offset: 3px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 24rem) {
+  .loading,
+  .statePanel {
+    width: min(100% - 1rem, 38rem);
+  }
+
+  .statePanel {
+    padding: 1rem;
+  }
+
+  .statePanel a,
+  .statePanel button {
+    box-sizing: border-box;
+    width: 100%;
+  }
+}
