@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { useNotifications } from "@/components/notifications/notification-provider";
 
 import styles from "./site-header.module.css";
 
 export function SiteHeader() {
   const router = useRouter();
   const { status, user, refreshSession, logout } = useAuthSession();
+  const notifications = useNotifications();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState(false);
   const isActive = user?.status === "active";
@@ -18,6 +20,14 @@ export function SiteHeader() {
     isActive && (user?.role === "staff" || user?.role === "administrator");
   const canManageOwnClaims = isActive && user?.role === "student";
   const canViewAdminOverview = isActive && user?.role === "administrator";
+  const unreadCount =
+    isActive && notifications.status === "ready" ? notifications.unreadCount : 0;
+  const unreadLabel =
+    unreadCount === 1
+      ? "Notifications, 1 unread"
+      : unreadCount > 1
+        ? `Notifications, ${unreadCount} unread`
+        : "Notifications";
 
   async function handleSignOut() {
     setLogoutError(false);
@@ -78,6 +88,20 @@ export function SiteHeader() {
               {canViewAdminOverview ? (
                 <Link className={`${styles.navLink} text-link`} href="/admin">
                   Admin overview
+                </Link>
+              ) : null}
+              {isActive ? (
+                <Link
+                  className={`${styles.navLink} ${styles.notificationLink} text-link`}
+                  href="/notifications"
+                  aria-label={unreadLabel}
+                >
+                  <span>Notifications</span>
+                  {unreadCount > 0 ? (
+                    <span className={styles.notificationCount} aria-hidden="true">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  ) : null}
                 </Link>
               ) : null}
               <Link className={`${styles.navLink} text-link`} href="/dashboard">
