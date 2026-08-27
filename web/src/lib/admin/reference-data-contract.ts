@@ -3,17 +3,24 @@ import { z } from "zod";
 export const ADMIN_REFERENCE_DATA_PAGE_SIZE = 20;
 export const REFERENCE_DATA_STATUSES = ["all", "active", "inactive"] as const;
 
-const CONTROL_OR_FORMAT_PATTERN = /[\p{Cc}\p{Cf}]/u;
+const INVALID_TEXT_PATTERN = /[\p{Cc}\p{Cf}\p{Cs}]/u;
 const normalizeText = (value: string) =>
   value.normalize("NFKC").trim().replace(/\s+/gu, " ");
 const boundedText = (minimum: number, maximum: number) =>
   z
     .string()
-    .refine((value) => !CONTROL_OR_FORMAT_PATTERN.test(value))
+    .refine((value) => !INVALID_TEXT_PATTERN.test(value))
     .transform(normalizeText)
     .pipe(z.string().min(minimum).max(maximum));
 const descriptionInput = z
-  .union([z.string().trim().max(300), z.null()])
+  .union([
+    z
+      .string()
+      .refine((value) => !INVALID_TEXT_PATTERN.test(value))
+      .trim()
+      .max(300),
+    z.null(),
+  ])
   .transform((value) => (value === "" ? null : value));
 const canonicalPage = z
   .string()
@@ -22,7 +29,7 @@ const canonicalPage = z
   .pipe(z.number().int().min(1).max(10_000));
 const optionalSearch = z
   .string()
-  .refine((value) => !CONTROL_OR_FORMAT_PATTERN.test(value))
+  .refine((value) => !INVALID_TEXT_PATTERN.test(value))
   .transform(normalizeText)
   .pipe(z.string().max(80))
   .transform((value) => (value === "" ? undefined : value))

@@ -105,6 +105,37 @@ describe("administrator reference-data contracts", () => {
     });
   });
 
+  it.each([
+    ["category name", createAdminCategorySchema, { name: "\ud800a" }],
+    [
+      "category description",
+      createAdminCategorySchema,
+      { name: "Keys", description: "\ud800a" },
+    ],
+    [
+      "campus location name",
+      createAdminCampusLocationSchema,
+      { campusName: "Auckland", locationName: "\ud800a" },
+    ],
+    [
+      "campus location description",
+      createAdminCampusLocationSchema,
+      {
+        campusName: "Auckland",
+        locationName: "Library",
+        description: "\ud800a",
+      },
+    ],
+  ])("rejects a lone surrogate from %s", (_name, schema, input) => {
+    expect(schema.safeParse(input).success).toBe(false);
+  });
+
+  it("rejects a lone surrogate from search text", () => {
+    expect(
+      referenceDataListQuerySchema.safeParse({ q: "\ud800a" }).success,
+    ).toBe(false);
+  });
+
   it("requires one mutable field and a concurrency timestamp", () => {
     expect(updateAdminCategorySchema.safeParse({ updatedAt }).success).toBe(false);
     expect(updateAdminCategorySchema.parse({ updatedAt, isActive: false })).toEqual({
