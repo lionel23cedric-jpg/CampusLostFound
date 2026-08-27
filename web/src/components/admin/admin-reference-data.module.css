@@ -1,0 +1,213 @@
+.workspace {
+  display: grid;
+  box-sizing: border-box;
+  width: min(100% - 2rem, 72rem);
+  min-width: 0;
+  margin-inline: auto;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  overflow-wrap: anywhere;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.tabs {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-block-end: 1px solid var(--line);
+}
+
+.tab {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-block-end: 3px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+}
+
+.tab[aria-selected="true"] {
+  border-block-end-color: var(--campus-green);
+  color: var(--ink);
+}
+
+.tab:hover:not(:disabled) {
+  background: #e4eee8;
+  color: var(--campus-green-dark);
+}
+
+.panel {
+  min-width: 0;
+}
+
+.filters {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 2fr) minmax(10rem, 1fr);
+  align-items: end;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.filterField {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.filterField label {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.filterField input,
+.filterField select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+}
+
+.buttonRow {
+  display: flex;
+  min-width: 0;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.buttonRow button,
+.pagination button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.buttonRow button:first-child {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+}
+
+.buttonRow button:last-child,
+.pagination button {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green-dark);
+}
+
+.buttonRow button:first-child:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.buttonRow button:last-child:hover:not(:disabled),
+.pagination button:hover:not(:disabled) {
+  background: #e4eee8;
+}
+
+.buttonRow button:active:not(:disabled),
+.pagination button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.buttonRow button:disabled,
+.pagination button:disabled,
+.filterField input:disabled,
+.filterField select:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.pagination {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(7rem, 1fr) auto minmax(7rem, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pagination button:last-child {
+  justify-self: end;
+}
+
+.tab:focus-visible,
+.filters :focus-visible,
+.pagination :focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 42rem) {
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 20rem) {
+  .workspace {
+    width: min(100% - 1rem, 72rem);
+  }
+
+  .buttonRow,
+  .pagination {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .buttonRow button,
+  .pagination button {
+    width: 100%;
+  }
+
+  .pagination p {
+    grid-row: 1;
+  }
+
+  .pagination button:last-child {
+    justify-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buttonRow button:active:not(:disabled),
+  .pagination button:active:not(:disabled) {
+    transform: none;
+  }
+}
