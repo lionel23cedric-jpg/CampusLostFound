@@ -127,7 +127,7 @@
 
 .headingCopy > p:last-child,
 .overviewActions p,
-.sectionHeading > p {
+.sectionHeading p {
   color: var(--ink-soft);
   line-height: 1.6;
 }
@@ -229,6 +229,10 @@
   gap: 1rem;
 }
 
+.sectionHeading > div {
+  min-width: 0;
+}
+
 .sectionHeading h2 {
   margin: 0;
   color: var(--ink);
@@ -237,7 +241,7 @@
   line-height: 1.1;
 }
 
-.sectionHeading > p {
+.sectionHeading p {
   max-width: 32rem;
   margin: 0;
   text-align: end;
@@ -332,7 +336,7 @@
     flex-basis: auto;
   }
 
-  .sectionHeading > p {
+  .sectionHeading p {
     text-align: start;
   }
 }

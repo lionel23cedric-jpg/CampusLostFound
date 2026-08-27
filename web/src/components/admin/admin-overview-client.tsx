@@ -271,8 +271,11 @@ export function AdminOverviewClient() {
 
       <section className={styles.metricSection} aria-labelledby="account-overview">
         <div className={styles.sectionHeading}>
-          <h2 id="account-overview">Accounts</h2>
-          <p>Current access states across all registered accounts.</p>
+          <div>
+            <h2 id="account-overview">Accounts</h2>
+            <p>Current access states across all registered accounts.</p>
+          </div>
+          <Link href="/admin/accounts">Manage accounts</Link>
         </div>
         <MetricList entries={accountMetrics} values={data.accounts} />
       </section>
