@@ -283,6 +283,131 @@
   line-height: 1.45;
 }
 
+.accountActions {
+  min-width: 0;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 1.1rem;
+}
+
+.actionButtons,
+.confirmationActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.actionButtons p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.actionButtons button,
+.confirmationActions button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--campus-green);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--campus-green-dark);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.actionButtons button:last-child,
+.confirmationActions button:first-child {
+  border-color: #8a3d32;
+  background: #8a3d32;
+  color: white;
+}
+
+.actionButtons button:hover:not(:disabled),
+.confirmationActions button:last-child:hover:not(:disabled) {
+  background: #e4eee8;
+}
+
+.actionButtons button:last-child:hover:not(:disabled),
+.confirmationActions button:first-child:hover:not(:disabled) {
+  border-color: #693027;
+  background: #693027;
+}
+
+.actionButtons button:disabled,
+.confirmationActions button:disabled,
+.actions button:disabled,
+.filterField input:disabled,
+.filterField select:disabled,
+.reasonField select:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.confirmation {
+  display: grid;
+  margin-block-start: 1rem;
+  gap: 1rem;
+  border-block-start: 1px solid var(--line);
+  background: var(--paper);
+  padding: 1rem;
+}
+
+.confirmation h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.15rem, 2.5vw, 1.4rem);
+  line-height: 1.2;
+}
+
+.confirmation > p {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.reasonField {
+  display: grid;
+  max-width: 24rem;
+  gap: 0.45rem;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.reasonField select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+}
+
+.mutationError,
+.mutationNotice {
+  margin: 0;
+  border: 1px solid #b86a31;
+  border-radius: 10px;
+  background: #fff5e8;
+  color: var(--ink);
+  line-height: 1.55;
+  padding: 0.85rem 1rem;
+}
+
+.mutationNotice {
+  border-color: var(--campus-green);
+  background: #e4eee8;
+}
+
 .emptyState {
   border: 1px solid var(--line);
   background: var(--paper-light);
@@ -317,6 +442,7 @@
 .statePanel :focus-visible,
 .header :focus-visible,
 .filters :focus-visible,
+.accountCard :focus-visible,
 .pagination :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
@@ -366,6 +492,8 @@
 
   .header a,
   .actions button,
+  .actionButtons button,
+  .confirmationActions button,
   .pagination button {
     width: 100%;
   }

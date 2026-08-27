@@ -8,10 +8,12 @@ import { useAuthSession } from "@/components/auth/auth-session-provider";
 import {
   BrowserAccountManagementError,
   listAdministratorAccounts,
+  updateAdministratorAccountStatus,
 } from "@/lib/admin/account-browser-client";
 import {
   accountBrowserSearchSchema,
   type AccountBrowserQuery,
+  type AccountBrowserStatusInput,
   type ManagedBrowserAccount,
   type ManagedBrowserAccountPage,
 } from "@/lib/admin/account-browser-contract";
@@ -34,6 +36,18 @@ type FilterDraft = {
   role: "" | "student" | "staff";
   status: "" | "active" | "suspended" | "deactivated";
 };
+
+type AccountAction = "suspend" | "restore" | "deactivate";
+type OpenAction = { accountId: string; action: AccountAction };
+type MutationStatus = "idle" | "pending" | "error";
+type MutationNotice = { message: string; kind: "status" | "alert" };
+
+const suspensionReasons = [
+  ["security_concern", "Security concern"],
+  ["policy_violation", "Policy violation"],
+  ["administrative_review", "Administrative review"],
+] as const;
+type SuspensionReason = (typeof suspensionReasons)[number][0];
 
 const EMPTY_FILTERS: FilterDraft = { q: "", role: "", status: "" };
 const dateFormatter = new Intl.DateTimeFormat("en-NZ", {
@@ -59,8 +73,85 @@ function formatDate(value: string | null) {
   return value ? dateFormatter.format(new Date(value)) : "Never";
 }
 
-function AccountCard({ account }: { account: ManagedBrowserAccount }) {
+function actionInput(
+  account: ManagedBrowserAccount,
+  action: AccountAction,
+  suspensionReason: SuspensionReason,
+): AccountBrowserStatusInput {
+  if (action === "suspend") {
+    return {
+      status: "suspended",
+      reason: suspensionReason,
+      expectedUpdatedAt: account.updatedAt,
+    };
+  }
+  if (action === "restore") {
+    return {
+      status: "active",
+      reason: "account_restored",
+      expectedUpdatedAt: account.updatedAt,
+    };
+  }
+  return {
+    status: "deactivated",
+    reason: "account_closed",
+    expectedUpdatedAt: account.updatedAt,
+  };
+}
+
+const actionLabels = {
+  suspend: { verb: "Suspend", noun: "suspension" },
+  restore: { verb: "Restore", noun: "restoration" },
+  deactivate: { verb: "Deactivate", noun: "deactivation" },
+} as const;
+
+type AccountCardProps = {
+  account: ManagedBrowserAccount;
+  openAction: OpenAction | null;
+  isMutating: boolean;
+  suspensionReason: SuspensionReason;
+  mutationError: string | null;
+  confirmationHeadingRef: React.RefObject<HTMLHeadingElement | null>;
+  setActionRegion: (accountId: string, node: HTMLDivElement | null) => void;
+  onOpen: (
+    accountId: string,
+    action: AccountAction,
+    trigger: HTMLButtonElement,
+  ) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+  onSuspensionReasonChange: (reason: SuspensionReason) => void;
+};
+
+function AccountCard({
+  account,
+  openAction,
+  isMutating,
+  suspensionReason,
+  mutationError,
+  confirmationHeadingRef,
+  setActionRegion,
+  onOpen,
+  onCancel,
+  onConfirm,
+  onSuspensionReasonChange,
+}: AccountCardProps) {
   const headingId = `managed-account-${account.id}`;
+  const activeAction =
+    openAction?.accountId === account.id ? openAction.action : null;
+
+  function actionButton(action: AccountAction) {
+    const label = actionLabels[action].verb;
+    return (
+      <button
+        type="button"
+        disabled={isMutating}
+        onClick={(event) => onOpen(account.id, action, event.currentTarget)}
+      >
+        {label} {account.displayName}
+      </button>
+    );
+  }
 
   return (
     <li className={styles.accountCard}>
@@ -101,6 +192,100 @@ function AccountCard({ account }: { account: ManagedBrowserAccount }) {
             </dd>
           </div>
         </dl>
+        <div
+          ref={(node) => setActionRegion(account.id, node)}
+          className={styles.accountActions}
+          role="region"
+          aria-label={`Account actions for ${account.displayName}`}
+          tabIndex={-1}
+        >
+          <div className={styles.actionButtons}>
+            {account.status === "active" ? (
+              <>
+                {actionButton("suspend")}
+                {actionButton("deactivate")}
+              </>
+            ) : account.status === "suspended" ? (
+              <>
+                {actionButton("restore")}
+                {actionButton("deactivate")}
+              </>
+            ) : (
+              <p>No further status changes are available.</p>
+            )}
+          </div>
+
+          {activeAction ? (
+            <section
+              className={styles.confirmation}
+              aria-labelledby={`account-confirmation-${account.id}`}
+            >
+              <h3
+                id={`account-confirmation-${account.id}`}
+                ref={confirmationHeadingRef}
+                tabIndex={-1}
+              >
+                {actionLabels[activeAction].verb} {account.displayName}?
+              </h3>
+              <p>
+                This access change takes effect immediately. All current
+                sessions will be revoked.
+              </p>
+              {activeAction === "suspend" ? (
+                <label className={styles.reasonField}>
+                  <span>Suspension reason</span>
+                  <select
+                    value={suspensionReason}
+                    disabled={isMutating}
+                    onChange={(event) =>
+                      onSuspensionReasonChange(
+                        event.target.value as SuspensionReason,
+                      )
+                    }
+                  >
+                    {suspensionReasons.map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              {mutationError ? (
+                <div
+                  className={styles.mutationError}
+                  role="alert"
+                  aria-label="Account change failed"
+                >
+                  {mutationError}
+                </div>
+              ) : null}
+              <div className={styles.confirmationActions}>
+                <button
+                  type="button"
+                  disabled={isMutating}
+                  aria-label={
+                    isMutating
+                      ? "Changing account status"
+                      : `Confirm ${actionLabels[activeAction].noun}`
+                  }
+                  onClick={onConfirm}
+                >
+                  {isMutating
+                    ? "Changing status"
+                    : `Confirm ${actionLabels[activeAction].noun}`}
+                </button>
+                <button
+                  type="button"
+                  disabled={isMutating}
+                  onClick={onCancel}
+                >
+                  Cancel account change
+                </button>
+              </div>
+            </section>
+          ) : null}
+        </div>
       </article>
     </li>
   );
@@ -115,9 +300,23 @@ export function AdminAccountManagementClient() {
   const [appliedFilters, setAppliedFilters] =
     useState<FilterDraft>(EMPTY_FILTERS);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [openAction, setOpenAction] = useState<OpenAction | null>(null);
+  const [suspensionReason, setSuspensionReason] =
+    useState<SuspensionReason>("administrative_review");
+  const [mutationStatus, setMutationStatus] =
+    useState<MutationStatus>("idle");
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [mutationNotice, setMutationNotice] =
+    useState<MutationNotice | null>(null);
   const mounted = useRef(false);
   const requestId = useRef(0);
   const listController = useRef<AbortController | null>(null);
+  const mutationRequestId = useRef(0);
+  const mutationController = useRef<AbortController | null>(null);
+  const mutationPendingRef = useRef(false);
+  const initiatingButton = useRef<HTMLButtonElement | null>(null);
+  const confirmationHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const actionRegions = useRef(new Map<string, HTMLDivElement>());
 
   const loadAccounts = useCallback(
     async (
@@ -125,6 +324,11 @@ export function AdminAccountManagementClient() {
       mode: "initial" | "refresh",
       filtersOnSuccess?: FilterDraft,
     ) => {
+      if (!mutationPendingRef.current) {
+        setOpenAction(null);
+        setMutationError(null);
+        setMutationStatus("idle");
+      }
       const currentRequest = ++requestId.current;
       listController.current?.abort();
       const nextController = new AbortController();
@@ -141,7 +345,9 @@ export function AdminAccountManagementClient() {
           query,
           nextController.signal,
         );
-        if (!mounted.current || requestId.current !== currentRequest) return;
+        if (!mounted.current || requestId.current !== currentRequest) {
+          return false;
+        }
         if (filtersOnSuccess) setAppliedFilters(filtersOnSuccess);
         setState({
           status: "ready",
@@ -149,13 +355,14 @@ export function AdminAccountManagementClient() {
           isRefreshing: false,
           refreshFailed: false,
         });
+        return true;
       } catch (error) {
         if (
           !mounted.current ||
           requestId.current !== currentRequest ||
           nextController.signal.aborted
         ) {
-          return;
+          return false;
         }
 
         if (error instanceof BrowserAccountManagementError) {
@@ -165,13 +372,13 @@ export function AdminAccountManagementClient() {
             if (mounted.current && requestId.current === currentRequest) {
               router.replace("/login");
             }
-            return;
+            return false;
           }
 
           if (error.code === "ADMINISTRATOR_REQUIRED") {
             setState({ status: "accessChanged" });
             await refreshSession().catch(() => undefined);
-            return;
+            return false;
           }
         }
 
@@ -180,6 +387,7 @@ export function AdminAccountManagementClient() {
             ? { ...current, isRefreshing: false, refreshFailed: true }
             : { status: "error" },
         );
+        return false;
       }
     },
     [refreshSession, router],
@@ -195,9 +403,193 @@ export function AdminAccountManagementClient() {
       window.clearTimeout(timeoutId);
       mounted.current = false;
       requestId.current += 1;
+      mutationRequestId.current += 1;
       listController.current?.abort();
+      mutationController.current?.abort();
+      mutationPendingRef.current = false;
     };
   }, [loadAccounts]);
+
+  useEffect(() => {
+    if (openAction) confirmationHeadingRef.current?.focus();
+  }, [openAction]);
+
+  function setActionRegion(accountId: string, node: HTMLDivElement | null) {
+    if (node) actionRegions.current.set(accountId, node);
+    else actionRegions.current.delete(accountId);
+  }
+
+  function focusActionRegion(accountId: string) {
+    window.setTimeout(() => actionRegions.current.get(accountId)?.focus(), 0);
+  }
+
+  function openConfirmation(
+    accountId: string,
+    action: AccountAction,
+    trigger: HTMLButtonElement,
+  ) {
+    if (mutationStatus === "pending") return;
+    initiatingButton.current = trigger;
+    setSuspensionReason("administrative_review");
+    setMutationError(null);
+    setMutationNotice(null);
+    setMutationStatus("idle");
+    setOpenAction({ accountId, action });
+  }
+
+  function cancelConfirmation() {
+    if (mutationStatus === "pending") return;
+    const trigger = initiatingButton.current;
+    setOpenAction(null);
+    setMutationError(null);
+    setMutationStatus("idle");
+    window.setTimeout(() => trigger?.focus(), 0);
+  }
+
+  async function confirmAction() {
+    if (
+      !openAction ||
+      mutationStatus === "pending" ||
+      state.status !== "ready"
+    ) {
+      return;
+    }
+
+    const account = state.data.accounts.find(
+      (candidate) => candidate.id === openAction.accountId,
+    );
+    if (!account) return;
+
+    const action = openAction.action;
+    const committedQuery = toQuery(
+      appliedFilters,
+      state.data.pagination.page,
+    );
+    const currentRequest = ++mutationRequestId.current;
+    mutationController.current?.abort();
+    const nextController = new AbortController();
+    mutationController.current = nextController;
+    mutationPendingRef.current = true;
+    setMutationStatus("pending");
+    setMutationError(null);
+    setMutationNotice(null);
+
+    try {
+      const updated = await updateAdministratorAccountStatus(
+        account.id,
+        actionInput(account, action, suspensionReason),
+        nextController.signal,
+      );
+      if (updated.id !== account.id) {
+        throw new Error("Account response target mismatch");
+      }
+      if (
+        !mounted.current ||
+        mutationRequestId.current !== currentRequest ||
+        nextController.signal.aborted
+      ) {
+        return;
+      }
+
+      setState((current) =>
+        current.status === "ready"
+          ? {
+              ...current,
+              data: {
+                ...current.data,
+                accounts: current.data.accounts.map((candidate) =>
+                  candidate.id === updated.id ? updated : candidate,
+                ),
+              },
+            }
+          : current,
+      );
+      setOpenAction(null);
+      setMutationStatus("idle");
+      mutationPendingRef.current = false;
+      setMutationNotice({
+        kind: "status",
+        message:
+          action === "suspend"
+            ? "Account suspended. Existing sessions were revoked."
+            : action === "restore"
+              ? "Account restored. Existing sessions were revoked."
+              : "Account deactivated. Existing sessions were revoked.",
+      });
+      focusActionRegion(account.id);
+    } catch (error) {
+      if (
+        !mounted.current ||
+        mutationRequestId.current !== currentRequest ||
+        nextController.signal.aborted
+      ) {
+        return;
+      }
+
+      if (error instanceof BrowserAccountManagementError) {
+        if (
+          error.code === "AUTHENTICATION_REQUIRED" ||
+          error.code === "ADMINISTRATOR_REQUIRED"
+        ) {
+          setOpenAction(null);
+          setMutationStatus("idle");
+          setMutationError(null);
+          mutationPendingRef.current = false;
+          setState({ status: "accessChanged" });
+          await refreshSession().catch(() => undefined);
+          if (
+            error.code === "AUTHENTICATION_REQUIRED" &&
+            mounted.current &&
+            mutationRequestId.current === currentRequest
+          ) {
+            router.replace("/login");
+          }
+          return;
+        }
+
+        if (
+          error.code === "ACCOUNT_STATE_CONFLICT" ||
+          error.code === "ACCOUNT_NOT_FOUND"
+        ) {
+          setOpenAction(null);
+          setMutationStatus("idle");
+          setMutationError(null);
+          mutationPendingRef.current = false;
+          const refreshed = await loadAccounts(committedQuery, "refresh");
+          if (refreshed) {
+            setMutationNotice({
+              kind: "status",
+              message:
+                error.code === "ACCOUNT_STATE_CONFLICT"
+                  ? "Account data changed. The current list has been refreshed."
+                  : "That account is no longer available. The current list has been refreshed.",
+            });
+            focusActionRegion(account.id);
+          }
+          return;
+        }
+
+        if (error.code === "ACCOUNT_ACTION_FORBIDDEN") {
+          setOpenAction(null);
+          setMutationStatus("idle");
+          setMutationError(null);
+          mutationPendingRef.current = false;
+          setMutationNotice({
+            kind: "alert",
+            message: "This account action is not permitted.",
+          });
+          window.setTimeout(() => initiatingButton.current?.focus(), 0);
+          return;
+        }
+      }
+
+      setMutationStatus("error");
+      mutationPendingRef.current = false;
+      setMutationError(
+        "We could not update this account. Check the current state and try again.",
+      );
+    }
+  }
 
   function applyFilters() {
     const rawSearch = draftFilters.q;
@@ -271,12 +663,13 @@ export function AdminAccountManagementClient() {
   }`;
   const canGoBack = page > 1;
   const canGoForward = page < Math.min(totalPages, 500);
+  const mutationPending = mutationStatus === "pending";
 
   return (
     <section
       className={styles.accountManagement}
       aria-labelledby="account-management-title"
-      aria-busy={state.isRefreshing}
+      aria-busy={state.isRefreshing || mutationPending}
     >
       <header className={styles.header}>
         <div>
@@ -305,6 +698,7 @@ export function AdminAccountManagementClient() {
             type="search"
             value={draftFilters.q}
             maxLength={80}
+            disabled={mutationPending}
             aria-describedby={searchError ? "account-search-error" : undefined}
             aria-invalid={searchError ? "true" : undefined}
             onChange={(event) =>
@@ -321,6 +715,7 @@ export function AdminAccountManagementClient() {
             id="account-role"
             name="role"
             value={draftFilters.role}
+            disabled={mutationPending}
             onChange={(event) =>
               setDraftFilters((current) => ({
                 ...current,
@@ -339,6 +734,7 @@ export function AdminAccountManagementClient() {
             id="account-status"
             name="status"
             value={draftFilters.status}
+            disabled={mutationPending}
             onChange={(event) =>
               setDraftFilters((current) => ({
                 ...current,
@@ -353,8 +749,14 @@ export function AdminAccountManagementClient() {
           </select>
         </div>
         <div className={styles.actions}>
-          <button type="submit">Apply filters</button>
-          <button type="button" onClick={resetFilters}>
+          <button type="submit" disabled={mutationPending}>
+            Apply filters
+          </button>
+          <button
+            type="button"
+            disabled={mutationPending}
+            onClick={resetFilters}
+          >
             Reset filters
           </button>
         </div>
@@ -376,6 +778,21 @@ export function AdminAccountManagementClient() {
         {state.isRefreshing ? "Updating accounts" : resultLabel}
       </p>
 
+      {mutationNotice ? (
+        <p
+          className={styles.mutationNotice}
+          role={mutationNotice.kind}
+          aria-live={mutationNotice.kind === "status" ? "polite" : undefined}
+          aria-label={
+            mutationNotice.kind === "alert"
+              ? "Account action not permitted"
+              : undefined
+          }
+        >
+          {mutationNotice.message}
+        </p>
+      ) : null}
+
       {data.accounts.length === 0 ? (
         <section className={styles.emptyState} aria-labelledby="accounts-empty">
           <h2 id="accounts-empty">No accounts match these filters</h2>
@@ -384,7 +801,20 @@ export function AdminAccountManagementClient() {
       ) : (
         <ul className={styles.resultList} aria-label="Account results">
           {data.accounts.map((account) => (
-            <AccountCard key={account.id} account={account} />
+            <AccountCard
+              key={account.id}
+              account={account}
+              openAction={openAction}
+              isMutating={mutationPending || state.isRefreshing}
+              suspensionReason={suspensionReason}
+              mutationError={mutationError}
+              confirmationHeadingRef={confirmationHeadingRef}
+              setActionRegion={setActionRegion}
+              onOpen={openConfirmation}
+              onCancel={cancelConfirmation}
+              onConfirm={() => void confirmAction()}
+              onSuspensionReasonChange={setSuspensionReason}
+            />
           ))}
         </ul>
       )}
@@ -393,7 +823,7 @@ export function AdminAccountManagementClient() {
         <nav className={styles.pagination} aria-label="Account result pages">
           <button
             type="button"
-            disabled={state.isRefreshing || !canGoBack}
+            disabled={state.isRefreshing || mutationPending || !canGoBack}
             aria-label={
               state.isRefreshing || !canGoBack
                 ? "Previous page"
@@ -410,7 +840,7 @@ export function AdminAccountManagementClient() {
           </p>
           <button
             type="button"
-            disabled={state.isRefreshing || !canGoForward}
+            disabled={state.isRefreshing || mutationPending || !canGoForward}
             aria-label={
               state.isRefreshing || !canGoForward
                 ? "Next page"

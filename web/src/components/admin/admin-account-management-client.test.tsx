@@ -7,6 +7,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -31,6 +32,7 @@ import { useAuthSession } from "@/components/auth/auth-session-provider";
 import {
   BrowserAccountManagementError,
   listAdministratorAccounts,
+  updateAdministratorAccountStatus,
 } from "@/lib/admin/account-browser-client";
 import type {
   ManagedBrowserAccount,
@@ -82,6 +84,7 @@ function deferred<T>() {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(listAdministratorAccounts).mockReset();
+  vi.mocked(updateAdministratorAccountStatus).mockReset();
   vi.mocked(useRouter).mockReturnValue({ replace } as never);
   vi.mocked(useAuthSession).mockReturnValue({
     status: "authenticated",
@@ -384,4 +387,407 @@ it("keeps the last valid results after a refresh failure", async () => {
   );
   expect(screen.getByText("Alex Student")).toBeTruthy();
   expect(document.body.textContent).not.toContain("PRIVATE-DATABASE");
+});
+
+it("offers only transitions permitted by the current status", async () => {
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  const alex = screen.getByText("Alex Student").closest("li")!;
+  expect(
+    within(alex).getByRole("button", { name: "Suspend Alex Student" }),
+  ).toBeTruthy();
+  expect(
+    within(alex).getByRole("button", { name: "Deactivate Alex Student" }),
+  ).toBeTruthy();
+
+  const taylor = screen.getByText("Taylor Staff").closest("li")!;
+  expect(
+    within(taylor).getByRole("button", { name: "Restore Taylor Staff" }),
+  ).toBeTruthy();
+  expect(
+    within(taylor).getByRole("button", { name: "Deactivate Taylor Staff" }),
+  ).toBeTruthy();
+  expect(within(taylor).queryByRole("button", { name: /Suspend/ })).toBeNull();
+});
+
+it("offers no status action for a deactivated account", async () => {
+  vi.mocked(listAdministratorAccounts).mockResolvedValue({
+    accounts: [
+      {
+        ...accounts[0],
+        id: "64b64c5f2f8f9e0012345680",
+        displayName: "Former Student",
+        status: "deactivated",
+      },
+    ],
+    pagination: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+  });
+  render(<AdminAccountManagementClient />);
+
+  const account = (await screen.findByText("Former Student")).closest("li")!;
+  expect(within(account).queryByRole("button")).toBeNull();
+  expect(
+    within(account).getByText("No further status changes are available."),
+  ).toBeTruthy();
+});
+
+it("opens one confirmation and cancels without a request", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  const trigger = screen.getByRole("button", { name: "Suspend Alex Student" });
+  await user.click(trigger);
+  expect(
+    screen.getByRole("heading", { name: "Suspend Alex Student?" }),
+  ).toBe(document.activeElement);
+  expect(
+    screen.getByText(/all current sessions will be revoked/i),
+  ).toBeTruthy();
+
+  await user.click(screen.getByRole("button", { name: "Cancel account change" }));
+  expect(updateAdministratorAccountStatus).not.toHaveBeenCalled();
+  await waitFor(() => expect(trigger).toBe(document.activeElement));
+});
+
+it("suspends with the selected reason and exact updatedAt", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus).mockResolvedValue({
+    ...accounts[0],
+    status: "suspended",
+    updatedAt: "2026-08-27T03:00:00.000Z",
+  });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  await user.selectOptions(
+    screen.getByLabelText("Suspension reason"),
+    "policy_violation",
+  );
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+  expect(updateAdministratorAccountStatus).toHaveBeenCalledWith(
+    accounts[0].id,
+    {
+      status: "suspended",
+      reason: "policy_violation",
+      expectedUpdatedAt: accounts[0].updatedAt,
+    },
+    expect.any(AbortSignal),
+  );
+  expect(
+    await screen.findByText(
+      "Account suspended. Existing sessions were revoked.",
+    ),
+  ).toBeTruthy();
+  const card = screen.getByText("Alex Student").closest("li")!;
+  expect(within(card).getByText("Suspended")).toBeTruthy();
+  expect(
+    within(card).getByRole("region", { name: "Account actions for Alex Student" }),
+  ).toBe(document.activeElement);
+});
+
+it.each([
+  ["Restore Taylor Staff", "Confirm restoration", "active", "account_restored"],
+  [
+    "Deactivate Taylor Staff",
+    "Confirm deactivation",
+    "deactivated",
+    "account_closed",
+  ],
+] as const)("submits %s safely", async (openName, confirmName, status, reason) => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus).mockResolvedValue({
+    ...accounts[1],
+    status,
+    updatedAt: "2026-08-27T03:00:00.000Z",
+  });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Taylor Staff");
+
+  await user.click(screen.getByRole("button", { name: openName }));
+  await user.click(screen.getByRole("button", { name: confirmName }));
+  expect(updateAdministratorAccountStatus).toHaveBeenCalledWith(
+    accounts[1].id,
+    { status, reason, expectedUpdatedAt: accounts[1].updatedAt },
+    expect.any(AbortSignal),
+  );
+});
+
+it("prevents concurrent account changes while a mutation is pending", async () => {
+  const user = userEvent.setup();
+  const mutation = deferred<ManagedBrowserAccount>();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus).mockReturnValue(mutation.promise);
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+  expect(
+    screen
+      .getByRole("button", { name: "Changing account status" })
+      .hasAttribute("disabled"),
+  ).toBe(true);
+  expect(
+    screen
+      .getByRole("button", { name: "Restore Taylor Staff" })
+      .hasAttribute("disabled"),
+  ).toBe(true);
+  expect(updateAdministratorAccountStatus).toHaveBeenCalledTimes(1);
+
+  await act(async () => {
+    mutation.resolve({
+      ...accounts[0],
+      status: "suspended",
+      updatedAt: "2026-08-27T03:00:00.000Z",
+    });
+    await mutation.promise;
+  });
+});
+
+it.each([
+  [
+    "ACCOUNT_STATE_CONFLICT",
+    "Account data changed. The current list has been refreshed.",
+  ],
+  [
+    "ACCOUNT_NOT_FOUND",
+    "That account is no longer available. The current list has been refreshed.",
+  ],
+] as const)("reloads the committed query after %s", async (code, message) => {
+  const user = userEvent.setup();
+  const refreshedPage: ManagedBrowserAccountPage = {
+    ...page,
+    accounts: [{ ...accounts[0], status: "suspended" }, accounts[1]],
+  };
+  vi.mocked(listAdministratorAccounts)
+    .mockResolvedValueOnce(page)
+    .mockResolvedValueOnce(page)
+    .mockResolvedValueOnce(refreshedPage);
+  vi.mocked(updateAdministratorAccountStatus).mockRejectedValue(
+    new BrowserAccountManagementError(code),
+  );
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.type(screen.getByLabelText("Search accounts"), "Alex");
+  await user.click(screen.getByRole("button", { name: "Apply filters" }));
+  await waitFor(() => expect(listAdministratorAccounts).toHaveBeenCalledTimes(2));
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+  expect(await screen.findByText(message)).toBeTruthy();
+  await waitFor(() =>
+    expect(listAdministratorAccounts).toHaveBeenLastCalledWith(
+      { q: "Alex", page: 1 },
+      expect.any(AbortSignal),
+    ),
+  );
+  expect(
+    screen.queryByRole("heading", { name: "Suspend Alex Student?" }),
+  ).toBeNull();
+  expect(
+    within(screen.getByText("Alex Student").closest("li")!).getByText(
+      "Suspended",
+    ),
+  ).toBeTruthy();
+});
+
+it.each(["ACCOUNT_STATE_CONFLICT", "ACCOUNT_NOT_FOUND"] as const)(
+  "does not claim a refresh when %s recovery reload fails",
+  async (code) => {
+    const user = userEvent.setup();
+    vi.mocked(listAdministratorAccounts)
+      .mockResolvedValueOnce(page)
+      .mockRejectedValueOnce(new Error("PRIVATE-REFRESH-FAILURE"));
+    vi.mocked(updateAdministratorAccountStatus).mockRejectedValue(
+      new BrowserAccountManagementError(code),
+    );
+    render(<AdminAccountManagementClient />);
+    await screen.findByText("Alex Student");
+
+    await user.click(
+      screen.getByRole("button", { name: "Suspend Alex Student" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Confirm suspension" }),
+    );
+
+    expect(
+      (await screen.findByRole("alert")).textContent,
+    ).toContain("We could not update the account list");
+    expect(document.body.textContent).not.toContain(
+      "The current list has been refreshed",
+    );
+    expect(document.body.textContent).not.toContain("PRIVATE-REFRESH-FAILURE");
+  },
+);
+
+it("closes a stale confirmation when refreshed account data arrives", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts)
+    .mockResolvedValueOnce(page)
+    .mockResolvedValueOnce({
+      ...page,
+      accounts: [{ ...accounts[0], status: "suspended" }, accounts[1]],
+    });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  expect(
+    screen.getByRole("heading", { name: "Suspend Alex Student?" }),
+  ).toBeTruthy();
+  await user.type(screen.getByLabelText("Search accounts"), "Alex");
+  await user.click(screen.getByRole("button", { name: "Apply filters" }));
+
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("heading", { name: "Suspend Alex Student?" }),
+    ).toBeNull(),
+  );
+  expect(
+    screen.getByRole("button", { name: "Restore Alex Student" }),
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole("button", { name: "Suspend Alex Student" }),
+  ).toBeNull();
+});
+
+it("rejects a valid mutation response for the wrong account", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus).mockResolvedValue({
+    ...accounts[1],
+    status: "deactivated",
+    updatedAt: "2026-08-27T03:00:00.000Z",
+  });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+  expect(
+    (await screen.findByRole("alert", { name: "Account change failed" }))
+      .textContent,
+  ).toContain("We could not update this account");
+  expect(
+    screen.getByRole("heading", { name: "Suspend Alex Student?" }),
+  ).toBeTruthy();
+  expect(document.body.textContent).not.toContain("Account suspended.");
+  expect(
+    within(screen.getByText("Taylor Staff").closest("li")!).getByText(
+      "Suspended",
+    ),
+  ).toBeTruthy();
+});
+
+it("closes a forbidden action without exposing raw details", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus).mockRejectedValue(
+    new BrowserAccountManagementError("ACCOUNT_ACTION_FORBIDDEN"),
+  );
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  const trigger = screen.getByRole("button", {
+    name: "Deactivate Alex Student",
+  });
+  await user.click(trigger);
+  await user.click(screen.getByRole("button", { name: "Confirm deactivation" }));
+
+  expect(
+    await screen.findByRole("alert", {
+      name: "Account action not permitted",
+    }),
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole("heading", { name: "Deactivate Alex Student?" }),
+  ).toBeNull();
+  expect(screen.getByText("Alex Student")).toBeTruthy();
+  await waitFor(() => expect(trigger).toBe(document.activeElement));
+});
+
+it("retains the confirmation and offers safe retry after a server failure", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus)
+    .mockRejectedValueOnce(new Error("PRIVATE-DATABASE-HOST"))
+    .mockResolvedValueOnce({
+      ...accounts[0],
+      status: "suspended",
+      updatedAt: "2026-08-27T03:00:00.000Z",
+    });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+  expect(
+    (await screen.findByRole("alert", { name: "Account change failed" }))
+      .textContent,
+  ).toContain("We could not update this account");
+  expect(document.body.textContent).not.toContain("PRIVATE-DATABASE-HOST");
+  expect(
+    screen.getByRole("heading", { name: "Suspend Alex Student?" }),
+  ).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+  expect(updateAdministratorAccountStatus).toHaveBeenCalledTimes(2);
+});
+
+it.each([
+  ["AUTHENTICATION_REQUIRED", true],
+  ["ADMINISTRATOR_REQUIRED", false],
+] as const)("clears account data when mutation returns %s", async (code, redirects) => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus).mockRejectedValue(
+    new BrowserAccountManagementError(code),
+  );
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+
+  await waitFor(() => expect(refreshSession).toHaveBeenCalledOnce());
+  expect(screen.queryByText("Alex Student")).toBeNull();
+  expect(replace).toHaveBeenCalledTimes(redirects ? 1 : 0);
+  if (redirects) expect(replace).toHaveBeenCalledWith("/login");
+});
+
+it("aborts a pending account mutation on unmount and ignores late completion", async () => {
+  const user = userEvent.setup();
+  const mutation = deferred<ManagedBrowserAccount>();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountStatus).mockReturnValue(mutation.promise);
+  const { unmount } = render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Suspend Alex Student" }));
+  await user.click(screen.getByRole("button", { name: "Confirm suspension" }));
+  const signal = vi.mocked(updateAdministratorAccountStatus).mock.calls[0][2];
+  expect(signal?.aborted).toBe(false);
+  unmount();
+  expect(signal?.aborted).toBe(true);
+
+  await act(async () => {
+    mutation.resolve({
+      ...accounts[0],
+      status: "suspended",
+      updatedAt: "2026-08-27T03:00:00.000Z",
+    });
+    await mutation.promise;
+  });
 });
