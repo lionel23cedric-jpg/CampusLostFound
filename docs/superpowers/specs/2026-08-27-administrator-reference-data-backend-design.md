@@ -351,7 +351,8 @@ generic CRUD abstraction is introduced.
 - existing member Category and CampusLocation endpoints still return only
   active options;
 - report submission and reference validation regressions remain green;
-- existing model tests remain green without schema changes;
+- the final scope diff proves the Category and CampusLocation schema files are
+  unchanged;
 - the focused suite and full Vitest suite pass;
 - ESLint and TypeScript without emission pass;
 - the Next.js production build lists all new administrator routes;
