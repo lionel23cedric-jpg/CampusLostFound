@@ -1,0 +1,384 @@
+.accountManagement,
+.loading,
+.statePanel {
+  box-sizing: border-box;
+  width: min(100% - 2rem, 72rem);
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+}
+
+.accountManagement {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.loading,
+.statePanel {
+  margin-block: clamp(3rem, 10vw, 7rem);
+}
+
+.loading {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.statePanel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+}
+
+.statePanel h1,
+.header h1,
+.emptyState h2,
+.accountHeading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.1;
+}
+
+.statePanel h1,
+.emptyState h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.statePanel p,
+.header p,
+.emptyState p {
+  max-width: 68ch;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.statePanel p,
+.emptyState p {
+  margin: 0.75rem 0 0;
+}
+
+.statePanel a,
+.statePanel button,
+.header a,
+.actions button,
+.pagination button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.statePanel a,
+.statePanel button,
+.actions button:first-child {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+}
+
+.statePanel a,
+.statePanel button {
+  margin-block-start: 1.25rem;
+}
+
+.header {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-block-end: 1px solid var(--line);
+  padding-block-end: clamp(1.5rem, 4vw, 2.25rem);
+}
+
+.header > div {
+  min-width: 0;
+}
+
+.header h1 {
+  font-size: clamp(2.25rem, 7vw, 4.5rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.header p {
+  margin: 1rem 0 0;
+}
+
+.header a {
+  flex: 0 0 auto;
+  border: 1px solid var(--campus-green);
+  color: var(--campus-green-dark);
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) repeat(2, minmax(10rem, 1fr));
+  align-items: end;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.filterField {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.filterField label {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.filterField input,
+.filterField select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+}
+
+.actions {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.actions button:last-child,
+.pagination button {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green-dark);
+}
+
+.statePanel a:hover,
+.statePanel button:hover,
+.actions button:first-child:hover {
+  background: var(--campus-green-dark);
+}
+
+.header a:hover,
+.actions button:last-child:hover,
+.pagination button:hover:not(:disabled) {
+  background: #e4eee8;
+}
+
+.alert,
+.resultStatus {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.alert {
+  border: 1px solid #b86a31;
+  border-radius: 10px;
+  background: #fff5e8;
+  color: var(--ink);
+  padding: 0.85rem 1rem;
+}
+
+.resultStatus {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.resultList {
+  display: grid;
+  margin: 0;
+  gap: 1px;
+  border: 1px solid var(--line);
+  background: var(--line);
+  padding: 0;
+  list-style: none;
+}
+
+.accountCard {
+  min-width: 0;
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.accountCard article {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.accountHeading {
+  display: flex;
+  min-width: 0;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.accountHeading h2 {
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+}
+
+.accountHeading p {
+  margin: 0.4rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.accountLabels {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.5rem;
+}
+
+.accountLabels span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 0.4rem 0.65rem;
+}
+
+.metadataList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  gap: 1rem;
+}
+
+.metadataList div {
+  min-width: 0;
+}
+
+.metadataList dt {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.metadataList dd {
+  margin: 0.35rem 0 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+}
+
+.emptyState {
+  border: 1px solid var(--line);
+  background: var(--paper-light);
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+}
+
+.pagination {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) auto minmax(7rem, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.pagination button:last-child {
+  justify-self: end;
+}
+
+.pagination button:disabled {
+  border-color: var(--line);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.statePanel :focus-visible,
+.header :focus-visible,
+.filters :focus-visible,
+.pagination :focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 48rem) {
+  .header,
+  .accountHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .header a {
+    align-self: start;
+  }
+
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filterField:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .accountLabels {
+    justify-content: start;
+  }
+}
+
+@media (max-width: 36rem) {
+  .filters,
+  .metadataList {
+    grid-template-columns: 1fr;
+  }
+
+  .filterField:first-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 20rem) {
+  .accountManagement,
+  .loading,
+  .statePanel {
+    width: min(100% - 1rem, 72rem);
+  }
+
+  .header a,
+  .actions button,
+  .pagination button {
+    width: 100%;
+  }
+
+  .pagination {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination button:last-child {
+    justify-self: stretch;
+  }
+
+  .pagination p {
+    grid-row: 1;
+  }
+}
