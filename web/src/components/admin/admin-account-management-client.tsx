@@ -780,7 +780,11 @@ export function AdminAccountManagementClient() {
 
       {mutationNotice ? (
         <p
-          className={styles.mutationNotice}
+          className={
+            mutationNotice.kind === "alert"
+              ? styles.mutationAlert
+              : styles.mutationNotice
+          }
           role={mutationNotice.kind}
           aria-live={mutationNotice.kind === "status" ? "polite" : undefined}
           aria-label={
