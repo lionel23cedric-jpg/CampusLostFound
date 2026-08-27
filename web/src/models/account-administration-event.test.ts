@@ -70,6 +70,19 @@ describe("AccountAdministrationEvent model", () => {
     ).rejects.toMatchObject({ errors: { targetUserId: expect.anything() } });
   });
 
+  it.each([
+    "actorAdministratorId",
+    "targetUserId",
+    "previousStatus",
+    "newStatus",
+    "reason",
+    "occurredAt",
+  ])("marks %s immutable", (path) => {
+    expect(accountAdministrationEventSchema.path(path).options.immutable).toBe(
+      true,
+    );
+  });
+
   it("defines actor and target audit indexes without update timestamps", () => {
     expect(accountAdministrationEventSchema.indexes()).toEqual(
       expect.arrayContaining([
