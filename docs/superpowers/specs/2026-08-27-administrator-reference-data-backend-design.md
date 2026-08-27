@@ -1,7 +1,7 @@
 # Administrator Reference Data Management Backend Design
 
-**Date:** 2026-08-27  
-**Issue:** #40  
+**Date:** 2026-08-27
+**Issue:** #40
 **Status:** Approved for implementation planning
 
 ## Goal
