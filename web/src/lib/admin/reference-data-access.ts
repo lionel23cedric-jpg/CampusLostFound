@@ -12,7 +12,9 @@ export function requireReferenceDataAdministrator(user: PublicUser) {
 }
 
 export async function getCurrentReferenceDataAdministrator() {
-  const user = await getCurrentUser(await readSessionCookie());
+  const user = await getCurrentUser(await readSessionCookie(), {
+    includeInactive: true,
+  });
   if (!user) throw new AuthError("AUTHENTICATION_REQUIRED");
   requireReferenceDataAdministrator(user);
   return user;

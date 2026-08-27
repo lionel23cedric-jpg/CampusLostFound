@@ -8,6 +8,7 @@ import { hashSessionToken } from "./token";
 
 export async function getCurrentUser(
   rawToken?: string,
+  { includeInactive = false }: { includeInactive?: boolean } = {},
 ): Promise<PublicUser | null> {
   if (!rawToken) return null;
 
@@ -20,7 +21,7 @@ export async function getCurrentUser(
   if (!session) return null;
 
   const user = await UserModel.findById(session.userId);
-  if (!user || user.status !== "active") {
+  if (!user || (!includeInactive && user.status !== "active")) {
     await SessionModel.deleteOne({ _id: session._id });
     return null;
   }

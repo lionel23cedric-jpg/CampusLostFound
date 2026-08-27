@@ -42,7 +42,9 @@ describe("reference data administrator access", () => {
     await expect(getCurrentReferenceDataAdministrator()).resolves.toBe(
       administrator,
     );
-    expect(getCurrentUser).toHaveBeenCalledWith("session-token");
+    expect(getCurrentUser).toHaveBeenCalledWith("session-token", {
+      includeInactive: true,
+    });
   });
 
   it.each([
@@ -62,4 +64,21 @@ describe("reference data administrator access", () => {
       code: "AUTHENTICATION_REQUIRED",
     });
   });
+
+  it.each(["suspended", "deactivated"] as const)(
+    "rejects a %s administrator from the current session",
+    async (status) => {
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        ...administrator,
+        status,
+      });
+
+      await expect(getCurrentReferenceDataAdministrator()).rejects.toMatchObject(
+        { code: "ADMINISTRATOR_REQUIRED" },
+      );
+      expect(getCurrentUser).toHaveBeenCalledWith("session-token", {
+        includeInactive: true,
+      });
+    },
+  );
 });

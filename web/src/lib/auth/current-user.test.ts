@@ -83,7 +83,7 @@ describe("current-user resolution", () => {
     ["a missing account", null],
     ["a suspended account", { _id: "user-id", status: "suspended" }],
     ["a deactivated account", { _id: "user-id", status: "deactivated" }],
-  ])("revokes the session for %s", async (_description, user) => {
+  ])("revokes the session by default for %s", async (_description, user) => {
     vi.mocked(SessionModel.findOne).mockResolvedValue({
       _id: "session-id",
       userId: "user-id",
@@ -94,6 +94,28 @@ describe("current-user resolution", () => {
     expect(ProfileModel.findOne).not.toHaveBeenCalled();
     expect(SessionModel.deleteOne).toHaveBeenCalledWith({ _id: "session-id" });
   });
+
+  it.each(["suspended", "deactivated"] as const)(
+    "returns a %s account when inactive accounts are included",
+    async (status) => {
+      const session = { _id: "session-id", userId: "user-id" };
+      const user = { _id: "user-id", status };
+      const profile = { userId: "user-id" };
+      const inactivePublicUser = { ...safeUser, status };
+      vi.mocked(SessionModel.findOne).mockResolvedValue(session as never);
+      vi.mocked(UserModel.findById).mockResolvedValue(user as never);
+      vi.mocked(ProfileModel.findOne).mockResolvedValue(profile as never);
+      vi.mocked(toPublicUser).mockReturnValue(inactivePublicUser as never);
+
+      await expect(
+        getCurrentUser("raw-session-token", { includeInactive: true }),
+      ).resolves.toEqual(inactivePublicUser);
+
+      expect(ProfileModel.findOne).toHaveBeenCalledWith({ userId: "user-id" });
+      expect(toPublicUser).toHaveBeenCalledWith(user, profile);
+      expect(SessionModel.deleteOne).not.toHaveBeenCalled();
+    },
+  );
 
   it("revokes the session when the active account has no profile", async () => {
     vi.mocked(SessionModel.findOne).mockResolvedValue({
