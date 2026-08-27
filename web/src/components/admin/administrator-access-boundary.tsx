@@ -10,8 +10,13 @@ import styles from "./admin-overview.module.css";
 
 export function AdministratorAccessBoundary({
   children,
+  workspaceLabel = "Administrator overview workspace",
+  forbiddenDescription =
+    "Only active administrator accounts can view system statistics.",
 }: {
   children: ReactNode;
+  workspaceLabel?: string;
+  forbiddenDescription?: string;
 }) {
   const router = useRouter();
   const session = useAuthSession();
@@ -177,7 +182,7 @@ export function AdministratorAccessBoundary({
         >
           Administrator access unavailable
         </h1>
-        <p>Only active administrator accounts can view system statistics.</p>
+        <p>{forbiddenDescription}</p>
         <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
@@ -188,7 +193,7 @@ export function AdministratorAccessBoundary({
           ref={workspaceRef}
           className={styles.authorizedContent}
           role="region"
-          aria-label="Administrator overview workspace"
+          aria-label={workspaceLabel}
           tabIndex={-1}
         >
           {children}
