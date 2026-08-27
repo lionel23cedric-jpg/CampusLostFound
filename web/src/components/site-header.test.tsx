@@ -11,12 +11,19 @@ vi.mock("next/navigation", () => ({ useRouter: vi.fn() }));
 vi.mock("@/components/auth/auth-session-provider", () => ({
   useAuthSession: vi.fn(),
 }));
+vi.mock("@/components/notifications/notification-provider", () => ({
+  useNotifications: vi.fn(),
+}));
 
 import { useRouter } from "next/navigation";
 import {
   type AuthSessionContextValue,
   useAuthSession,
 } from "@/components/auth/auth-session-provider";
+import {
+  type NotificationContextValue,
+  useNotifications,
+} from "@/components/notifications/notification-provider";
 
 import styles from "./site-header.module.css";
 import { SiteHeader } from "./site-header";
@@ -45,6 +52,23 @@ const safeUser: NonNullable<AuthSessionContextValue["user"]> = {
   },
 };
 
+const notificationState: NotificationContextValue = {
+  status: "ready",
+  notifications: [],
+  unreadCount: 0,
+  hasMore: false,
+  isRefreshing: false,
+  isLoadingMore: false,
+  refreshFailed: false,
+  loadMoreFailed: false,
+  markingIds: new Set(),
+  failedMarkIds: new Set(),
+  authenticationExpired: false,
+  refresh: vi.fn(),
+  loadMore: vi.fn(),
+  markRead: vi.fn(),
+};
+
 function mockSession(overrides: Partial<AuthSessionContextValue>) {
   vi.mocked(useAuthSession).mockReturnValue({
     status: "unauthenticated",
@@ -56,9 +80,17 @@ function mockSession(overrides: Partial<AuthSessionContextValue>) {
   });
 }
 
+function mockNotifications(overrides: Partial<NotificationContextValue> = {}) {
+  vi.mocked(useNotifications).mockReturnValue({
+    ...notificationState,
+    ...overrides,
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(useRouter).mockReturnValue({ replace, refresh } as never);
+  mockNotifications();
 });
 
 afterEach(cleanup);
@@ -98,6 +130,19 @@ it("keeps compact account navigation within narrow screens", () => {
   expect(compactCss).not.toMatch(/\.(?:navLink|signOut)\s*\{[^}]*display:\s*none/);
 });
 
+it("keeps notification navigation and its badge visible and touch accessible", () => {
+  const css = readFileSync(resolve("src/components/site-header.module.css"), "utf8");
+  const linkRule = css.match(/\.notificationLink\s*\{([^}]*)\}/)?.[1];
+  const countRule = css.match(/\.notificationCount\s*\{([^}]*)\}/)?.[1];
+
+  expect(linkRule).toMatch(/display:\s*inline-flex/);
+  expect(linkRule).toMatch(/min-width:\s*44px/);
+  expect(linkRule).toMatch(/min-height:\s*44px/);
+  expect(linkRule).toMatch(/flex-flow:\s*row wrap/);
+  expect(countRule).toMatch(/display:\s*inline-flex/);
+  expect(css).not.toMatch(/\.notification(?:Link|Count)\s*\{[^}]*display:\s*none/);
+});
+
 it("shows signed-out navigation", () => {
   mockSession({ status: "unauthenticated", user: null });
   render(<SiteHeader />);
@@ -135,6 +180,81 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   );
   expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
+});
+
+it.each(["student", "staff", "administrator"] as const)(
+  "shows notifications to an active %s",
+  (role) => {
+    mockSession({
+      status: "authenticated",
+      user: { ...safeUser, role, status: "active" },
+    });
+    mockNotifications({ unreadCount: 3, status: "ready" });
+    render(<SiteHeader />);
+
+    const link = screen.getByRole("link", {
+      name: "Notifications, 3 unread",
+    });
+    expect(link.getAttribute("href")).toBe("/notifications");
+    expect(link.textContent).toContain("3");
+  },
+);
+
+it("shows a notification link without a badge when nothing is unread", () => {
+  mockSession({ status: "authenticated", user: safeUser });
+  mockNotifications({ unreadCount: 0, status: "ready" });
+  render(<SiteHeader />);
+
+  const link = screen.getByRole("link", { name: "Notifications" });
+  expect(link.getAttribute("href")).toBe("/notifications");
+  expect(link.textContent).toBe("Notifications");
+});
+
+it("caps the visible badge without truncating its accessible count", () => {
+  mockSession({ status: "authenticated", user: safeUser });
+  mockNotifications({ unreadCount: 100, status: "ready" });
+  render(<SiteHeader />);
+
+  const link = screen.getByRole("link", { name: "Notifications, 100 unread" });
+  expect(link.textContent).toContain("99+");
+  expect(link.textContent).not.toContain("100");
+});
+
+it.each(["loading", "error"] as const)(
+  "keeps the notification link without claiming a count while provider is %s",
+  (status) => {
+    mockSession({ status: "authenticated", user: safeUser });
+    mockNotifications({ status, unreadCount: 7 });
+    render(<SiteHeader />);
+
+    expect(screen.getByRole("link", { name: "Notifications" })).toBeTruthy();
+    expect(screen.queryByText("7")).toBeNull();
+  },
+);
+
+it.each([
+  ["signed-out", { status: "unauthenticated" as const, user: null }],
+  ["unavailable", { status: "unavailable" as const, user: null }],
+  [
+    "suspended",
+    {
+      status: "authenticated" as const,
+      user: { ...safeUser, status: "suspended" as const },
+    },
+  ],
+  [
+    "deactivated",
+    {
+      status: "authenticated" as const,
+      user: { ...safeUser, status: "deactivated" as const },
+    },
+  ],
+])("hides notifications from a %s account state", (_label, session) => {
+  mockSession(session);
+  mockNotifications({ unreadCount: 3 });
+  render(<SiteHeader />);
+
+  expect(screen.queryByRole("link", { name: /notifications/i })).toBeNull();
 });
 
 it.each(["staff", "administrator"] as const)(
