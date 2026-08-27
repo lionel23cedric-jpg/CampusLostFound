@@ -21,14 +21,22 @@ export async function getCurrentUser(
   if (!session) return null;
 
   const user = await UserModel.findById(session.userId);
-  if (!user || (!includeInactive && user.status !== "active")) {
+  if (!user) {
     await SessionModel.deleteOne({ _id: session._id });
     return null;
   }
 
+  const isInactive = user.status !== "active";
+  if (isInactive) {
+    await SessionModel.deleteOne({ _id: session._id });
+    if (!includeInactive) return null;
+  }
+
   const profile = await ProfileModel.findOne({ userId: user._id });
   if (!profile) {
-    await SessionModel.deleteOne({ _id: session._id });
+    if (!isInactive) {
+      await SessionModel.deleteOne({ _id: session._id });
+    }
     return null;
   }
 

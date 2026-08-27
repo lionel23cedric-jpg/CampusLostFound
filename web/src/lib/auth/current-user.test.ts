@@ -113,7 +113,7 @@ describe("current-user resolution", () => {
 
       expect(ProfileModel.findOne).toHaveBeenCalledWith({ userId: "user-id" });
       expect(toPublicUser).toHaveBeenCalledWith(user, profile);
-      expect(SessionModel.deleteOne).not.toHaveBeenCalled();
+      expect(SessionModel.deleteOne).toHaveBeenCalledWith({ _id: "session-id" });
     },
   );
 

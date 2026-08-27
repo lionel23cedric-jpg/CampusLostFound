@@ -63,9 +63,13 @@ export function referenceDataManagementErrorResponse(error: unknown) {
   if (error instanceof AuthError && error.code === "AUTHENTICATION_REQUIRED") {
     return authErrorResponse(new AuthError("AUTHENTICATION_REQUIRED"));
   }
+  const code: unknown =
+    error instanceof ReferenceDataManagementError ? error.code : undefined;
   const safe =
-    error instanceof ReferenceDataManagementError
-      ? new ReferenceDataManagementError(error.code)
+    typeof code === "string" && Object.hasOwn(definitions, code)
+      ? new ReferenceDataManagementError(
+          code as ReferenceDataManagementErrorCode,
+        )
       : new ReferenceDataManagementError("REFERENCE_DATA_OPERATION_FAILED");
   return Response.json(
     { error: { code: safe.code, message: safe.message } },

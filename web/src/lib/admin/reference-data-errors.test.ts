@@ -49,4 +49,24 @@ describe("reference data management errors", () => {
     expect(isDuplicateKeyError({ code: 11000 })).toBe(true);
     expect(isDuplicateKeyError({ code: "11000" })).toBe(false);
   });
+
+  it.each(["__proto__", "constructor", "UNKNOWN_REFERENCE_DATA_CODE"])(
+    "maps the mutated runtime code %s to a safe 500 response",
+    async (code) => {
+      const error = new ReferenceDataManagementError(
+        "REFERENCE_DATA_NOT_FOUND",
+      );
+      (error as unknown as { code: string }).code = code;
+
+      const response = referenceDataManagementErrorResponse(error);
+
+      expect(response.status).toBe(500);
+      await expect(response.json()).resolves.toEqual({
+        error: {
+          code: "REFERENCE_DATA_OPERATION_FAILED",
+          message: "Reference data operation failed",
+        },
+      });
+    },
+  );
 });
