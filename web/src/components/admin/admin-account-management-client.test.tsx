@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import {
   act,
   cleanup,
@@ -40,6 +43,7 @@ import type {
 } from "@/lib/admin/account-browser-contract";
 
 import { AdminAccountManagementClient } from "./admin-account-management-client";
+import styles from "./admin-account-management.module.css";
 
 const accounts = [
   {
@@ -121,6 +125,46 @@ it("loads page one and renders public account cards", async () => {
   expect(container.textContent).not.toMatch(
     /passwordHash|tokenHash|emailVerifiedAt|notificationSettings|PRIVATE/i,
   );
+});
+
+it("keeps the account workspace semantic and usable at 320 pixels", async () => {
+  vi.mocked(listAdministratorAccounts).mockResolvedValue({
+    accounts: [
+      ...accounts,
+      {
+        ...accounts[0],
+        id: "64b64c5f2f8f9e0012345680",
+        email: "former@example.test",
+        displayName: "Former Student",
+        status: "deactivated",
+      },
+    ],
+    pagination: { page: 1, pageSize: 20, totalItems: 3, totalPages: 1 },
+  });
+  const { container } = render(<AdminAccountManagementClient />);
+
+  await screen.findByRole("heading", { name: "Manage accounts" });
+  expect(container.querySelectorAll("h1")).toHaveLength(1);
+  expect(screen.getByLabelText("Search accounts")).toBeTruthy();
+  expect(screen.getByLabelText("Role")).toBeTruthy();
+  expect(screen.getByLabelText("Status")).toBeTruthy();
+  const results = screen.getByRole("list", { name: "Account results" });
+  expect(within(results).getByText("Active")).toBeTruthy();
+  expect(within(results).getByText("Suspended")).toBeTruthy();
+  expect(within(results).getByText("Deactivated")).toBeTruthy();
+  const resultStatus = screen.getByRole("status");
+  expect(resultStatus.getAttribute("aria-live")).toBe("polite");
+  expect(resultStatus.textContent).toBe("1–3 of 3 accounts");
+
+  const css = readFileSync(
+    resolve("src/components/admin/admin-account-management.module.css"),
+    "utf8",
+  );
+  expect(css).toMatch(/@media\s*\(max-width:\s*20rem\)/);
+  expect(css).toMatch(/min-height:\s*44px/);
+  expect(css).toMatch(/focus-visible/);
+  expect(css).toMatch(/prefers-reduced-motion/);
+  expect(css).not.toMatch(/overflow-x:\s*(auto|scroll)/);
 });
 
 it("renders a valid empty result with reset", async () => {
@@ -480,11 +524,10 @@ it("suspends with the selected reason and exact updatedAt", async () => {
     },
     expect.any(AbortSignal),
   );
-  expect(
-    await screen.findByText(
-      "Account suspended. Existing sessions were revoked.",
-    ),
-  ).toBeTruthy();
+  const successNotice = await screen.findByText(
+    "Account suspended. Existing sessions were revoked.",
+  );
+  expect(successNotice.classList.contains(styles.mutationNotice)).toBe(true);
   const card = screen.getByText("Alex Student").closest("li")!;
   expect(within(card).getByText("Suspended")).toBeTruthy();
   expect(
@@ -706,11 +749,18 @@ it("closes a forbidden action without exposing raw details", async () => {
   await user.click(trigger);
   await user.click(screen.getByRole("button", { name: "Confirm deactivation" }));
 
-  expect(
-    await screen.findByRole("alert", {
-      name: "Account action not permitted",
-    }),
-  ).toBeTruthy();
+  const forbiddenNotice = await screen.findByRole("alert", {
+    name: "Account action not permitted",
+  });
+  expect(forbiddenNotice.classList.contains(styles.mutationAlert)).toBe(true);
+  expect(styles.mutationAlert).not.toBe(styles.mutationNotice);
+  const css = readFileSync(
+    resolve("src/components/admin/admin-account-management.module.css"),
+    "utf8",
+  );
+  expect(css).toMatch(
+    /\.mutationError,\s*\.mutationAlert,\s*\.mutationNotice\s*{/,
+  );
   expect(
     screen.queryByRole("heading", { name: "Deactivate Alex Student?" }),
   ).toBeNull();
