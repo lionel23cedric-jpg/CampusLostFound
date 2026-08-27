@@ -130,6 +130,18 @@ describe("administrator reference-data contracts", () => {
     expect(schema.safeParse(input).success).toBe(false);
   });
 
+  it("trims descriptions while preserving internal newlines and tabs", () => {
+    expect(
+      createAdminCategorySchema.parse({
+        name: "Keys",
+        description: " \nReception\tlevel\nLibrary desk \t",
+      }),
+    ).toEqual({
+      name: "Keys",
+      description: "Reception\tlevel\nLibrary desk",
+    });
+  });
+
   it("rejects a lone surrogate from search text", () => {
     expect(
       referenceDataListQuerySchema.safeParse({ q: "\ud800a" }).success,

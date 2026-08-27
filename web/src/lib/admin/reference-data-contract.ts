@@ -4,6 +4,7 @@ export const ADMIN_REFERENCE_DATA_PAGE_SIZE = 20;
 export const REFERENCE_DATA_STATUSES = ["all", "active", "inactive"] as const;
 
 const INVALID_TEXT_PATTERN = /[\p{Cc}\p{Cf}\p{Cs}]/u;
+const SURROGATE_PATTERN = /\p{Cs}/u;
 const normalizeText = (value: string) =>
   value.normalize("NFKC").trim().replace(/\s+/gu, " ");
 const boundedText = (minimum: number, maximum: number) =>
@@ -16,7 +17,7 @@ const descriptionInput = z
   .union([
     z
       .string()
-      .refine((value) => !INVALID_TEXT_PATTERN.test(value))
+      .refine((value) => !SURROGATE_PATTERN.test(value))
       .trim()
       .max(300),
     z.null(),
