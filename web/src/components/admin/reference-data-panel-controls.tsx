@@ -143,7 +143,9 @@ export function ReferenceDataPagination({
         Previous
       </button>
       <p aria-live="polite">
-        Page {page} of {totalPages} · {total} {resourceLabel}
+        {hasPages
+          ? `Page ${page} of ${totalPages} · ${total} ${resourceLabel}`
+          : `0 ${resourceLabel}`}
       </p>
       <button
         type="button"

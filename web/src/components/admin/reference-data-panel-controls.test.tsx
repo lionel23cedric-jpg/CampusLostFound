@@ -153,6 +153,10 @@ it.each([
 
     const previousButton = screen.getByRole("button", { name: "Previous" });
     const nextButton = screen.getByRole("button", { name: "Next" });
+    if (totalPages === 0) {
+      expect(screen.getByText("0 categories")).toBeTruthy();
+      expect(screen.queryByText("Page 1 of 0 · 0 categories")).toBeNull();
+    }
     expect(previousButton.hasAttribute("disabled")).toBe(previous);
     expect(nextButton.hasAttribute("disabled")).toBe(next);
     await user.click(previousButton);
