@@ -51,6 +51,7 @@ const matches = {
         tags: ["laptop", "charger"],
         photoUrls: [],
         status: "open" as const,
+        moderationStatus: "visible" as const,
         resolvedAt: null,
         createdAt: "2026-08-24T03:00:00.000Z",
         updatedAt: "2026-08-24T03:00:00.000Z",

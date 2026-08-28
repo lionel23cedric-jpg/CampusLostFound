@@ -56,6 +56,7 @@ const memberReportProjection = {
   tags: 1,
   photoUrls: 1,
   status: 1,
+  moderationStatus: 1,
   privacySettings: 1,
   resolvedAt: 1,
   createdAt: 1,
@@ -111,7 +112,10 @@ describe("report browse service", () => {
     const allowedStatuses = ["open", "claim_pending", "resolved", "closed"];
     expect(connectToDatabase).toHaveBeenCalledOnce();
     expect(ItemReportModel.find).toHaveBeenCalledWith(
-      { status: { $in: allowedStatuses } },
+      {
+        status: { $in: allowedStatuses },
+        moderationStatus: { $ne: "hidden" },
+      },
       memberReportProjection,
     );
     expect(findChain.sort).toHaveBeenCalledWith({
@@ -122,6 +126,7 @@ describe("report browse service", () => {
     expect(findChain.limit).toHaveBeenCalledWith(12);
     expect(ItemReportModel.countDocuments).toHaveBeenCalledWith({
       status: { $in: allowedStatuses },
+      moderationStatus: { $ne: "hidden" },
     });
   });
 
@@ -131,6 +136,7 @@ describe("report browse service", () => {
     expect(ItemReportModel.find).toHaveBeenCalledWith(
       {
         status: { $in: ["open", "claim_pending", "resolved", "closed"] },
+        moderationStatus: { $ne: "hidden" },
         $text: { $search: "laptop bag" },
       },
       { ...memberReportProjection, score: { $meta: "textScore" } },
@@ -294,10 +300,39 @@ describe("report browse service", () => {
       {
         _id: "64b64c6f2f4d9f1a2b3c4d54",
         status: { $in: ["open", "claim_pending", "resolved", "closed"] },
+        $or: [
+          { moderationStatus: { $ne: "hidden" } },
+          { reporterId: user.id },
+        ],
       },
       memberReportProjection,
     );
     expect(toMemberReport).toHaveBeenCalledWith(firstDocument, user.id);
+  });
+
+  it("allows an owner detail returned as hidden while lists stay visible-only", async () => {
+    const hiddenOwnerDocument = {
+      _id: "hidden-owner-report",
+      reporterId: user.id,
+      moderationStatus: "hidden",
+    };
+    detailExec.mockResolvedValue(hiddenOwnerDocument);
+    vi.mocked(toMemberReport).mockReturnValue({
+      id: "hidden-owner-report",
+      moderationStatus: "hidden",
+      isOwner: true,
+    } as never);
+
+    await expect(
+      getReport(user, "64b64c6f2f4d9f1a2b3c4d54"),
+    ).resolves.toMatchObject({ moderationStatus: "hidden", isOwner: true });
+    expect(toMemberReport).toHaveBeenCalledWith(hiddenOwnerDocument, user.id);
+
+    await listReports(user, query());
+    expect(ItemReportModel.find).toHaveBeenCalledWith(
+      expect.objectContaining({ moderationStatus: { $ne: "hidden" } }),
+      expect.any(Object),
+    );
   });
 
   it("reports missing or draft details with the safe not-found domain error", async () => {

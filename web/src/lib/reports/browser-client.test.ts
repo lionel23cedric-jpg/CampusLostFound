@@ -40,6 +40,7 @@ const report = {
   tags: ["charger"],
   photoUrls: ["https://example.com/charger.jpg"],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: true,
@@ -62,6 +63,7 @@ const memberReport = {
   tags: ["laptop", "bag"],
   photoUrls: ["https://example.com/laptop-bag.jpg"],
   status: "open",
+  moderationStatus: "visible",
   resolvedAt: null,
   createdAt: "2026-08-15T02:05:00.000Z",
   updatedAt: "2026-08-15T02:05:00.000Z",
@@ -193,6 +195,34 @@ describe("report browser client", () => {
 
   it.each([
     [
+      "missing moderation state",
+      () => getReportById(memberReport.id),
+      (() => {
+        const withoutModeration: Record<string, unknown> = {
+          ...memberReport,
+        };
+        delete withoutModeration.moderationStatus;
+        return { report: withoutModeration };
+      })(),
+    ],
+    [
+      "unknown moderation state",
+      () => getReportById(memberReport.id),
+      { report: { ...memberReport, moderationStatus: "removed" } },
+    ],
+    [
+      "moderation evidence",
+      () => getReportById(memberReport.id),
+      {
+        report: {
+          ...memberReport,
+          flag: true,
+          reason: "private",
+          note: "private",
+        },
+      },
+    ],
+    [
       "list reporterId",
       () => getReports({}),
       {
@@ -251,6 +281,20 @@ describe("report browser client", () => {
 
   it.each([
     [
+      "missing report moderation state",
+      () => submitReport(input),
+      (() => {
+        const withoutModeration: Record<string, unknown> = { ...report };
+        delete withoutModeration.moderationStatus;
+        return { report: withoutModeration };
+      })(),
+    ],
+    [
+      "unknown report moderation state",
+      () => submitReport(input),
+      { report: { ...report, moderationStatus: "removed" } },
+    ],
+    [
       "list malformed URL",
       () => getReports({}),
       {
@@ -288,7 +332,7 @@ describe("report browser client", () => {
         },
       },
     ],
-  ])("rejects %s in member photo URLs", async (_name, request, body) => {
+  ])("rejects malformed successful responses containing %s", async (_name, request, body) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
 
     await expect(request()).rejects.toEqual(

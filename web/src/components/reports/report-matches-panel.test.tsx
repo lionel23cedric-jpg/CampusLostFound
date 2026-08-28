@@ -44,6 +44,7 @@ const reportMatches: ReportMatches = {
         tags: ["laptop", "charger"],
         photoUrls: [],
         status: "open",
+        moderationStatus: "visible",
         resolvedAt: null,
         createdAt: "2026-08-24T02:00:00.000Z",
         updatedAt: "2026-08-24T02:00:00.000Z",

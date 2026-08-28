@@ -59,6 +59,7 @@ const createdReport: CreatedReport = {
   tags: ["laptop", "bag"],
   photoUrls: ["https://images.example/item.jpg"],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: true,

@@ -24,6 +24,7 @@ const MEMBER_REPORT_PROJECTION = {
   tags: 1,
   photoUrls: 1,
   status: 1,
+  moderationStatus: 1,
   privacySettings: 1,
   resolvedAt: 1,
   createdAt: 1,
@@ -47,6 +48,7 @@ function escapeRegularExpression(value: string) {
 function buildFilter(query: ReportBrowseQuery): QueryFilter<ItemReport> {
   const filter: QueryFilter<ItemReport> = {
     status: query.status ?? { $in: [...MEMBER_REPORT_STATUSES] },
+    moderationStatus: { $ne: "hidden" },
   };
 
   if (query.q) filter.$text = { $search: query.q };
@@ -119,7 +121,14 @@ export async function listReports(
 export async function getReport(user: PublicUser, reportId: string) {
   await connectToDatabase();
   const report = await ItemReportModel.findOne(
-    { _id: reportId, status: { $in: [...MEMBER_REPORT_STATUSES] } },
+    {
+      _id: reportId,
+      status: { $in: [...MEMBER_REPORT_STATUSES] },
+      $or: [
+        { moderationStatus: { $ne: "hidden" } },
+        { reporterId: user.id },
+      ],
+    },
     MEMBER_REPORT_PROJECTION,
   ).exec();
 

@@ -18,6 +18,7 @@ const report = {
   tags: ["laptop", "bag"],
   photoUrls: ["https://images.example/item.jpg"],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: true,
@@ -51,6 +52,7 @@ describe("owner report response", () => {
       tags: ["laptop", "bag"],
       photoUrls: ["https://images.example/item.jpg"],
       status: "open",
+      moderationStatus: "visible",
       privacySettings: {
         showPhoto: true,
         showEventDate: false,
@@ -76,6 +78,7 @@ describe("owner report response", () => {
       tags: [],
       photoUrls: [],
       status: "open",
+      moderationStatus: "visible",
       privacySettings: {
         showPhoto: true,
         showEventDate: true,
@@ -122,6 +125,7 @@ describe("member report response", () => {
       tags: ["laptop", "bag"],
       photoUrls: [],
       status: "open",
+      moderationStatus: "visible",
       resolvedAt: null,
       createdAt: "2026-08-15T02:05:00.000Z",
       updatedAt: "2026-08-15T02:05:00.000Z",
@@ -191,5 +195,31 @@ describe("member report response", () => {
     expect(JSON.stringify(result)).not.toMatch(
       /reporterId|privacySettings|serialNumber|exactLocationDetails|expectedAnswer|privateNotes|passwordHash|tokenHash|secret/,
     );
+  });
+
+  it("normalizes legacy reports and exposes only moderation state", () => {
+    const owner = toOwnerReport({
+      ...report,
+      moderationStatus: undefined,
+    } as never);
+    const member = toMemberReport(
+      { ...report, moderationStatus: "hidden" } as never,
+      report.reporterId.toString(),
+    );
+
+    expect(owner.moderationStatus).toBe("visible");
+    expect(member.moderationStatus).toBe("hidden");
+    expect(JSON.stringify(member)).not.toMatch(
+      /flag|reason|note|administrator|submittedByUserId/,
+    );
+  });
+
+  it("fails closed for an unknown stored moderation value", () => {
+    expect(() =>
+      toMemberReport(
+        { ...report, moderationStatus: "removed" } as never,
+        "viewer-id",
+      ),
+    ).toThrow("Report moderation status is invalid");
   });
 });

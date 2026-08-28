@@ -54,6 +54,7 @@ const sourceDocument = {
   tags: ["laptop", "charger"],
   photoUrls: [],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: false,
@@ -108,6 +109,7 @@ function memberReport(
     tags: ["charger"],
     photoUrls: [],
     status: "open",
+    moderationStatus: "visible",
     resolvedAt: null,
     createdAt: "2026-08-20T02:00:00.000Z",
     updatedAt: "2026-08-20T02:00:00.000Z",

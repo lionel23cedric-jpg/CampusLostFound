@@ -1,6 +1,7 @@
 import type { HydratedDocument } from "mongoose";
 
 import type { ItemReport } from "@/models/item-report";
+import { normalizeReportModerationStatus } from "@/models/item-report";
 
 type ReportDocument = HydratedDocument<ItemReport> & {
   createdAt: Date;
@@ -21,6 +22,9 @@ export function toOwnerReport(report: ReportDocument) {
     tags: [...report.tags],
     photoUrls: [...report.photoUrls],
     status: report.status,
+    moderationStatus: normalizeReportModerationStatus(
+      report.moderationStatus,
+    ),
     privacySettings: {
       showPhoto: report.privacySettings.showPhoto,
       showEventDate: report.privacySettings.showEventDate,
@@ -51,6 +55,9 @@ export function toMemberReport(report: ReportDocument, viewerId: string) {
     tags: [...report.tags],
     photoUrls: report.privacySettings.showPhoto ? [...report.photoUrls] : [],
     status: report.status,
+    moderationStatus: normalizeReportModerationStatus(
+      report.moderationStatus,
+    ),
     resolvedAt: report.resolvedAt?.toISOString() ?? null,
     createdAt: report.createdAt.toISOString(),
     updatedAt: report.updatedAt.toISOString(),
