@@ -138,7 +138,9 @@ it("loads page one and renders privacy-safe campus location cards", async () => 
     { q: undefined, status: "all", page: 1 },
     expect.any(AbortSignal),
   );
-  const libraryHeading = screen.getByRole("heading", { name: "Library help desk" });
+  const libraryHeading = await screen.findByRole("heading", {
+    name: "Library help desk",
+  });
   expect(libraryHeading).toBeTruthy();
   const libraryCard = libraryHeading.closest("article");
   expect(libraryCard).toBeTruthy();
