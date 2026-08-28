@@ -128,6 +128,11 @@ it("loads once and renders every metric with a definition", async () => {
   expect(
     screen.getByRole("link", { name: "Manage accounts" }).getAttribute("href"),
   ).toBe("/admin/accounts");
+  expect(
+    screen
+      .getByRole("link", { name: "Manage reference data" })
+      .getAttribute("href"),
+  ).toBe("/admin/reference-data");
   expect(container.textContent).not.toMatch(
     /admin@example|userId|reportId|claimId|password|token|verification/i,
   );
