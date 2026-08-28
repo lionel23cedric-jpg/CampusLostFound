@@ -10,6 +10,17 @@ export const REPORT_STATUSES = [
   "resolved",
   "closed",
 ] as const;
+export const REPORT_MODERATION_STATUSES = ["visible", "hidden"] as const;
+export type ReportModerationStatus =
+  (typeof REPORT_MODERATION_STATUSES)[number];
+
+export function normalizeReportModerationStatus(
+  value: unknown,
+): ReportModerationStatus {
+  if (value === undefined) return "visible";
+  if (value === "visible" || value === "hidden") return value;
+  throw new Error("Report moderation status is invalid");
+}
 
 const privacySettingsSchema = new Schema(
   {
@@ -122,6 +133,12 @@ export const itemReportSchema = new Schema(
       type: String,
       enum: REPORT_STATUSES,
       default: "draft",
+      required: true,
+    },
+    moderationStatus: {
+      type: String,
+      enum: REPORT_MODERATION_STATUSES,
+      default: "visible",
       required: true,
     },
     privacySettings: {
