@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import {
+  REPORT_IMAGE_LIMIT,
+  reportPhotoReferenceSchema,
+} from "@/lib/reports/photo-reference";
 import { REPORT_TYPES } from "@/models/item-report";
 
 const objectIdSchema = z
@@ -37,21 +41,6 @@ const occurredAtSchema = z
     }
   })
   .transform((value) => new Date(value));
-
-const photoUrlSchema = z
-  .string()
-  .trim()
-  .url("Photo URL must be valid")
-  .refine(
-    (value) => {
-      try {
-        return new URL(value).protocol === "https:";
-      } catch {
-        return false;
-      }
-    },
-    { message: "Photo URL must use HTTPS" },
-  );
 
 const privacySettingsSchema = z
   .strictObject({
@@ -102,8 +91,8 @@ export const createReportSchema = z.strictObject({
     .max(10, "Provide at most 10 tags")
     .default([]),
   photoUrls: z
-    .array(photoUrlSchema)
-    .max(5, "Provide at most 5 photo URLs")
+    .array(reportPhotoReferenceSchema)
+    .max(REPORT_IMAGE_LIMIT, "Provide at most 5 photo URLs")
     .default([]),
   privacySettings: privacySettingsSchema,
   privateVerification: privateVerificationSchema,

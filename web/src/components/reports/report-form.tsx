@@ -22,19 +22,27 @@ import {
   type ReportFormValues,
 } from "@/lib/reports/form-validation";
 
+import {
+  ReportImagePicker,
+  type PendingReportImage,
+} from "./report-image-picker";
 import styles from "./report-form.module.css";
 
 const GENERIC_ERROR = "We could not complete that request. Please try again.";
 const NETWORK_ERROR = "We could not reach the service. Please try again.";
 
-const PHOTO_LIMIT = 5;
 const FEATURE_LIMIT = 10;
 const QUESTION_LIMIT = 5;
+
+export type CreatedSubmission = {
+  report: CreatedReport;
+  images: PendingReportImage[];
+};
 
 export type ReportFormProps = {
   categories: ReportCategory[];
   campusLocations: ReportCampusLocation[];
-  onSuccess: (report: CreatedReport) => void;
+  onSuccess: (submission: CreatedSubmission) => void;
   onAuthenticationRequired: () => void;
   onPermissionLost: () => void;
   onReferenceUnavailable: () => Promise<void>;
@@ -53,7 +61,6 @@ const SERVER_FIELD_TARGETS = new Set([
 ]);
 
 const SERVER_GROUP_TARGETS: Record<string, string> = {
-  photoUrls: "photoUrls.0",
   privacySettings: "privacySettings.showPhoto",
   privateVerification: "privateVerification.distinguishingFeatures.0",
 };
@@ -106,6 +113,8 @@ export function ReportForm({
 }: ReportFormProps) {
   const idPrefix = useId();
   const [values, setValues] = useState(() => createInitialReportFormValues());
+  const [images, setImages] = useState<PendingReportImage[]>([]);
+  const [imageErrors, setImageErrors] = useState<string[]>([]);
   const [errors, setErrors] = useState<ReportFormErrors>({});
   const [formMessage, setFormMessage] = useState<string>();
   const [isPending, setIsPending] = useState(false);
@@ -113,7 +122,6 @@ export function ReportForm({
   const summaryRef = useRef<HTMLDivElement>(null);
   const submitLock = useRef(false);
   const focusToken = useRef(0);
-  const nextPhotoId = useRef(1);
   const nextFeatureId = useRef(1);
   const nextQuestionId = useRef(1);
   const mappedServerGroups = useRef<Record<string, string>>({});
@@ -122,11 +130,6 @@ export function ReportForm({
   const errorId = (path: string) => `${inputId(path)}-error`;
 
   function targetIdForPath(path: string) {
-    if (path.startsWith("photoUrls")) {
-      const index = Number(path.split(".")[1] ?? 0);
-      return inputId(values.photoUrls[index]?.id ?? values.photoUrls[0].id);
-    }
-
     if (path.startsWith("privateVerification.distinguishingFeatures")) {
       const index = Number(path.split(".")[2] ?? 0);
       const row =
@@ -209,17 +212,6 @@ export function ReportForm({
     clearErrorsFor(field);
   }
 
-  function updatePhoto(id: string, value: string) {
-    const index = values.photoUrls.findIndex((row) => row.id === id);
-    setValues((current) => ({
-      ...current,
-      photoUrls: current.photoUrls.map((row) =>
-        row.id === id ? { ...row, value } : row,
-      ),
-    }));
-    clearErrorsFor(`photoUrls.${index}`);
-  }
-
   function updateFeature(id: string, value: string) {
     const rows = values.privateVerification.distinguishingFeatures;
     const index = rows.findIndex((row) => row.id === id);
@@ -272,17 +264,6 @@ export function ReportForm({
     clearErrorsFor(`privateVerification.${field}`);
   }
 
-  function addPhoto() {
-    if (values.photoUrls.length >= PHOTO_LIMIT) return;
-    setValues((current) => ({
-      ...current,
-      photoUrls: [
-        ...current.photoUrls,
-        { id: `photo-${nextPhotoId.current++}`, value: "" },
-      ],
-    }));
-  }
-
   function addFeature() {
     if (
       values.privateVerification.distinguishingFeatures.length >= FEATURE_LIMIT
@@ -323,15 +304,6 @@ export function ReportForm({
     }));
   }
 
-  function removePhoto(id: string) {
-    if (values.photoUrls.length <= 1) return;
-    setValues((current) => ({
-      ...current,
-      photoUrls: current.photoUrls.filter((row) => row.id !== id),
-    }));
-    clearErrorsFor("photoUrls");
-  }
-
   function removeFeature(id: string) {
     if (values.privateVerification.distinguishingFeatures.length <= 1) return;
     setValues((current) => ({
@@ -367,9 +339,12 @@ export function ReportForm({
     if (submitLock.current) return;
 
     const validation = validateReportForm(values);
-    if (!validation.success) {
+    if (!validation.success || imageErrors.length > 0) {
       mappedServerGroups.current = {};
-      publishFailure(validation.errors);
+      publishFailure({
+        ...(validation.success ? {} : validation.errors),
+        ...(imageErrors.length > 0 ? { images: imageErrors } : {}),
+      });
       return;
     }
 
@@ -381,7 +356,7 @@ export function ReportForm({
 
     try {
       const report = await submitReport(validation.data);
-      onSuccess(report);
+      onSuccess({ report, images });
     } catch (error) {
       if (error instanceof BrowserReportError) {
         if (error.code === "AUTHENTICATION_REQUIRED") {
@@ -655,57 +630,17 @@ export function ReportForm({
           </div>
         </div>
 
-        <div className={styles.repeatedGroup}>
-          <div>
-            <h3>Photo URLs</h3>
-            <p className={styles.help} id={inputId("photos-help")}>
-              Add up to five HTTPS image URLs. Do not use private or temporary
-              signed links.
-            </p>
-          </div>
-          {values.photoUrls.map((row, index) => {
-            const path = `photoUrls.${index}`;
-            const rowErrors = messagesFor(errors, path);
-            const id = inputId(row.id);
-            return (
-              <div className={styles.repeatRow} key={row.id}>
-                <div className={styles.field}>
-                  <label htmlFor={id}>Photo URL {index + 1} (optional)</label>
-                  <input
-                    id={id}
-                    name={path}
-                    type="url"
-                    inputMode="url"
-                    value={row.value}
-                    onChange={(event) => updatePhoto(row.id, event.target.value)}
-                    aria-invalid={Boolean(rowErrors.length)}
-                    aria-describedby={describedBy(
-                      inputId("photos-help"),
-                      rowErrors.length ? errorId(path) : undefined,
-                    )}
-                  />
-                  <FieldError id={errorId(path)} messages={rowErrors} />
-                </div>
-                <button
-                  className={styles.removeButton}
-                  type="button"
-                  onClick={() => removePhoto(row.id)}
-                  disabled={isPending || values.photoUrls.length === 1}
-                >
-                  Remove photo URL {index + 1}
-                </button>
-              </div>
-            );
-          })}
-          <button
-            className={styles.addButton}
-            type="button"
-            onClick={addPhoto}
-            disabled={isPending || values.photoUrls.length >= PHOTO_LIMIT}
-          >
-            Add photo URL
-          </button>
-        </div>
+        <ReportImagePicker
+          id={inputId("images")}
+          images={images}
+          disabled={isPending}
+          errors={imageErrors}
+          onChange={setImages}
+          onErrorsChange={(nextErrors) => {
+            setImageErrors(nextErrors);
+            if (nextErrors.length === 0) clearErrorsFor("images");
+          }}
+        />
       </fieldset>
 
       <fieldset className={styles.section} disabled={isPending}>

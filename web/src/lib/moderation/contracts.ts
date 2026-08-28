@@ -2,6 +2,10 @@ import { z } from "zod";
 
 import { MEMBER_REPORT_STATUSES } from "@/lib/reports/browse-validation";
 import {
+  REPORT_IMAGE_LIMIT,
+  reportPhotoReferenceSchema,
+} from "@/lib/reports/photo-reference";
+import {
   REPORT_MODERATION_STATUSES,
   REPORT_TYPES,
   normalizeReportModerationStatus,
@@ -25,17 +29,6 @@ const identifierSchema = z.custom<Identifier>(
 );
 const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/);
 const dateTimeSchema = z.string().datetime({ offset: true });
-const photoUrlSchema = z
-  .string()
-  .url()
-  .refine((value) => {
-    try {
-      const protocol = new URL(value).protocol;
-      return protocol === "http:" || protocol === "https:";
-    } catch {
-      return false;
-    }
-  });
 
 export const reportFlagReceiptSchema = z.strictObject({
   id: objectIdSchema,
@@ -56,7 +49,9 @@ export const adminReportSummarySchema = z
     occurredAt: dateTimeSchema,
     colors: z.array(z.string().min(1).max(32)).min(1).max(5),
     tags: z.array(z.string().min(1).max(40)).max(10),
-    photoUrls: z.array(photoUrlSchema).max(5),
+    photoUrls: z
+      .array(reportPhotoReferenceSchema)
+      .max(REPORT_IMAGE_LIMIT),
     status: z.enum(MEMBER_REPORT_STATUSES),
     moderationStatus: z.enum(REPORT_MODERATION_STATUSES),
     privacySettings: z.strictObject({

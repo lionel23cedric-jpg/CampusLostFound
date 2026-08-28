@@ -1,17 +1,15 @@
 import { z } from "zod";
 
+import {
+  REPORT_IMAGE_CONTENT_TYPES,
+  REPORT_IMAGE_MAX_BYTES,
+  isInternalReportImagePath,
+  reportPhotoReferenceSchema,
+} from "./photo-reference";
 import type { CreateReportInput } from "./validation";
 
 const GENERIC_MESSAGE = "We could not complete that request. Please try again.";
 const NETWORK_MESSAGE = "We could not reach the service. Please try again.";
-
-const httpsUrlSchema = z.string().refine((value) => {
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-});
 
 export type ReportCategory = {
   id: string;
@@ -107,6 +105,12 @@ export type ReportMatches = {
   matches: ReportMatch[];
 };
 
+export type UploadedReportImage = {
+  url: string;
+  contentType: (typeof REPORT_IMAGE_CONTENT_TYPES)[number];
+  byteLength: number;
+};
+
 export type ReportBrowseRequest = {
   q?: string;
   reportType?: "lost" | "found";
@@ -144,7 +148,7 @@ const createdReportSchema = z.strictObject({
   occurredAt: z.string().datetime({ offset: true }),
   colors: z.array(z.string()),
   tags: z.array(z.string()),
-  photoUrls: z.array(z.string()),
+  photoUrls: z.array(reportPhotoReferenceSchema),
   status: z.enum(["draft", "open", "claim_pending", "resolved", "closed"]),
   moderationStatus: z.enum(["visible", "hidden"]),
   privacySettings: z.strictObject({
@@ -167,7 +171,7 @@ const memberReportSchema = z.strictObject({
   occurredAt: z.string().datetime({ offset: true }).nullable(),
   colors: z.array(z.string()),
   tags: z.array(z.string()),
-  photoUrls: z.array(httpsUrlSchema),
+  photoUrls: z.array(reportPhotoReferenceSchema),
   status: z.enum(["open", "claim_pending", "resolved", "closed"]),
   moderationStatus: z.enum(["visible", "hidden"]),
   resolvedAt: z.string().datetime({ offset: true }).nullable(),
@@ -280,6 +284,16 @@ const campusLocationResponseSchema = z.strictObject({
 });
 
 const reportResponseSchema = z.strictObject({ report: createdReportSchema });
+
+const uploadedReportImageSchema = z.strictObject({
+  url: z.string().refine(isInternalReportImagePath),
+  contentType: z.enum(REPORT_IMAGE_CONTENT_TYPES),
+  byteLength: z.number().int().min(1).max(REPORT_IMAGE_MAX_BYTES),
+}) satisfies z.ZodType<UploadedReportImage>;
+
+const reportImageResponseSchema = z.strictObject({
+  image: uploadedReportImageSchema,
+});
 
 const errorResponseSchema = z.strictObject({
   error: z.strictObject({
@@ -440,4 +454,19 @@ export async function submitReport(
   });
   const data = await parseResponse(response, reportResponseSchema);
   return data.report;
+}
+
+export async function uploadReportImage(
+  reportId: string,
+  file: File,
+  uploadKey: string,
+): Promise<UploadedReportImage> {
+  const body = new FormData();
+  body.append("image", file);
+  body.append("uploadKey", uploadKey);
+  const response = await fetchSameOrigin(
+    `/api/reports/${encodeURIComponent(reportId)}/images`,
+    { method: "POST", body },
+  );
+  return (await parseResponse(response, reportImageResponseSchema)).image;
 }

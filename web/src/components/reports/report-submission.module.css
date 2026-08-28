@@ -161,6 +161,26 @@
   font-weight: 700;
 }
 
+.uploadStatus {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.uploadStatus p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.uploadStatus p + p {
+  margin-top: 0.5rem;
+}
+
+.uploadStatus .secondaryButton {
+  margin-top: 1rem;
+}
+
 .reportId {
   overflow-wrap: anywhere;
 }

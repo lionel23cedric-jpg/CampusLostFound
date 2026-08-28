@@ -29,6 +29,9 @@ const report = {
   updatedAt: new Date("2026-08-15T02:05:00.000Z"),
 };
 
+const internalPhotoPath =
+  "/api/report-images/64f0123456789abcdef01234";
+
 describe("owner report response", () => {
   it("converts IDs and dates and returns only approved report fields", () => {
     expect(
@@ -212,6 +215,24 @@ describe("member report response", () => {
     expect(JSON.stringify(member)).not.toMatch(
       /flag|reason|note|administrator|submittedByUserId/,
     );
+  });
+
+  it("redacts internal photos without weakening moderation privacy", () => {
+    const result = toMemberReport(
+      {
+        ...report,
+        photoUrls: [internalPhotoPath],
+        moderationStatus: "hidden",
+        privacySettings: {
+          ...report.privacySettings,
+          showPhoto: false,
+        },
+      } as never,
+      report.reporterId.toString(),
+    );
+
+    expect(result.photoUrls).toEqual([]);
+    expect(result.moderationStatus).toBe("hidden");
   });
 
   it("fails closed for an unknown stored moderation value", () => {

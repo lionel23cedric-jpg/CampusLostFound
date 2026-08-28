@@ -11,6 +11,8 @@ import {
 const reporterId = new mongoose.Types.ObjectId();
 const categoryId = new mongoose.Types.ObjectId();
 const campusLocationId = new mongoose.Types.ObjectId();
+const internalPhotoPath =
+  "/api/report-images/64f0123456789abcdef01234";
 
 function report(overrides: Record<string, unknown> = {}) {
   return new ItemReportModel({
@@ -71,5 +73,27 @@ describe("ItemReport moderation state", () => {
     expect(itemReportSchema.path("status").options.enum).not.toContain(
       "hidden",
     );
+  });
+});
+
+describe("ItemReport photo references", () => {
+  it.each([
+    internalPhotoPath,
+    "https://images.example.test/item.jpg",
+  ])("accepts %s", async (photoUrl) => {
+    await expect(
+      report({ photoUrls: [photoUrl] }).validate(),
+    ).resolves.toBeUndefined();
+  });
+
+  it.each([
+    "http://images.example.test/item.jpg",
+    "/images/arbitrary-relative-path.jpg",
+  ])("rejects %s", async (photoUrl) => {
+    await expect(
+      report({ photoUrls: [photoUrl] }).validate(),
+    ).rejects.toMatchObject({
+      errors: { "photoUrls.0": expect.anything() },
+    });
   });
 });

@@ -18,7 +18,6 @@ export type ReportFormValues = {
   occurredAt: string;
   colors: string;
   tags: string;
-  photoUrls: TextFormRow[];
   privacySettings: {
     showPhoto: boolean;
     showEventDate: boolean;
@@ -127,36 +126,6 @@ const localDateTimeSchema = z
   })
   .transform((value) => parseLocalDateTime(value) ?? new Date(Number.NaN));
 
-const photoRowsSchema = z
-  .array(textRowSchema)
-  .superRefine((rows, context) => {
-    const nonblank = rows.filter((row) => row.value.trim());
-    if (nonblank.length > 5) {
-      context.addIssue({
-        code: "custom",
-        message: "Provide at most 5 photo URLs",
-      });
-    }
-
-    rows.forEach((row, index) => {
-      const value = row.value.trim();
-      if (!value) return;
-
-      try {
-        if (new URL(value).protocol !== "https:") throw new Error();
-      } catch {
-        context.addIssue({
-          code: "custom",
-          path: [index],
-          message: "Photo URL must be a valid HTTPS URL",
-        });
-      }
-    });
-  })
-  .transform((rows) =>
-    rows.map((row) => row.value.trim()).filter(Boolean),
-  );
-
 const formSchema = z.strictObject({
   reportType: z.enum(["lost", "found"]),
   title: boundedText("Title", 5, 120),
@@ -168,7 +137,6 @@ const formSchema = z.strictObject({
   tags: commaSeparated("Tag", 0, 10, 40).transform((tags) =>
     tags.map((tag) => tag.toLowerCase()),
   ),
-  photoUrls: photoRowsSchema,
   privacySettings: z.strictObject({
     showPhoto: z.boolean(),
     showEventDate: z.boolean(),
@@ -224,7 +192,6 @@ export function createInitialReportFormValues(): ReportFormValues {
     occurredAt: "",
     colors: "",
     tags: "",
-    photoUrls: [{ id: "photo-0", value: "" }],
     privacySettings: {
       showPhoto: true,
       showEventDate: true,
@@ -254,6 +221,6 @@ export function validateReportForm(
     };
   }
 
-  const data: CreateReportInput = result.data;
+  const data: CreateReportInput = { ...result.data, photoUrls: [] };
   return { success: true, data };
 }

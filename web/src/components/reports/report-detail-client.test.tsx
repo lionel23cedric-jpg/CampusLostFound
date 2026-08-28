@@ -330,6 +330,47 @@ describe("ReportDetailClient data and privacy", () => {
     expect(container.querySelector('link[rel="preload"]')).toBeNull();
   });
 
+  it("renders protected images and legacy links in their original positions", async () => {
+    const firstImage = "/api/report-images/64b64c6f2f4d9f1a2b3c4d61";
+    const legacyImage = "https://photos.example/legacy.jpg";
+    const thirdImage = "/api/report-images/64b64c6f2f4d9f1a2b3c4d63";
+    mockReadyResponses({
+      ...memberReport,
+      photoUrls: [firstImage, legacyImage, thirdImage],
+    });
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    const images = await screen.findAllByRole("img");
+    expect(images.map((image) => image.getAttribute("alt"))).toEqual([
+      "Submitted photo 1",
+      "Submitted photo 3",
+    ]);
+    expect(images.map((image) => image.getAttribute("src"))).toEqual([
+      firstImage,
+      thirdImage,
+    ]);
+    const legacyLink = screen.getByRole("link", {
+      name: "View submitted photo 2 (external)",
+    });
+    expect(legacyLink.getAttribute("href")).toBe(legacyImage);
+    expect(legacyLink.getAttribute("target")).toBe("_blank");
+    expect(legacyLink.getAttribute("rel")).toBe("noreferrer");
+    expect(screen.queryByRole("link", { name: /photo (1|3)/i })).toBeNull();
+    expect(images.some((image) => image.getAttribute("src") === legacyImage)).toBe(
+      false,
+    );
+  });
+
+  it("omits the photo section when photo references are redacted", async () => {
+    mockReadyResponses({ ...memberReport, photoUrls: [] });
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    await screen.findByRole("heading", { name: memberReport.title });
+    expect(
+      screen.queryByRole("heading", { name: "Submitted photos" }),
+    ).toBeNull();
+  });
+
   it("keeps detail links usable and facts stacked at narrow widths", () => {
     const css = readFileSync(
       resolve("src/components/reports/report-browsing.module.css"),
@@ -337,6 +378,8 @@ describe("ReportDetailClient data and privacy", () => {
     );
     const photoLinkRule = css.match(/\.photoLinks a\s*\{[^}]*\}/)?.[0] ?? "";
     expect(photoLinkRule).toMatch(/min-height:\s*44px/);
+    expect(css).toMatch(/\.photoGallery\s*\{[^}]*min-width:\s*0/);
+    expect(css).toMatch(/\.photoImage\s*\{[^}]*max-width:\s*100%/);
     expect(css).toContain("@media (max-width: 20rem)");
     expect(css).toMatch(
       /@media \(max-width: 40rem\)[\s\S]*?\.detailFacts[\s\S]*?grid-template-columns:\s*1fr/,
