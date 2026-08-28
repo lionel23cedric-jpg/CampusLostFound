@@ -1,21 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import mongoose from "mongoose";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({ connectToDatabase: vi.fn() }));
-vi.mock("@/models/item-report", () => ({
-  REPORT_TYPES: ["lost", "found"],
-  REPORT_VERIFICATION_STATUSES: ["pending", "verified"],
-  REPORT_CUSTODY_STATUSES: [
-    "not_applicable",
-    "not_held",
-    "stored",
-    "released",
-  ],
-  ItemReportModel: {
-    find: vi.fn(),
-    findOne: vi.fn(),
-    countDocuments: vi.fn(),
-  },
-}));
+vi.mock("@/models/item-report", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/models/item-report")>();
+  return {
+    ...actual,
+    ItemReportModel: {
+      find: vi.fn(),
+      findOne: vi.fn(),
+      findOneAndUpdate: vi.fn(),
+      countDocuments: vi.fn(),
+    },
+  };
+});
 vi.mock("./access", () => ({ requireStaffReportUser: vi.fn() }));
 vi.mock("./contracts", () => ({
   toStaffReportSummary: vi.fn(),
@@ -27,7 +25,12 @@ import type { PublicUser } from "@/lib/auth/public-user";
 import { ItemReportModel } from "@/models/item-report";
 import { requireStaffReportUser } from "./access";
 import { toStaffReportDetail, toStaffReportSummary } from "./contracts";
-import { getStaffReport, listStaffReports } from "./service";
+import {
+  getStaffReport,
+  listStaffReports,
+  storeStaffReport,
+  verifyStaffReport,
+} from "./service";
 
 const staff: PublicUser = {
   id: "64f0123456789abcdef01238",
@@ -85,6 +88,8 @@ const countExec = vi.fn();
 const countChain = { exec: countExec };
 const detailExec = vi.fn();
 const detailChain = { select: vi.fn(), lean: vi.fn(), exec: detailExec };
+const updateExec = vi.fn();
+const updateChain = { select: vi.fn(), lean: vi.fn(), exec: updateExec };
 
 describe("staff report read service", () => {
   beforeEach(() => {
@@ -216,5 +221,303 @@ describe("staff report read service", () => {
       code: "STAFF_REPORT_FORBIDDEN",
     });
     expect(connectToDatabase).not.toHaveBeenCalled();
+  });
+});
+
+const reportId = "64f0123456789abcdef01234";
+const staffId = new mongoose.Types.ObjectId(staff.id);
+const reportUpdatedAt = new Date("2026-08-29T01:02:03.000Z");
+const now = new Date("2026-08-29T04:05:06.000Z");
+
+function reportRecord(
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
+  return {
+    _id: new mongoose.Types.ObjectId(reportId),
+    reportType: "found",
+    title: "Found campus card",
+    publicDescription: "A campus card found near the library entrance.",
+    categoryId: new mongoose.Types.ObjectId("64f0123456789abcdef01235"),
+    campusLocationId: new mongoose.Types.ObjectId(
+      "64f0123456789abcdef01236",
+    ),
+    occurredAt: new Date("2026-08-28T01:00:00.000Z"),
+    colors: ["blue"],
+    tags: ["card"],
+    photoUrls: [],
+    status: "open",
+    moderationStatus: "visible",
+    resolvedAt: null,
+    staffHandling: {
+      verificationStatus: "pending",
+      verifiedBy: null,
+      verifiedAt: null,
+      custodyStatus: "not_held",
+      storageLocation: null,
+      storedAt: null,
+      releasedAt: null,
+      updatedBy: null,
+    },
+    createdAt: new Date("2026-08-28T02:00:00.000Z"),
+    updatedAt: reportUpdatedAt,
+    ...overrides,
+  };
+}
+
+describe("staff report verification", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    updateChain.select.mockReturnValue(updateChain);
+    updateChain.lean.mockReturnValue(updateChain);
+    detailChain.select.mockReturnValue(detailChain);
+    detailChain.lean.mockReturnValue(detailChain);
+    vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+      updateChain as never,
+    );
+    vi.mocked(ItemReportModel.findOne).mockReturnValue(detailChain as never);
+    detailExec.mockResolvedValue(reportRecord());
+    updateExec.mockResolvedValue(reportRecord());
+    vi.mocked(toStaffReportDetail).mockReturnValue(detail as never);
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("atomically verifies a pending Found report", async () => {
+    await expect(
+      verifyStaffReport(staff, reportId, {
+        expectedUpdatedAt: reportUpdatedAt.toISOString(),
+      }),
+    ).resolves.toBe(detail);
+
+    expect(ItemReportModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: reportId,
+        updatedAt: reportUpdatedAt,
+        reportType: "found",
+        moderationStatus: { $ne: "hidden" },
+        status: { $in: ["open", "claim_pending"] },
+        $or: [
+          { "staffHandling.verificationStatus": "pending" },
+          { staffHandling: { $exists: false } },
+        ],
+      },
+      {
+        $set: {
+          staffHandling: {
+            verificationStatus: "verified",
+            verifiedBy: staffId,
+            verifiedAt: now,
+            custodyStatus: "not_held",
+            storageLocation: null,
+            storedAt: null,
+            releasedAt: null,
+            updatedBy: staffId,
+          },
+        },
+      },
+      { new: true, runValidators: true, projection },
+    );
+    expect(updateChain.select).toHaveBeenCalledWith("+staffHandling");
+    expect(toStaffReportDetail).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: new mongoose.Types.ObjectId(reportId) }),
+    );
+  });
+
+  it("writes a complete Lost-report state for legacy records", async () => {
+    detailExec.mockResolvedValue(reportRecord({
+      reportType: "lost",
+      staffHandling: undefined,
+    }));
+    updateExec.mockResolvedValue(reportRecord({ reportType: "lost" }));
+
+    await verifyStaffReport(staff, reportId, {
+      expectedUpdatedAt: reportUpdatedAt.toISOString(),
+    });
+
+    const [, update] = vi.mocked(ItemReportModel.findOneAndUpdate).mock.calls[0];
+    expect(update).toMatchObject({
+      $set: {
+        staffHandling: {
+          verificationStatus: "verified",
+          custodyStatus: "not_applicable",
+          storageLocation: null,
+          storedAt: null,
+          releasedAt: null,
+        },
+      },
+    });
+  });
+
+  it("returns conflict for stale or ineligible visible reports", async () => {
+    updateExec.mockResolvedValue(null);
+    detailExec
+      .mockResolvedValueOnce(reportRecord())
+      .mockResolvedValueOnce({ _id: reportId });
+
+    await expect(
+      verifyStaffReport(staff, reportId, {
+        expectedUpdatedAt: reportUpdatedAt.toISOString(),
+      }),
+    ).rejects.toMatchObject({
+      code: "STAFF_REPORT_STATE_CONFLICT",
+      status: 409,
+    });
+    expect(ItemReportModel.findOne).toHaveBeenCalledWith(
+      { _id: reportId, moderationStatus: { $ne: "hidden" } },
+      { _id: 1 },
+    );
+  });
+
+  it("returns not found when the report is missing or hidden", async () => {
+    updateExec.mockResolvedValue(null);
+    detailExec.mockResolvedValue(null);
+
+    await expect(
+      verifyStaffReport(staff, reportId, {
+        expectedUpdatedAt: reportUpdatedAt.toISOString(),
+      }),
+    ).rejects.toMatchObject({ code: "STAFF_REPORT_NOT_FOUND", status: 404 });
+  });
+});
+
+describe("staff report storage", () => {
+  const verifiedAt = new Date("2026-08-29T02:00:00.000Z");
+  const verified = {
+    verificationStatus: "verified",
+    verifiedBy: staffId,
+    verifiedAt,
+    custodyStatus: "not_held",
+    storageLocation: null,
+    storedAt: null,
+    releasedAt: null,
+    updatedBy: staffId,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    detailChain.select.mockReturnValue(detailChain);
+    detailChain.lean.mockReturnValue(detailChain);
+    updateChain.select.mockReturnValue(updateChain);
+    updateChain.lean.mockReturnValue(updateChain);
+    vi.mocked(ItemReportModel.findOne).mockReturnValue(detailChain as never);
+    vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+      updateChain as never,
+    );
+    detailExec.mockResolvedValue(reportRecord({ staffHandling: verified }));
+    updateExec.mockResolvedValue(reportRecord({ staffHandling: verified }));
+    vi.mocked(toStaffReportDetail).mockReturnValue(detail as never);
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("stores a verified Found report with the first intake time", async () => {
+    await expect(
+      storeStaffReport(staff, reportId, {
+        expectedUpdatedAt: reportUpdatedAt.toISOString(),
+        storageLocation: "Library desk - locker B12",
+      }),
+    ).resolves.toBe(detail);
+
+    expect(ItemReportModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: reportId,
+        updatedAt: reportUpdatedAt,
+        reportType: "found",
+        moderationStatus: { $ne: "hidden" },
+        status: { $in: ["open", "claim_pending"] },
+        "staffHandling.verificationStatus": "verified",
+        "staffHandling.custodyStatus": "not_held",
+      },
+      {
+        $set: {
+          staffHandling: {
+            ...verified,
+            custodyStatus: "stored",
+            storageLocation: "Library desk - locker B12",
+            storedAt: now,
+            updatedBy: staffId,
+          },
+        },
+      },
+      { new: true, runValidators: true, projection },
+    );
+  });
+
+  it("updates the location while retaining the original intake time", async () => {
+    const storedAt = new Date("2026-08-29T03:00:00.000Z");
+    const stored = {
+      ...verified,
+      custodyStatus: "stored",
+      storageLocation: "Old locker",
+      storedAt,
+    };
+    detailExec.mockResolvedValue(reportRecord({ staffHandling: stored }));
+
+    await storeStaffReport(staff, reportId, {
+      expectedUpdatedAt: reportUpdatedAt.toISOString(),
+      storageLocation: "New locker",
+    });
+
+    const [, update] = vi.mocked(ItemReportModel.findOneAndUpdate).mock.calls[0];
+    expect(update).toMatchObject({
+      $set: {
+        staffHandling: {
+          custodyStatus: "stored",
+          storageLocation: "New locker",
+          storedAt,
+          releasedAt: null,
+        },
+      },
+    });
+  });
+
+  it.each([
+    ["Lost", { reportType: "lost" }],
+    ["pending", { staffHandling: { ...verified, verificationStatus: "pending" } }],
+    ["released", { staffHandling: { ...verified, custodyStatus: "released" } }],
+    ["resolved", { status: "resolved" }],
+    ["stale", { updatedAt: new Date("2026-08-29T01:02:04.000Z") }],
+  ])("rejects an ineligible %s report", async (_label, overrides) => {
+    detailExec.mockResolvedValue(reportRecord(overrides));
+
+    await expect(
+      storeStaffReport(staff, reportId, {
+        expectedUpdatedAt: reportUpdatedAt.toISOString(),
+        storageLocation: "Locker B12",
+      }),
+    ).rejects.toMatchObject({
+      code: "STAFF_REPORT_STATE_CONFLICT",
+      status: 409,
+    });
+    expect(ItemReportModel.findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it("returns not found for a missing or hidden report", async () => {
+    detailExec.mockResolvedValue(null);
+
+    await expect(
+      storeStaffReport(staff, reportId, {
+        expectedUpdatedAt: reportUpdatedAt.toISOString(),
+        storageLocation: "Locker B12",
+      }),
+    ).rejects.toMatchObject({ code: "STAFF_REPORT_NOT_FOUND", status: 404 });
+  });
+
+  it("returns conflict when the guarded storage update loses a race", async () => {
+    updateExec.mockResolvedValue(null);
+
+    await expect(
+      storeStaffReport(staff, reportId, {
+        expectedUpdatedAt: reportUpdatedAt.toISOString(),
+        storageLocation: "Locker B12",
+      }),
+    ).rejects.toMatchObject({
+      code: "STAFF_REPORT_STATE_CONFLICT",
+      status: 409,
+    });
   });
 });
