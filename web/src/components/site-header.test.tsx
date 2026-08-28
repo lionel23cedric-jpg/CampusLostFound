@@ -156,6 +156,7 @@ it("shows signed-out navigation", () => {
   );
   expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "My reports" })).toBeNull();
 });
 
 it("shows the safe display name and dashboard for an authenticated user", () => {
@@ -171,6 +172,9 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   );
   expect(screen.getByRole("link", { name: "Browse" }).getAttribute("href")).toBe(
     "/reports",
+  );
+  expect(screen.getByRole("link", { name: "My reports" }).getAttribute("href")).toBe(
+    "/reports/mine",
   );
   expect(screen.getByRole("link", { name: "My claims" }).getAttribute("href")).toBe(
     "/claims",
@@ -197,6 +201,21 @@ it.each(["student", "staff", "administrator"] as const)(
     });
     expect(link.getAttribute("href")).toBe("/notifications");
     expect(link.textContent).toContain("3");
+  },
+);
+
+it.each(["student", "staff", "administrator"] as const)(
+  "shows My reports to an active %s",
+  (role) => {
+    mockSession({
+      status: "authenticated",
+      user: { ...safeUser, role, status: "active" },
+    });
+    render(<SiteHeader />);
+
+    expect(
+      screen.getByRole("link", { name: "My reports" }).getAttribute("href"),
+    ).toBe("/reports/mine");
   },
 );
 
@@ -255,6 +274,7 @@ it.each([
   render(<SiteHeader />);
 
   expect(screen.queryByRole("link", { name: /notifications/i })).toBeNull();
+  expect(screen.queryByRole("link", { name: "My reports" })).toBeNull();
 });
 
 it.each(["staff", "administrator"] as const)(
