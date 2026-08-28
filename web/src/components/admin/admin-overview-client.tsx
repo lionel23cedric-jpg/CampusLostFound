@@ -255,8 +255,11 @@ export function AdminOverviewClient() {
 
       <section className={`${styles.metricSection} ${styles.reportSection}`} aria-labelledby="report-overview">
         <div className={styles.sectionHeading}>
-          <h2 id="report-overview">Reports</h2>
-          <p>Submitted reports and recovery outcomes.</p>
+          <div>
+            <h2 id="report-overview">Reports</h2>
+            <p>Submitted reports and recovery outcomes.</p>
+          </div>
+          <Link href="/admin/reference-data">Manage reference data</Link>
         </div>
         <MetricList entries={reportMetrics} values={data.reports} />
       </section>
