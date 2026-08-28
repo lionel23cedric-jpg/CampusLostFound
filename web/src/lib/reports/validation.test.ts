@@ -4,6 +4,8 @@ import { createReportSchema } from "./validation";
 
 const categoryId = "64b64c6f2f4d9f1a2b3c4d5e";
 const campusLocationId = "64b64c6f2f4d9f1a2b3c4d5f";
+const internalPhotoPath =
+  "/api/report-images/64f0123456789abcdef01234";
 
 const validBody = {
   reportType: "lost",
@@ -150,6 +152,16 @@ describe("report submission validation", () => {
     ).toEqual([]);
   });
 
+  it.each([
+    internalPhotoPath,
+    "https://images.example/item.jpg",
+  ])("accepts a safe photo reference: %s", (photoUrl) => {
+    expect(
+      createReportSchema.parse({ ...validBody, photoUrls: [photoUrl] })
+        .photoUrls,
+    ).toEqual([photoUrl]);
+  });
+
   it("rejects malformed photo URLs without throwing", () => {
     const body = { ...validBody, photoUrls: ["not-a-url"] };
 
@@ -159,6 +171,9 @@ describe("report submission validation", () => {
 
   it.each([
     ["non-HTTPS photo", ["http://images.example/item.jpg"]],
+    ["arbitrary relative path", ["/images/item.jpg"]],
+    ["credential-bearing URL", ["https://student:secret@images.example/item.jpg"]],
+    ["whitespace-wrapped URL", [" https://images.example/item.jpg "]],
     [
       "too many photos",
       Array.from(

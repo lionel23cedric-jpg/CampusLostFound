@@ -27,6 +27,9 @@ const campusLocation = {
   description: null,
 };
 
+const internalPhotoPath =
+  "/api/report-images/64f0123456789abcdef01234";
+
 const report = {
   id: "507f191e810c19729de860eb",
   reporterId: "507f191e810c19729de860ec",
@@ -193,6 +196,31 @@ describe("report browser client", () => {
     );
   });
 
+  it("accepts internal photo references at both browser response boundaries", async () => {
+    const internalMemberReport = {
+      ...memberReport,
+      photoUrls: [internalPhotoPath],
+    };
+    const internalCreatedReport = {
+      ...report,
+      photoUrls: [internalPhotoPath],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(Response.json({ report: internalMemberReport }))
+        .mockResolvedValueOnce(
+          Response.json({ report: internalCreatedReport }, { status: 201 }),
+        ),
+    );
+
+    await expect(getReportById(memberReport.id)).resolves.toEqual(
+      internalMemberReport,
+    );
+    await expect(submitReport(input)).resolves.toEqual(internalCreatedReport);
+  });
+
   it.each([
     [
       "missing moderation state",
@@ -293,6 +321,26 @@ describe("report browser client", () => {
       "unknown report moderation state",
       () => submitReport(input),
       { report: { ...report, moderationStatus: "removed" } },
+    ],
+    [
+      "created report insecure HTTP URL",
+      () => submitReport(input),
+      {
+        report: {
+          ...report,
+          photoUrls: ["http://example.com/private.jpg"],
+        },
+      },
+    ],
+    [
+      "created report javascript URL",
+      () => submitReport(input),
+      {
+        report: {
+          ...report,
+          photoUrls: ["javascript:alert(1)"],
+        },
+      },
     ],
     [
       "list malformed URL",

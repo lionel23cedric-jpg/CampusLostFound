@@ -1,17 +1,10 @@
 import { z } from "zod";
 
+import { reportPhotoReferenceSchema } from "./photo-reference";
 import type { CreateReportInput } from "./validation";
 
 const GENERIC_MESSAGE = "We could not complete that request. Please try again.";
 const NETWORK_MESSAGE = "We could not reach the service. Please try again.";
-
-const httpsUrlSchema = z.string().refine((value) => {
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-});
 
 export type ReportCategory = {
   id: string;
@@ -144,7 +137,7 @@ const createdReportSchema = z.strictObject({
   occurredAt: z.string().datetime({ offset: true }),
   colors: z.array(z.string()),
   tags: z.array(z.string()),
-  photoUrls: z.array(z.string()),
+  photoUrls: z.array(reportPhotoReferenceSchema),
   status: z.enum(["draft", "open", "claim_pending", "resolved", "closed"]),
   moderationStatus: z.enum(["visible", "hidden"]),
   privacySettings: z.strictObject({
@@ -167,7 +160,7 @@ const memberReportSchema = z.strictObject({
   occurredAt: z.string().datetime({ offset: true }).nullable(),
   colors: z.array(z.string()),
   tags: z.array(z.string()),
-  photoUrls: z.array(httpsUrlSchema),
+  photoUrls: z.array(reportPhotoReferenceSchema),
   status: z.enum(["open", "claim_pending", "resolved", "closed"]),
   moderationStatus: z.enum(["visible", "hidden"]),
   resolvedAt: z.string().datetime({ offset: true }).nullable(),

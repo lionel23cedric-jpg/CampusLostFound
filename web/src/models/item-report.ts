@@ -1,5 +1,10 @@
 import mongoose, { type InferSchemaType, type Model } from "mongoose";
 
+import {
+  REPORT_IMAGE_LIMIT,
+  isReportPhotoReference,
+} from "@/lib/reports/photo-reference";
+
 const { Schema, model, models } = mongoose;
 
 export const REPORT_TYPES = ["lost", "found"] as const;
@@ -120,12 +125,17 @@ export const itemReportSchema = new Schema(
         {
           type: String,
           trim: true,
-          match: [/^https?:\/\/\S+$/i, "Photo URL must use HTTP or HTTPS"],
+          validate: {
+            validator: isReportPhotoReference,
+            message:
+              "Photo reference must be a report image path or HTTPS URL",
+          },
         },
       ],
       default: [],
       validate: {
-        validator: (values: string[]) => values.length <= 5,
+        validator: (values: string[]) =>
+          values.length <= REPORT_IMAGE_LIMIT,
         message: "Provide at most 5 photo URLs",
       },
     },

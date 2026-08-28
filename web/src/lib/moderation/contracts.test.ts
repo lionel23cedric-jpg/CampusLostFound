@@ -18,6 +18,8 @@ const campusLocationId = "64b64c6f2f4d9f1a2b3c4d53";
 const flagId = "64b64c6f2f4d9f1a2b3c4d54";
 const createdAt = new Date("2026-08-28T02:00:00.000Z");
 const updatedAt = new Date("2026-08-28T03:00:00.000Z");
+const internalPhotoPath =
+  "/api/report-images/64f0123456789abcdef01234";
 
 const identifier = (value: string) => ({ toString: () => value });
 
@@ -107,6 +109,21 @@ describe("moderation success contracts", () => {
     expect(result.colors).not.toBe(source.colors);
     expect(result.tags).not.toBe(source.tags);
     expect(result.photoUrls).not.toBe(source.photoUrls);
+  });
+
+  it("accepts internal photo paths and rejects insecure HTTP URLs", () => {
+    expect(
+      toAdminReportSummary(
+        adminReportRecord({ photoUrls: [internalPhotoPath] }),
+      ).photoUrls,
+    ).toEqual([internalPhotoPath]);
+    expect(() =>
+      toAdminReportSummary(
+        adminReportRecord({
+          photoUrls: ["http://images.example.test/bag.jpg"],
+        }),
+      ),
+    ).toThrow();
   });
 
   it("rejects an unknown stored moderation value", () => {
