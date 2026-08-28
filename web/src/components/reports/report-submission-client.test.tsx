@@ -20,6 +20,7 @@ vi.mock("@/lib/reports/browser-client", async () => {
     ...actual,
     getReportCategories: vi.fn(),
     getReportCampusLocations: vi.fn(),
+    uploadReportImage: vi.fn(),
   };
 });
 vi.mock("./report-form", async () => {
@@ -36,7 +37,7 @@ vi.mock("./report-form", async () => {
       categories: Array<{ id: string; name: string }>;
       onSuccess: (submission: {
         report: typeof createdReport;
-        images: [];
+        images: Array<{ uploadKey: string; file: File }>;
       }) => void;
       onAuthenticationRequired: () => void;
       onPermissionLost: () => void;
@@ -98,6 +99,7 @@ import {
   BrowserReportError,
   getReportCampusLocations,
   getReportCategories,
+  uploadReportImage,
   type CreatedReport,
 } from "@/lib/reports/browser-client";
 
@@ -184,6 +186,32 @@ const privateFixture = {
   notes: "Call after the lecture",
 };
 
+const selectedImages = [
+  {
+    uploadKey: "550e8400-e29b-41d4-a716-446655440001",
+    file: new File([Uint8Array.from([0xff, 0xd8, 0xff])], "one.jpg", {
+      type: "image/jpeg",
+    }),
+  },
+  {
+    uploadKey: "550e8400-e29b-41d4-a716-446655440002",
+    file: new File([Uint8Array.from([0x89, 0x50])], "two.png", {
+      type: "image/png",
+    }),
+  },
+  {
+    uploadKey: "550e8400-e29b-41d4-a716-446655440003",
+    file: new File([Uint8Array.from([0x52, 0x49])], "three.webp", {
+      type: "image/webp",
+    }),
+  },
+];
+
+function completeReportWithImages(images = selectedImages) {
+  const props = vi.mocked(ReportForm).mock.calls.at(-1)?.[0];
+  act(() => props?.onSuccess({ report: createdReport, images }));
+}
+
 function mockSession(overrides: Partial<AuthSessionContextValue>) {
   vi.mocked(useAuthSession).mockReturnValue({
     status: "loading",
@@ -243,6 +271,11 @@ beforeEach(() => {
   vi.mocked(getReportCampusLocations)
     .mockReset()
     .mockResolvedValue(campusLocations);
+  vi.mocked(uploadReportImage).mockReset().mockResolvedValue({
+    url: "/api/report-images/507f191e810c19729de86111",
+    contentType: "image/jpeg",
+    byteLength: 3,
+  });
 });
 
 afterEach(cleanup);
@@ -653,6 +686,162 @@ describe("ReportSubmissionClient", () => {
     expect(screen.getByText(createdReport.id)).toBeTruthy();
     for (const privateValue of Object.values(privateFixture)) {
       expect(container.textContent).not.toContain(privateValue);
+    }
+    expect(screen.getByText("No images were selected.")).toBeTruthy();
+    expect(uploadReportImage).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("link", { name: "View submitted report" }).getAttribute(
+        "href",
+      ),
+    ).toBe(`/reports/${createdReport.id}`);
+  });
+
+  it("uploads selected images sequentially and announces progress", async () => {
+    const secondUpload = deferred<Awaited<ReturnType<typeof uploadReportImage>>>();
+    vi.mocked(uploadReportImage)
+      .mockResolvedValueOnce({
+        url: "/api/report-images/507f191e810c19729de86111",
+        contentType: "image/jpeg",
+        byteLength: 3,
+      })
+      .mockReturnValueOnce(secondUpload.promise)
+      .mockResolvedValueOnce({
+        url: "/api/report-images/507f191e810c19729de86113",
+        contentType: "image/webp",
+        byteLength: 2,
+      });
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+
+    completeReportWithImages();
+
+    await waitFor(() => expect(uploadReportImage).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole("status").textContent).toContain(
+      "Uploading image 2 of 3",
+    );
+    expect(uploadReportImage).toHaveBeenNthCalledWith(
+      1,
+      createdReport.id,
+      selectedImages[0].file,
+      selectedImages[0].uploadKey,
+    );
+    expect(uploadReportImage).toHaveBeenNthCalledWith(
+      2,
+      createdReport.id,
+      selectedImages[1].file,
+      selectedImages[1].uploadKey,
+    );
+    expect(uploadReportImage).not.toHaveBeenCalledWith(
+      createdReport.id,
+      selectedImages[2].file,
+      selectedImages[2].uploadKey,
+    );
+
+    await act(async () => {
+      secondUpload.resolve({
+        url: "/api/report-images/507f191e810c19729de86112",
+        contentType: "image/png",
+        byteLength: 2,
+      });
+    });
+
+    await waitFor(() => expect(uploadReportImage).toHaveBeenCalledTimes(3));
+    expect(await screen.findByText("3 of 3 images uploaded.")).toBeTruthy();
+  });
+
+  it("keeps a partial result and retries only the pending suffix", async () => {
+    const user = userEvent.setup();
+    vi.mocked(uploadReportImage)
+      .mockResolvedValueOnce({
+        url: "/api/report-images/507f191e810c19729de86111",
+        contentType: "image/jpeg",
+        byteLength: 3,
+      })
+      .mockResolvedValueOnce({
+        url: "/api/report-images/507f191e810c19729de86112",
+        contentType: "image/png",
+        byteLength: 2,
+      })
+      .mockRejectedValueOnce(new Error("private storage detail"))
+      .mockResolvedValueOnce({
+        url: "/api/report-images/507f191e810c19729de86113",
+        contentType: "image/webp",
+        byteLength: 2,
+      });
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+
+    completeReportWithImages();
+
+    expect(await screen.findByText("2 of 3 images uploaded.")).toBeTruthy();
+    expect(document.body.textContent).not.toContain("private storage detail");
+    await user.click(
+      screen.getByRole("button", { name: "Retry remaining images" }),
+    );
+
+    await waitFor(() => expect(uploadReportImage).toHaveBeenCalledTimes(4));
+    expect(uploadReportImage).toHaveBeenNthCalledWith(
+      4,
+      createdReport.id,
+      selectedImages[2].file,
+      selectedImages[2].uploadKey,
+    );
+    expect(await screen.findByText("3 of 3 images uploaded.")).toBeTruthy();
+  });
+
+  it("disables starting another report while an image is uploading", async () => {
+    const firstUpload = deferred<Awaited<ReturnType<typeof uploadReportImage>>>();
+    vi.mocked(uploadReportImage).mockReturnValueOnce(firstUpload.promise);
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+
+    completeReportWithImages([selectedImages[0]]);
+
+    await waitFor(() => expect(uploadReportImage).toHaveBeenCalledOnce());
+    expect(
+      (
+        screen.getByRole("button", { name: "Submit another report" }) as
+          HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
+  });
+
+  it.each([
+    [
+      new BrowserReportError({
+        code: "AUTHENTICATION_REQUIRED",
+        status: 401,
+        message: "Sign in again",
+      }),
+      "authentication",
+    ],
+    [
+      new BrowserReportError({
+        code: "REPORT_IMAGE_FORBIDDEN",
+        status: 403,
+        message: "Not permitted",
+      }),
+      "permission",
+    ],
+  ])("routes an upload %s failure through the access boundary", async (error, kind) => {
+    vi.mocked(uploadReportImage).mockRejectedValueOnce(error);
+    mockReadyStudent();
+    render(<ReportSubmissionClient />);
+    await screen.findByLabelText("Report form fixture");
+
+    completeReportWithImages([selectedImages[0]]);
+
+    if (kind === "authentication") {
+      await waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+    } else {
+      expect(
+        await screen.findByRole("heading", {
+          name: "Report submission unavailable",
+        }),
+      ).toBeTruthy();
     }
   });
 
