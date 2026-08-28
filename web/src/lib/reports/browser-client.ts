@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { reportPhotoReferenceSchema } from "./photo-reference";
+import {
+  REPORT_IMAGE_CONTENT_TYPES,
+  REPORT_IMAGE_MAX_BYTES,
+  isInternalReportImagePath,
+  reportPhotoReferenceSchema,
+} from "./photo-reference";
 import type { CreateReportInput } from "./validation";
 
 const GENERIC_MESSAGE = "We could not complete that request. Please try again.";
@@ -98,6 +103,12 @@ export type ReportMatch = {
 export type ReportMatches = {
   sourceReportId: string;
   matches: ReportMatch[];
+};
+
+export type UploadedReportImage = {
+  url: string;
+  contentType: (typeof REPORT_IMAGE_CONTENT_TYPES)[number];
+  byteLength: number;
 };
 
 export type ReportBrowseRequest = {
@@ -274,6 +285,16 @@ const campusLocationResponseSchema = z.strictObject({
 
 const reportResponseSchema = z.strictObject({ report: createdReportSchema });
 
+const uploadedReportImageSchema = z.strictObject({
+  url: z.string().refine(isInternalReportImagePath),
+  contentType: z.enum(REPORT_IMAGE_CONTENT_TYPES),
+  byteLength: z.number().int().min(1).max(REPORT_IMAGE_MAX_BYTES),
+}) satisfies z.ZodType<UploadedReportImage>;
+
+const reportImageResponseSchema = z.strictObject({
+  image: uploadedReportImageSchema,
+});
+
 const errorResponseSchema = z.strictObject({
   error: z.strictObject({
     code: z.string().min(1),
@@ -433,4 +454,19 @@ export async function submitReport(
   });
   const data = await parseResponse(response, reportResponseSchema);
   return data.report;
+}
+
+export async function uploadReportImage(
+  reportId: string,
+  file: File,
+  uploadKey: string,
+): Promise<UploadedReportImage> {
+  const body = new FormData();
+  body.append("image", file);
+  body.append("uploadKey", uploadKey);
+  const response = await fetchSameOrigin(
+    `/api/reports/${encodeURIComponent(reportId)}/images`,
+    { method: "POST", body },
+  );
+  return (await parseResponse(response, reportImageResponseSchema)).image;
 }

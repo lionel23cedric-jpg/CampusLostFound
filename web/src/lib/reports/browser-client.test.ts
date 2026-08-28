@@ -10,6 +10,7 @@ import {
   getReportMatches,
   getReports,
   submitReport,
+  uploadReportImage,
   type MemberReport,
   type ReportMatches,
 } from "./browser-client";
@@ -154,6 +155,78 @@ afterEach(() => {
 });
 
 describe("report browser client", () => {
+  it.each([200, 201])(
+    "uploads a report image with a strict receipt for status %s",
+    async (status) => {
+      const image = {
+        url: internalPhotoPath,
+        contentType: "image/jpeg" as const,
+        byteLength: 4,
+      };
+      const fetchMock = vi.fn().mockResolvedValue(
+        Response.json({ image }, { status }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const file = new File([Uint8Array.from([0xff, 0xd8, 0xff, 0x01])], "private.jpg", {
+        type: "image/jpeg",
+      });
+      const uploadKey = "550e8400-e29b-41d4-a716-446655440000";
+
+      await expect(
+        uploadReportImage("report/id", file, uploadKey),
+      ).resolves.toEqual(image);
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(path).toBe("/api/reports/report%2Fid/images");
+      expect(init).toMatchObject({ method: "POST", credentials: "same-origin" });
+      expect(init.headers).toBeUndefined();
+      expect(init.body).toBeInstanceOf(FormData);
+      const form = init.body as FormData;
+      expect([...form.keys()]).toEqual(["image", "uploadKey"]);
+      expect(form.get("image")).toBe(file);
+      expect(form.get("uploadKey")).toBe(uploadKey);
+    },
+  );
+
+  it.each([
+    ["extra success key", { image: { url: internalPhotoPath, contentType: "image/jpeg", byteLength: 4, privateId: "secret" } }],
+    ["external receipt URL", { image: { url: "https://example.test/image.jpg", contentType: "image/jpeg", byteLength: 4 } }],
+    ["unsupported MIME", { image: { url: internalPhotoPath, contentType: "image/gif", byteLength: 4 } }],
+    ["invalid byte length", { image: { url: internalPhotoPath, contentType: "image/jpeg", byteLength: 0 } }],
+  ])("rejects an upload response with %s", async (_label, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+    await expect(
+      uploadReportImage(
+        report.id,
+        new File([Uint8Array.from([0xff])], "x.jpg", { type: "image/jpeg" }),
+        "550e8400-e29b-41d4-a716-446655440000",
+      ),
+    ).rejects.toMatchObject({ code: "REQUEST_FAILED", status: 200 });
+  });
+
+  it("preserves safe upload errors and closes network failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(
+        Response.json(
+          { error: { code: "IMAGE_TOO_LARGE", message: "Image is too large" } },
+          { status: 413 },
+        ),
+      ).mockRejectedValueOnce(new Error("private network detail")),
+    );
+    const file = new File([Uint8Array.from([0xff])], "x.jpg", { type: "image/jpeg" });
+
+    await expect(uploadReportImage(report.id, file, "key")).rejects.toMatchObject({
+      code: "IMAGE_TOO_LARGE",
+      status: 413,
+    });
+    await expect(uploadReportImage(report.id, file, "key")).rejects.toMatchObject({
+      code: "NETWORK_ERROR",
+      status: 0,
+    });
+  });
+
   it("loads a canonical member report page with same-origin credentials", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       Response.json({
