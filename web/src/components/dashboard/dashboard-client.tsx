@@ -97,6 +97,15 @@ export function DashboardClient() {
   const workflow = [
     recoveryWorkflow[0],
     recoveryWorkflow[1],
+    ...(user.status === "active"
+      ? [
+          {
+            title: "Review my report history",
+            description: "Review every lost or found report submitted by this account.",
+            href: "/reports/mine",
+          },
+        ]
+      : []),
     recoveryAction,
     ...(user.status === "active"
       ? [

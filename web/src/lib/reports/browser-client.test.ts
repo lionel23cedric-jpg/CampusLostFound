@@ -9,9 +9,11 @@ import {
   getReportCategories,
   getReportMatches,
   getReports,
+  getOwnReports,
   submitReport,
   uploadReportImage,
   type MemberReport,
+  type OwnerReportHistoryPage,
   type ReportMatches,
 } from "./browser-client";
 
@@ -54,6 +56,25 @@ const report = {
   createdAt: "2026-08-15T00:00:00.000Z",
   updatedAt: "2026-08-15T00:00:00.000Z",
 } as const;
+
+const ownerReport = {
+  ...report,
+  colors: [...report.colors],
+  tags: [...report.tags],
+  photoUrls: [internalPhotoPath, "https://example.com/legacy.jpg"],
+  status: "draft" as const,
+  moderationStatus: "hidden" as const,
+  privacySettings: {
+    showPhoto: false,
+    showEventDate: false,
+    showCampusLocation: false,
+  },
+};
+
+const ownerPage = {
+  reports: [ownerReport],
+  pagination: { page: 2, pageSize: 10, total: 11, totalPages: 2 },
+} satisfies OwnerReportHistoryPage;
 
 const memberReport = {
   id: "64b64c6f2f4d9f1a2b3c4d54",
@@ -155,6 +176,126 @@ afterEach(() => {
 });
 
 describe("report browser client", () => {
+  it("loads strict owner history with same-origin credentials and abort support", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(ownerPage));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getOwnReports(
+        { reportType: "found", status: "closed", page: 2 },
+        controller.signal,
+      ),
+    ).resolves.toEqual(ownerPage);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/reports/mine?reportType=found&status=closed&page=2",
+      {
+        method: "GET",
+        signal: controller.signal,
+        credentials: "same-origin",
+      },
+    );
+  });
+
+  it("omits empty owner history query values and page one", async () => {
+    const emptyPage = {
+      reports: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    };
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(emptyPage));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getOwnReports({ page: 1 })).resolves.toEqual(emptyPage);
+    expect(fetchMock).toHaveBeenCalledWith("/api/reports/mine", {
+      method: "GET",
+      signal: undefined,
+      credentials: "same-origin",
+    });
+  });
+
+  it.each([
+    ["unknown top-level key", { ...ownerPage, internalVersion: 1 }],
+    [
+      "private verification field",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, expectedAnswer: "private answer" }],
+      },
+    ],
+    [
+      "invalid photo reference",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, photoUrls: ["javascript:alert(1)"] }],
+      },
+    ],
+    [
+      "invalid timestamp",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, createdAt: "not-a-date" }],
+      },
+    ],
+    [
+      "unknown report status",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, status: "archived" }],
+      },
+    ],
+    [
+      "wrong page size",
+      { ...ownerPage, pagination: { ...ownerPage.pagination, pageSize: 12 } },
+    ],
+    [
+      "inconsistent total pages",
+      { ...ownerPage, pagination: { ...ownerPage.pagination, totalPages: 3 } },
+    ],
+    [
+      "more than ten reports",
+      { ...ownerPage, reports: Array.from({ length: 11 }, () => ownerReport) },
+    ],
+    [
+      "reports when total is zero",
+      {
+        ...ownerPage,
+        pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+      },
+    ],
+  ])("rejects owner history containing %s", async (_case, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+
+    await expect(getOwnReports({ page: 2 })).rejects.toMatchObject({
+      code: "REQUEST_FAILED",
+      status: 200,
+    });
+  });
+
+  it("preserves a safe owner history API error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Invalid report query",
+              fields: { page: ["Invalid input"] },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    await expect(getOwnReports({ page: 2 })).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      status: 400,
+      message: "Invalid report query",
+      fields: { page: ["Invalid input"] },
+    });
+  });
+
   it.each([200, 201])(
     "uploads a report image with a strict receipt for status %s",
     async (status) => {

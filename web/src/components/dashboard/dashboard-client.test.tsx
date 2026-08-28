@@ -110,13 +110,16 @@ it("renders safe account details and the available report actions", () => {
     screen.getByRole("link", { name: "Search possible matches" }).getAttribute("href"),
   ).toBe("/reports");
   expect(
+    screen.getByRole("link", { name: "Review my report history" }).getAttribute("href"),
+  ).toBe("/reports/mine");
+  expect(
     screen.getByRole("link", { name: "Manage recovery requests" }).getAttribute("href"),
   ).toBe("/claims");
   expect(
     screen.getByRole("link", { name: "Manage profile settings" }).getAttribute("href"),
   ).toBe("/profile");
   expect(screen.queryByRole("link", { name: "Review ownership claims" })).toBeNull();
-  expect(screen.getAllByText("Available now")).toHaveLength(4);
+  expect(screen.getAllByText("Available now")).toHaveLength(5);
   expect(screen.queryByText("Upcoming")).toBeNull();
   expect(container.textContent).not.toMatch(/password|token|session hash/i);
   expect(container.textContent).not.toContain("user-id");
@@ -138,8 +141,11 @@ it.each(["staff", "administrator"] as const)(
     expect(
       screen.getByRole("link", { name: "Manage profile settings" }).getAttribute("href"),
     ).toBe("/profile");
+    expect(
+      screen.getByRole("link", { name: "Review my report history" }).getAttribute("href"),
+    ).toBe("/reports/mine");
     expect(screen.getAllByText("Available now")).toHaveLength(
-      role === "administrator" ? 5 : 4,
+      role === "administrator" ? 6 : 5,
     );
     expect(screen.queryByText("Upcoming")).toBeNull();
   },
@@ -192,6 +198,7 @@ it.each([
   expect(screen.queryByRole("link", { name: "Manage recovery requests" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Review ownership claims" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Manage profile settings" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Review my report history" })).toBeNull();
   expect(screen.getAllByText("Available now")).toHaveLength(2);
   expect(screen.getAllByText("Upcoming")).toHaveLength(1);
 });

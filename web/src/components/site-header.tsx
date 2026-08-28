@@ -72,6 +72,11 @@ export function SiteHeader() {
               <Link className={`${styles.navLink} text-link`} href="/reports">
                 Browse
               </Link>
+              {isActive ? (
+                <Link className={`${styles.navLink} text-link`} href="/reports/mine">
+                  My reports
+                </Link>
+              ) : null}
               {canManageOwnClaims ? (
                 <Link className={`${styles.navLink} text-link`} href="/claims">
                   My claims
