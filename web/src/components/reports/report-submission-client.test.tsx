@@ -34,7 +34,10 @@ vi.mock("./report-form", async () => {
       onReferenceUnavailable,
     }: {
       categories: Array<{ id: string; name: string }>;
-      onSuccess: (report: typeof createdReport) => void;
+      onSuccess: (submission: {
+        report: typeof createdReport;
+        images: [];
+      }) => void;
       onAuthenticationRequired: () => void;
       onPermissionLost: () => void;
       onReferenceUnavailable: () => Promise<void>;
@@ -61,7 +64,10 @@ vi.mock("./report-form", async () => {
           <p>{privateFixture.question}</p>
           <p>{privateFixture.answer}</p>
           <p>{privateFixture.notes}</p>
-          <button type="button" onClick={() => onSuccess(createdReport)}>
+          <button
+            type="button"
+            onClick={() => onSuccess({ report: createdReport, images: [] })}
+          >
             Complete report
           </button>
           <button type="button" onClick={onAuthenticationRequired}>
@@ -657,7 +663,10 @@ describe("ReportSubmissionClient", () => {
     const props = vi.mocked(ReportForm).mock.calls.at(-1)?.[0];
 
     act(() => {
-      props?.onSuccess({ ...createdReport, reporterId: secondStudent.id });
+      props?.onSuccess({
+        report: { ...createdReport, reporterId: secondStudent.id },
+        images: [],
+      });
     });
 
     expect(screen.queryByRole("heading", { name: "Report submitted" })).toBeNull();

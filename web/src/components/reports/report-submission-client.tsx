@@ -242,7 +242,7 @@ function ActiveReportSubmission({
         key={`${accountId}-${formKey}`}
         categories={referenceState.categories}
         campusLocations={referenceState.campusLocations}
-        onSuccess={(report) => {
+        onSuccess={({ report }) => {
           if (isMounted.current && report.reporterId === accountId) {
             setCreatedReport(report);
           }
