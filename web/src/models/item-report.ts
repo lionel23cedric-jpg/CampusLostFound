@@ -16,8 +16,157 @@ export const REPORT_STATUSES = [
   "closed",
 ] as const;
 export const REPORT_MODERATION_STATUSES = ["visible", "hidden"] as const;
+export const REPORT_VERIFICATION_STATUSES = ["pending", "verified"] as const;
+export const REPORT_CUSTODY_STATUSES = [
+  "not_applicable",
+  "not_held",
+  "stored",
+  "released",
+] as const;
 export type ReportModerationStatus =
   (typeof REPORT_MODERATION_STATUSES)[number];
+export type ReportVerificationStatus =
+  (typeof REPORT_VERIFICATION_STATUSES)[number];
+export type ReportCustodyStatus = (typeof REPORT_CUSTODY_STATUSES)[number];
+
+type ReportType = (typeof REPORT_TYPES)[number];
+type Identifier = { toString(): string };
+
+export type NormalizedStaffReportHandling = {
+  verificationStatus: ReportVerificationStatus;
+  verifiedBy: Identifier | null;
+  verifiedAt: Date | null;
+  custodyStatus: ReportCustodyStatus;
+  storageLocation: string | null;
+  storedAt: Date | null;
+  releasedAt: Date | null;
+  updatedBy: Identifier | null;
+};
+
+export function defaultStaffReportHandling(reportType: ReportType) {
+  return {
+    verificationStatus: "pending" as const,
+    verifiedBy: null,
+    verifiedAt: null,
+    custodyStatus:
+      reportType === "found" ? ("not_held" as const) : ("not_applicable" as const),
+    storageLocation: null,
+    storedAt: null,
+    releasedAt: null,
+    updatedBy: null,
+  };
+}
+
+function isDate(value: unknown): value is Date {
+  return value instanceof Date && !Number.isNaN(value.getTime());
+}
+
+function isIdentifier(value: unknown): value is Identifier {
+  return mongoose.isValidObjectId(value);
+}
+
+function hasValidStorageLocation(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value === value.trim() &&
+    value.length >= 2 &&
+    value.length <= 160 &&
+    !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(value)
+  );
+}
+
+function staffReportHandlingIsValid(
+  reportType: unknown,
+  value: unknown,
+): value is NormalizedStaffReportHandling {
+  if (
+    (reportType !== "lost" && reportType !== "found") ||
+    typeof value !== "object" ||
+    value === null
+  ) {
+    return false;
+  }
+
+  const handling = value as Record<string, unknown>;
+  const verificationStatus = handling.verificationStatus;
+  const custodyStatus = handling.custodyStatus;
+  const verifiedBy = handling.verifiedBy;
+  const verifiedAt = handling.verifiedAt;
+  const storageLocation = handling.storageLocation;
+  const storedAt = handling.storedAt;
+  const releasedAt = handling.releasedAt;
+  const updatedBy = handling.updatedBy;
+
+  if (verificationStatus === "pending") {
+    return (
+      verifiedBy === null &&
+      verifiedAt === null &&
+      updatedBy === null &&
+      storageLocation === null &&
+      storedAt === null &&
+      releasedAt === null &&
+      custodyStatus ===
+        (reportType === "found" ? "not_held" : "not_applicable")
+    );
+  }
+
+  if (
+    verificationStatus !== "verified" ||
+    !isIdentifier(verifiedBy) ||
+    !isDate(verifiedAt) ||
+    !isIdentifier(updatedBy)
+  ) {
+    return false;
+  }
+
+  if (reportType === "lost") {
+    return (
+      custodyStatus === "not_applicable" &&
+      storageLocation === null &&
+      storedAt === null &&
+      releasedAt === null
+    );
+  }
+
+  if (custodyStatus === "not_held") {
+    return (
+      storageLocation === null && storedAt === null && releasedAt === null
+    );
+  }
+
+  if (
+    (custodyStatus !== "stored" && custodyStatus !== "released") ||
+    !hasValidStorageLocation(storageLocation) ||
+    !isDate(storedAt)
+  ) {
+    return false;
+  }
+
+  return custodyStatus === "stored"
+    ? releasedAt === null
+    : isDate(releasedAt);
+}
+
+export function normalizeStaffReportHandling(
+  reportType: ReportType,
+  value: unknown,
+): NormalizedStaffReportHandling {
+  if (value === undefined) return defaultStaffReportHandling(reportType);
+  if (!staffReportHandlingIsValid(reportType, value)) {
+    throw new Error("Staff report handling is invalid");
+  }
+
+  return {
+    verificationStatus: value.verificationStatus,
+    verifiedBy: value.verifiedBy,
+    verifiedAt: value.verifiedAt,
+    custodyStatus: value.custodyStatus,
+    storageLocation: value.storageLocation,
+    storedAt: value.storedAt,
+    releasedAt: value.releasedAt,
+    updatedBy: value.updatedBy,
+  };
+}
 
 export function normalizeReportModerationStatus(
   value: unknown,
@@ -43,6 +192,47 @@ const privacySettingsSchema = new Schema(
       type: Boolean,
       default: true,
       required: true,
+    },
+  },
+  { _id: false },
+);
+
+const staffHandlingSchema = new Schema(
+  {
+    verificationStatus: {
+      type: String,
+      enum: REPORT_VERIFICATION_STATUSES,
+      required: true,
+    },
+    verifiedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    verifiedAt: { type: Date, default: null },
+    custodyStatus: {
+      type: String,
+      enum: REPORT_CUSTODY_STATUSES,
+      required: true,
+    },
+    storageLocation: {
+      type: String,
+      trim: true,
+      minlength: 2,
+      maxlength: 160,
+      default: null,
+      validate: {
+        validator: (value: string | null) =>
+          value === null || !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(value),
+        message: "Storage location contains unsupported characters",
+      },
+    },
+    storedAt: { type: Date, default: null },
+    releasedAt: { type: Date, default: null },
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
     },
   },
   { _id: false },
@@ -151,6 +341,16 @@ export const itemReportSchema = new Schema(
       default: "visible",
       required: true,
     },
+    staffHandling: {
+      type: staffHandlingSchema,
+      default: function (this: { reportType?: ReportType }) {
+        return defaultStaffReportHandling(
+          this.reportType === "found" ? "found" : "lost",
+        );
+      },
+      required: true,
+      select: false,
+    },
     privacySettings: {
       type: privacySettingsSchema,
       default: () => ({}),
@@ -175,6 +375,12 @@ export const itemReportSchema = new Schema(
     timestamps: true,
   },
 );
+
+itemReportSchema.pre("validate", function () {
+  if (!staffReportHandlingIsValid(this.reportType, this.staffHandling)) {
+    this.invalidate("staffHandling", "Staff report handling is invalid");
+  }
+});
 
 itemReportSchema.index({ reporterId: 1, createdAt: -1 });
 itemReportSchema.index({

@@ -9,6 +9,16 @@ vi.mock("@/models/campus-location", () => ({
 }));
 vi.mock("@/models/item-report", () => ({
   ItemReportModel: { create: vi.fn() },
+  defaultStaffReportHandling: (reportType: "lost" | "found") => ({
+    verificationStatus: "pending",
+    verifiedBy: null,
+    verifiedAt: null,
+    custodyStatus: reportType === "found" ? "not_held" : "not_applicable",
+    storageLocation: null,
+    storedAt: null,
+    releasedAt: null,
+    updatedBy: null,
+  }),
 }));
 vi.mock("@/models/private-verification-details", () => ({
   PrivateVerificationDetailsModel: { create: vi.fn() },
@@ -136,6 +146,16 @@ describe("report service", () => {
           privacySettings: input.privacySettings,
           status: "open",
           resolvedAt: null,
+          staffHandling: {
+            verificationStatus: "pending",
+            verifiedBy: null,
+            verifiedAt: null,
+            custodyStatus: "not_applicable",
+            storageLocation: null,
+            storedAt: null,
+            releasedAt: null,
+            updatedBy: null,
+          },
         },
       ],
       { session: transaction },
@@ -151,6 +171,23 @@ describe("report service", () => {
     );
     expect(toOwnerReport).toHaveBeenCalledWith(reportDocument);
     expect(transaction.endSession).toHaveBeenCalledOnce();
+  });
+
+  it("uses a not-held custody default for a Found report", async () => {
+    await createReport(user, { ...input, reportType: "found" });
+
+    expect(ItemReportModel.create).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          reportType: "found",
+          staffHandling: expect.objectContaining({
+            verificationStatus: "pending",
+            custodyStatus: "not_held",
+          }),
+        }),
+      ],
+      { session: transaction },
+    );
   });
 
   it.each([
