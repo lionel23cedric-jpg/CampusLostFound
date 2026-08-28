@@ -1,7 +1,7 @@
 # Report Image Upload and Preview Design
 
-**Date:** 2026-08-28  
-**Status:** Approved for specification  
+**Date:** 2026-08-28
+**Status:** Approved for specification
 **Target branch:** `feature/report-image-upload-preview`
 
 ## Course alignment
