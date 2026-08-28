@@ -174,14 +174,17 @@ Replace the URL rows in `ReportForm` with:
 - a labelled native file input with `multiple` and an explicit accept list;
 - help text stating the three formats, 3 MiB per-image limit, five-image limit,
   and privacy warning;
-- an ordered preview list using native `<img>` elements and generated object
-  URLs;
+- an ordered preview list using the existing `next/image` component with
+  `unoptimized` and generated object URLs, so previews remain local while the
+  repository's Core Web Vitals lint rules continue to pass;
 - a clearly named remove button for every selected file;
 - count, type, and size errors linked to the input;
 - disabled selection and removal controls while submission is in progress.
 
 The report detail page renders same-origin uploaded images as an accessible
-gallery. Each image uses generated alternative text such as
+gallery through `next/image` with `unoptimized`; this leaves the authenticated
+same-origin endpoint as the direct source and adds no image service. Each image
+uses generated alternative text such as
 `Submitted item photo 1`; it does not expose the original filename. Existing
 external HTTPS values remain explicit links and are not embedded, preventing
 automatic requests to third-party hosts.
