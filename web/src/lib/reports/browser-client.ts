@@ -48,6 +48,24 @@ export type CreatedReport = {
   updatedAt: string;
 };
 
+export type OwnerReport = CreatedReport;
+
+export type OwnerReportHistoryRequest = {
+  reportType?: OwnerReport["reportType"];
+  status?: OwnerReport["status"];
+  page?: number;
+};
+
+export type OwnerReportHistoryPage = {
+  reports: OwnerReport[];
+  pagination: {
+    page: number;
+    pageSize: 10;
+    total: number;
+    totalPages: number;
+  };
+};
+
 export type MemberReport = {
   id: string;
   reportType: "lost" | "found";
@@ -160,6 +178,40 @@ const createdReportSchema = z.strictObject({
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 }) satisfies z.ZodType<CreatedReport>;
+
+const ownerReportHistoryPageSchema = z
+  .strictObject({
+    reports: z.array(createdReportSchema),
+    pagination: z.strictObject({
+      page: z.number().int().positive(),
+      pageSize: z.literal(10),
+      total: z.number().int().nonnegative(),
+      totalPages: z.number().int().nonnegative(),
+    }),
+  })
+  .superRefine(({ reports, pagination }, context) => {
+    if (pagination.totalPages !== Math.ceil(pagination.total / 10)) {
+      context.addIssue({
+        code: "custom",
+        path: ["pagination", "totalPages"],
+        message: "Owner history page count is inconsistent",
+      });
+    }
+    if (reports.length > 10 || reports.length > pagination.total) {
+      context.addIssue({
+        code: "custom",
+        path: ["reports"],
+        message: "Owner history result count is inconsistent",
+      });
+    }
+    if (reports.length > 0 && pagination.page > pagination.totalPages) {
+      context.addIssue({
+        code: "custom",
+        path: ["pagination", "page"],
+        message: "Owner history page is inconsistent",
+      });
+    }
+  }) satisfies z.ZodType<OwnerReportHistoryPage>;
 
 const memberReportSchema = z.strictObject({
   id: z.string().min(1),
@@ -421,6 +473,23 @@ export async function getReports(
     method: "GET",
   });
   return parseResponse(response, reportPageSchema);
+}
+
+export async function getOwnReports(
+  input: OwnerReportHistoryRequest,
+  signal?: AbortSignal,
+): Promise<OwnerReportHistoryPage> {
+  const search = new URLSearchParams();
+  if (input.reportType) search.set("reportType", input.reportType);
+  if (input.status) search.set("status", input.status);
+  if (input.page && input.page !== 1) search.set("page", String(input.page));
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  const response = await fetchSameOrigin(`/api/reports/mine${suffix}`, {
+    method: "GET",
+    signal,
+  });
+  return parseResponse(response, ownerReportHistoryPageSchema);
 }
 
 export async function getReportById(id: string): Promise<MemberReport> {
