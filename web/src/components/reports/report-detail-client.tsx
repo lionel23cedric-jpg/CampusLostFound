@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -14,6 +15,10 @@ import {
   type ReportCampusLocation,
   type ReportCategory,
 } from "@/lib/reports/browser-client";
+import {
+  isInternalReportImagePath,
+  isLegacyHttpsPhotoUrl,
+} from "@/lib/reports/photo-reference";
 
 import styles from "./report-browsing.module.css";
 import { ReportMatchesPanel } from "./report-matches-panel";
@@ -305,6 +310,13 @@ function ActiveReportDetail({
           })()
         : "Campus location unavailable";
   const typeLabel = report.reportType === "lost" ? "Lost" : "Found";
+  const photoEntries = report.photoUrls.map((url, index) => ({ url, index }));
+  const uploadedPhotos = photoEntries.filter(({ url }) =>
+    isInternalReportImagePath(url),
+  );
+  const legacyPhotoLinks = photoEntries.filter(({ url }) =>
+    isLegacyHttpsPhotoUrl(url),
+  );
 
   return (
     <div className={styles.detailPage}>
@@ -406,19 +418,42 @@ function ActiveReportDetail({
           </section>
         ) : null}
 
-        {report.photoUrls.length > 0 ? (
+        {uploadedPhotos.length > 0 || legacyPhotoLinks.length > 0 ? (
           <section className={styles.detailSection} aria-labelledby="photos-heading">
             <h2 id="photos-heading">Submitted photos</h2>
-            <p>Photo links open an external website only when you activate them.</p>
-            <ul className={styles.photoLinks}>
-              {report.photoUrls.map((photoUrl, index) => (
-                <li key={`${photoUrl}-${index}`}>
-                  <a href={photoUrl} target="_blank" rel="noreferrer">
-                    View submitted photo {index + 1} (external)
-                  </a>
-                </li>
-              ))}
-            </ul>
+            {uploadedPhotos.length > 0 ? (
+              <ul className={styles.photoGallery}>
+                {uploadedPhotos.map(({ url, index }) => (
+                  <li key={`${url}-${index}`}>
+                    <Image
+                      className={styles.photoImage}
+                      src={url}
+                      alt={`Submitted photo ${index + 1}`}
+                      width={640}
+                      height={480}
+                      unoptimized
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {legacyPhotoLinks.length > 0 ? (
+              <>
+                <p>
+                  External photo links open another website only when you
+                  activate them.
+                </p>
+                <ul className={styles.photoLinks}>
+                  {legacyPhotoLinks.map(({ url, index }) => (
+                    <li key={`${url}-${index}`}>
+                      <a href={url} target="_blank" rel="noreferrer">
+                        View submitted photo {index + 1} (external)
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
           </section>
         ) : null}
       </article>
