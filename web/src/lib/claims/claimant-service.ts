@@ -84,6 +84,7 @@ export async function getClaimQuestions(user: PublicUser, reportId: string) {
       reportType: "found",
       status: "open",
       reporterId: { $ne: user.id },
+      moderationStatus: { $ne: "hidden" },
     },
     CLAIM_REPORT_PROJECTION,
   )
@@ -140,6 +141,7 @@ export async function createClaim(
           reportType: "found",
           status: "open",
           reporterId: { $ne: user.id },
+          moderationStatus: { $ne: "hidden" },
         },
         { $set: { status: "open" } },
         {

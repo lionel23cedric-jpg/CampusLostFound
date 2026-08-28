@@ -39,6 +39,7 @@ export type CreatedReport = {
   tags: string[];
   photoUrls: string[];
   status: "draft" | "open" | "claim_pending" | "resolved" | "closed";
+  moderationStatus: "visible" | "hidden";
   privacySettings: {
     showPhoto: boolean;
     showEventDate: boolean;
@@ -61,6 +62,7 @@ export type MemberReport = {
   tags: string[];
   photoUrls: string[];
   status: "open" | "claim_pending" | "resolved" | "closed";
+  moderationStatus: "visible" | "hidden";
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -144,6 +146,7 @@ const createdReportSchema = z.strictObject({
   tags: z.array(z.string()),
   photoUrls: z.array(z.string()),
   status: z.enum(["draft", "open", "claim_pending", "resolved", "closed"]),
+  moderationStatus: z.enum(["visible", "hidden"]),
   privacySettings: z.strictObject({
     showPhoto: z.boolean(),
     showEventDate: z.boolean(),
@@ -166,6 +169,7 @@ const memberReportSchema = z.strictObject({
   tags: z.array(z.string()),
   photoUrls: z.array(httpsUrlSchema),
   status: z.enum(["open", "claim_pending", "resolved", "closed"]),
+  moderationStatus: z.enum(["visible", "hidden"]),
   resolvedAt: z.string().datetime({ offset: true }).nullable(),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),

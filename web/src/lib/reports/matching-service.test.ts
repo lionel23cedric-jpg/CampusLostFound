@@ -54,6 +54,7 @@ const sourceDocument = {
   tags: ["laptop", "charger"],
   photoUrls: [],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: false,
@@ -77,6 +78,7 @@ const matchProjection = {
   tags: 1,
   photoUrls: 1,
   status: 1,
+  moderationStatus: 1,
   privacySettings: 1,
   resolvedAt: 1,
   createdAt: 1,
@@ -108,6 +110,7 @@ function memberReport(
     tags: ["charger"],
     photoUrls: [],
     status: "open",
+    moderationStatus: "visible",
     resolvedAt: null,
     createdAt: "2026-08-20T02:00:00.000Z",
     updatedAt: "2026-08-20T02:00:00.000Z",
@@ -154,7 +157,11 @@ describe("report matching service", () => {
 
     expect(connectToDatabase).toHaveBeenCalledOnce();
     expect(ItemReportModel.findOne).toHaveBeenCalledWith(
-      { _id: reportId, reporterId: user.id },
+      {
+        _id: reportId,
+        reporterId: user.id,
+        moderationStatus: { $ne: "hidden" },
+      },
       matchProjection,
     );
     expect(ItemReportModel.find).toHaveBeenCalledWith(
@@ -163,6 +170,7 @@ describe("report matching service", () => {
         reporterId: { $ne: sourceDocument.reporterId },
         reportType: "found",
         status: "open",
+        moderationStatus: { $ne: "hidden" },
       },
       matchProjection,
     );
@@ -188,13 +196,33 @@ describe("report matching service", () => {
     );
   });
 
-  it("treats a missing or non-owned source as not found", async () => {
-    sourceExec.mockResolvedValue(null);
+  it.each(["missing or non-owned", "hidden"])(
+    "treats a %s source returned outside the visible owner query as not found",
+    async () => {
+      sourceExec.mockResolvedValue(null);
 
-    await expect(findReportMatches(user, reportId)).rejects.toEqual(
-      new MatchingError("REPORT_NOT_FOUND"),
+      await expect(findReportMatches(user, reportId)).rejects.toEqual(
+        new MatchingError("REPORT_NOT_FOUND"),
+      );
+      expect(ItemReportModel.find).not.toHaveBeenCalled();
+    },
+  );
+
+  it("scores only the visible candidates returned by the filtered database query", async () => {
+    candidateExec.mockResolvedValue([document("visible-candidate")]);
+
+    await findReportMatches(user, reportId);
+
+    expect(ItemReportModel.find).toHaveBeenCalledWith(
+      expect.objectContaining({ moderationStatus: { $ne: "hidden" } }),
+      matchProjection,
     );
-    expect(ItemReportModel.find).not.toHaveBeenCalled();
+    expect(toMemberReport).toHaveBeenCalledTimes(1);
+    expect(scoreReportMatch).toHaveBeenCalledTimes(1);
+    expect(toMemberReport).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: "visible-candidate" }),
+      user.id,
+    );
   });
 
   it.each(["draft", "claim_pending", "resolved", "closed"])(

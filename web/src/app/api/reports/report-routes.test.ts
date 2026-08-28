@@ -222,6 +222,7 @@ describe("report routes", () => {
       tags: ["laptop"],
       photoUrls: [],
       status: "open",
+      moderationStatus: "visible",
       privacySettings: {
         showPhoto: true,
         showEventDate: true,

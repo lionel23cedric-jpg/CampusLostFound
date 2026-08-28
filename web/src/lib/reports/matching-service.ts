@@ -29,6 +29,7 @@ const MATCH_REPORT_PROJECTION = {
   tags: 1,
   photoUrls: 1,
   status: 1,
+  moderationStatus: 1,
   privacySettings: 1,
   resolvedAt: 1,
   createdAt: 1,
@@ -86,7 +87,11 @@ export async function findReportMatches(
   await connectToDatabase();
 
   const source = await ItemReportModel.findOne(
-    { _id: reportId, reporterId: user.id },
+    {
+      _id: reportId,
+      reporterId: user.id,
+      moderationStatus: { $ne: "hidden" },
+    },
     MATCH_REPORT_PROJECTION,
   ).exec();
 
@@ -101,6 +106,7 @@ export async function findReportMatches(
       reporterId: { $ne: source.reporterId },
       reportType: source.reportType === "lost" ? "found" : "lost",
       status: "open",
+      moderationStatus: { $ne: "hidden" },
     },
     MATCH_REPORT_PROJECTION,
   )

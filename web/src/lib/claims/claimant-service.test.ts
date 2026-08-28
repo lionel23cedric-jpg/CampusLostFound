@@ -261,6 +261,7 @@ describe("claimant service", () => {
         reportType: "found",
         status: "open",
         reporterId: { $ne: student.id },
+        moderationStatus: { $ne: "hidden" },
       },
       { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
     );
@@ -300,6 +301,21 @@ describe("claimant service", () => {
     });
   });
 
+  it("rejects a hidden report before loading claim state or private questions", async () => {
+    configureQuestionRead(null);
+
+    await expect(getClaimQuestions(student, reportId)).rejects.toMatchObject({
+      code: "REPORT_NOT_CLAIMABLE",
+    });
+
+    expect(ItemReportModel.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ moderationStatus: { $ne: "hidden" } }),
+      expect.any(Object),
+    );
+    expect(ClaimModel.exists).not.toHaveBeenCalled();
+    expect(PrivateVerificationDetailsModel.findOne).not.toHaveBeenCalled();
+  });
+
   it("rejects an existing active claim before loading private questions", async () => {
     const { duplicateQuery } = configureQuestionRead();
     duplicateQuery.exec.mockResolvedValue({ _id: claimObjectId });
@@ -324,6 +340,7 @@ describe("claimant service", () => {
         reportType: "found",
         status: "open",
         reporterId: { $ne: student.id },
+        moderationStatus: { $ne: "hidden" },
       },
       { $set: { status: "open" } },
       expect.objectContaining({ new: true, session: transaction }),
@@ -563,6 +580,27 @@ describe("claimant service", () => {
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
 
+  it("rejects a hidden report before verification, Claim, evidence or notification writes", async () => {
+    const { reportQuery } = configureCreate();
+    reportQuery.exec.mockResolvedValue(null);
+
+    await expect(
+      createClaim(student, reportId, validInput),
+    ).rejects.toMatchObject({ code: "REPORT_NOT_CLAIMABLE" });
+
+    expect(ItemReportModel.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ moderationStatus: { $ne: "hidden" } }),
+      expect.any(Object),
+      expect.any(Object),
+    );
+    expect(ClaimModel.exists).not.toHaveBeenCalled();
+    expect(PrivateVerificationDetailsModel.findOne).not.toHaveBeenCalled();
+    expect(ClaimModel.create).not.toHaveBeenCalled();
+    expect(ClaimEvidenceModel.create).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
+    expect(transaction.endSession).toHaveBeenCalledOnce();
+  });
+
   it("fails if a transaction callback never produces a claim", async () => {
     configureCreate();
     transaction.withTransaction.mockResolvedValueOnce(undefined);
@@ -599,6 +637,9 @@ describe("claimant service", () => {
       { _id: { $in: [reportObjectId] } },
       { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
     );
+    expect(
+      JSON.stringify(vi.mocked(ItemReportModel.find).mock.calls),
+    ).not.toContain("moderationStatus");
     expect(ClaimEvidenceModel.create).not.toHaveBeenCalled();
   });
 
@@ -652,6 +693,9 @@ describe("claimant service", () => {
       { _id: 1, reporterId: 1, title: 1, reportType: 1, status: 1 },
       { session: undefined },
     );
+    expect(
+      JSON.stringify(vi.mocked(ItemReportModel.findById).mock.calls),
+    ).not.toContain("moderationStatus");
     expect(toClaimantClaim).toHaveBeenCalledWith(pendingClaim, foundReport);
     expect(ClaimEvidenceModel.create).not.toHaveBeenCalled();
   });
@@ -778,6 +822,9 @@ describe("claimant service", () => {
       { $set: { status: "open", resolvedAt: null } },
       expect.objectContaining({ new: true, session: transaction }),
     );
+    expect(
+      JSON.stringify(vi.mocked(ItemReportModel.findOneAndUpdate).mock.calls),
+    ).not.toContain("moderationStatus");
     expect(ClaimModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: claimId, claimantId: student.id, status: "approved" },
       expect.any(Object),

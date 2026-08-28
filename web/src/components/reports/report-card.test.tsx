@@ -22,6 +22,7 @@ const memberReport = {
   tags: ["laptop", "bag"],
   photoUrls: [],
   status: "open",
+  moderationStatus: "visible",
   resolvedAt: null,
   createdAt: "2026-08-15T02:05:00.000Z",
   updatedAt: "2026-08-15T02:05:00.000Z",

@@ -158,6 +158,7 @@ const createdReport: CreatedReport = {
   tags: ["charger"],
   photoUrls: [],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: true,
