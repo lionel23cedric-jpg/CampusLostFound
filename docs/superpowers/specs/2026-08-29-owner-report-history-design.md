@@ -431,4 +431,3 @@ is not justified.
       moderation, notifications, and authentication behaviour.
 - [ ] Pass all focused, repository-wide, privacy, dependency, and whitespace
       verification gates.
-
