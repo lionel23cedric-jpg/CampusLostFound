@@ -353,7 +353,7 @@ git commit -m "fix: add administrator return navigation"
 ### Task 5: Full verification and documentation
 
 **Files:**
-- Create: `docs/testing/2026-08-29-notification-flag-navigation-verification.md`
+- Create: `docs/superpowers/verification/2026-08-29-notification-flag-navigation.md`
 
 **Interfaces:**
 - Consumes: all completed changes and the repository's existing quality commands.
@@ -404,6 +404,6 @@ Record the branch, changed behaviours, exact test totals, lint/type/build outcom
 - [ ] **Step 5: Commit the verification record and any bounded detector fixes**
 
 ```bash
-git add docs/testing/2026-08-29-notification-flag-navigation-verification.md web/src
+git add docs/superpowers/verification/2026-08-29-notification-flag-navigation.md web/src
 git commit -m "docs: verify notification and navigation fixes"
 ```
