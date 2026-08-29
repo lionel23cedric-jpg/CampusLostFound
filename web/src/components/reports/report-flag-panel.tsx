@@ -37,13 +37,13 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
   const mounted = useRef(true);
   const alertHeading = useRef<HTMLHeadingElement>(null);
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
       mounted.current = false;
       controller.current?.abort();
-    },
-    [],
-  );
+    };
+  }, []);
 
   useEffect(() => {
     if (message) alertHeading.current?.focus();
