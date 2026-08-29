@@ -221,6 +221,9 @@ export function AdminOverviewClient() {
     <article className={styles.overview}>
       <header className={styles.overviewHeader}>
         <div className={styles.headingCopy}>
+          <Link className={styles.backLink} href="/dashboard">
+            Back to dashboard
+          </Link>
           <h1>Administrator overview</h1>
           <p>
             Monitor report recovery, ownership Claims and account availability
