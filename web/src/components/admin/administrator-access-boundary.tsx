@@ -1,10 +1,10 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "./admin-overview.module.css";
 
@@ -175,6 +175,7 @@ export function AdministratorAccessBoundary({
         className={styles.statePanel}
         aria-labelledby="administrator-permission"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1
           ref={forbiddenHeadingRef}
           id="administrator-permission"
@@ -183,7 +184,6 @@ export function AdministratorAccessBoundary({
           Administrator access unavailable
         </h1>
         <p>{forbiddenDescription}</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   } else if (!showTransition && hasAdministratorAccess && session.user) {

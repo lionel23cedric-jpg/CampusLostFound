@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserReportError,
   getReportById,
@@ -116,12 +117,10 @@ function PermissionUnavailable() {
       role="alert"
       aria-labelledby="detail-permission-heading"
     >
+      <PageBackLink href="/reports">Back to reports</PageBackLink>
       <p className={styles.kicker}>Campus reports</p>
       <h1 id="detail-permission-heading">Report details unavailable</h1>
       <p>Your account cannot view member report details at the moment.</p>
-      <Link className={styles.secondaryLink} href="/reports">
-        Back to reports
-      </Link>
     </section>
   );
 }
@@ -265,12 +264,10 @@ function ActiveReportDetail({
   if (reportState.status === "not-found") {
     return (
       <section className={styles.statePanel} aria-labelledby="not-found-heading">
+        <PageBackLink href="/reports">Back to reports</PageBackLink>
         <p className={styles.kicker}>Campus reports</p>
         <h1 id="not-found-heading">Report not found</h1>
         <p>This report is unavailable or no longer visible to members.</p>
-        <Link className={styles.secondaryLink} href="/reports">
-          Back to reports
-        </Link>
       </section>
     );
   }
@@ -335,9 +332,9 @@ function ActiveReportDetail({
 
   return (
     <div className={styles.detailPage}>
-      <Link className={styles.backLink} href={backLink.href}>
+      <PageBackLink href={backLink.href}>
         {backLink.label}
-      </Link>
+      </PageBackLink>
 
       {referenceState.status === "error" ? (
         <div className={styles.inlineState} role="alert">

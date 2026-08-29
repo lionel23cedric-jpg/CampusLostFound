@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserAdminOverviewError,
   getAdministratorOverview,
@@ -204,9 +205,9 @@ export function AdminOverviewClient() {
   if (state.status === "accessChanged") {
     return (
       <section className={styles.statePanel} aria-labelledby="overview-access-changed">
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1 id="overview-access-changed">Administrator access changed</h1>
         <p>Your account no longer has access to this overview.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }
@@ -221,9 +222,7 @@ export function AdminOverviewClient() {
     <article className={styles.overview}>
       <header className={styles.overviewHeader}>
         <div className={styles.headingCopy}>
-          <Link className={styles.backLink} href="/dashboard">
-            Back to dashboard
-          </Link>
+          <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
           <h1>Administrator overview</h1>
           <p>
             Monitor report recovery, ownership Claims and account availability

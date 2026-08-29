@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserAccountManagementError,
   listAdministratorAccounts,
@@ -647,9 +647,9 @@ export function AdminAccountManagementClient() {
         className={styles.statePanel}
         aria-labelledby="accounts-access-changed"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1 id="accounts-access-changed">Administrator access changed</h1>
         <p>Your account no longer has access to account management.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }
@@ -673,13 +673,13 @@ export function AdminAccountManagementClient() {
     >
       <header className={styles.header}>
         <div>
+          <PageBackLink href="/admin">Back to administrator overview</PageBackLink>
           <h1 id="account-management-title">Manage accounts</h1>
           <p>
             Find student and staff accounts, review their current access state
             and move through the directory without exposing restricted data.
           </p>
         </div>
-        <Link href="/admin">Back to administrator overview</Link>
       </header>
 
       <form

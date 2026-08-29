@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { PageBackLink } from "@/components/page-back-link";
 import styles from "./notification-centre.module.css";
 import { useNotifications } from "./notification-provider";
 
@@ -20,6 +21,7 @@ export function NotificationCentre() {
 
   return (
     <section className={styles.centre} aria-labelledby="notifications-heading">
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
       <header className={styles.centreHeader}>
         <div>
           <p className={styles.eyebrow}>Account updates</p>
@@ -76,7 +78,6 @@ export function NotificationCentre() {
             <section className={styles.emptyState} aria-labelledby="empty-notifications">
               <h2 id="empty-notifications">No notifications yet</h2>
               <p>Updates about your reports and claims will appear here.</p>
-              <Link href="/dashboard">Back to dashboard</Link>
             </section>
           ) : (
             <section aria-labelledby="notification-list-heading">

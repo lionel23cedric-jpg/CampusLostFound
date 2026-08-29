@@ -1,10 +1,10 @@
 "use client";
 
 import { Fragment, useEffect, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "./claim-management.module.css";
 
@@ -47,9 +47,9 @@ export function ClaimantAccessBoundary({ children }: { children: ReactNode }) {
   if (session.user.role !== "student" || session.user.status !== "active") {
     return (
       <section className={styles.statePanel} role="alert" aria-labelledby="claim-permission">
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1 id="claim-permission">Claim access unavailable</h1>
         <p>Your account cannot use the student claim workspace.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }

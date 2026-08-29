@@ -14,15 +14,6 @@
   padding-block: clamp(2.5rem, 7vw, 5rem);
 }
 
-.backLink {
-  display: inline-flex;
-  width: fit-content;
-  min-height: 44px;
-  align-items: center;
-  color: var(--campus-green-dark);
-  font-weight: 800;
-}
-
 .submissionPanel {
   min-width: 0;
   border: 1px solid var(--line);
@@ -156,8 +147,7 @@
 }
 
 .primaryButton:disabled,
-.claimForm [aria-disabled="true"],
-.backLink[aria-disabled="true"] {
+.claimForm [aria-disabled="true"] {
   cursor: wait;
   opacity: 0.65;
 }

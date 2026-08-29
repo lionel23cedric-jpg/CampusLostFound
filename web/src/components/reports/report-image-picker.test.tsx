@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ReportImagePicker, type PendingReportImage } from "./report-image-picker";
@@ -36,6 +36,7 @@ beforeEach(() => {
     revokeObjectURL: { configurable: true, value: revokeObjectURL },
   });
   createObjectURL.mockClear();
+  createObjectURL.mockImplementation((file) => `blob:${file.name}`);
   revokeObjectURL.mockClear();
 });
 
@@ -44,7 +45,28 @@ afterEach(() => {
 });
 
 describe("ReportImagePicker", () => {
-  it("selects supported files with opaque upload keys and private previews", () => {
+  it("renders the live object URL recreated by React Strict Mode", async () => {
+    createObjectURL.mockImplementation(
+      (file) => `blob:${file.name}-${createObjectURL.mock.calls.length}`,
+    );
+
+    render(
+      <StrictMode>
+        <Harness />
+      </StrictMode>,
+    );
+    fireEvent.change(screen.getByLabelText("Report images (optional)"), {
+      target: { files: [imageFile("strict.jpg")] },
+    });
+
+    expect(createObjectURL).toHaveBeenCalledTimes(2);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:strict.jpg-1");
+    expect((await screen.findByRole("img")).getAttribute("src")).toBe(
+      "blob:strict.jpg-2",
+    );
+  });
+
+  it("selects supported files with opaque upload keys and private previews", async () => {
     render(<Harness />);
     const input = screen.getByLabelText("Report images (optional)");
     const files = [
@@ -55,7 +77,7 @@ describe("ReportImagePicker", () => {
 
     fireEvent.change(input, { target: { files } });
 
-    expect(screen.getAllByRole("img")).toHaveLength(3);
+    expect(await screen.findAllByRole("img")).toHaveLength(3);
     expect(screen.getByText("3 of 5 images selected")).toBeTruthy();
     expect(document.body.textContent).not.toContain("private-one.jpg");
     expect(createObjectURL).toHaveBeenCalledTimes(3);
@@ -77,7 +99,7 @@ describe("ReportImagePicker", () => {
     expect(screen.queryByRole("img")).toBeNull();
   });
 
-  it("enforces the five-image limit across selections", () => {
+  it("enforces the five-image limit across selections", async () => {
     render(<Harness />);
     const input = screen.getByLabelText("Report images (optional)");
 
@@ -88,7 +110,7 @@ describe("ReportImagePicker", () => {
     });
     fireEvent.change(input, { target: { files: [imageFile("six.jpg")] } });
 
-    expect(screen.getAllByRole("img")).toHaveLength(5);
+    expect(await screen.findAllByRole("img")).toHaveLength(5);
     expect(screen.getByRole("alert").textContent).toContain(
       "Choose no more than 5 images",
     );

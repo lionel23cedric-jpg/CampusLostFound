@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   parseReportSearchParams,
   reportSearchHref,
@@ -111,12 +112,10 @@ function PermissionUnavailable() {
       role="alert"
       aria-labelledby="browse-permission-heading"
     >
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
       <p className={styles.kicker}>Campus reports</p>
       <h1 id="browse-permission-heading">Report browsing unavailable</h1>
       <p>Your account cannot browse member reports at the moment.</p>
-      <Link className={styles.secondaryLink} href="/dashboard">
-        Back to dashboard
-      </Link>
     </section>
   );
 }
@@ -435,6 +434,7 @@ function ActiveReportBrowser() {
   return (
     <div className={styles.browserPage}>
       <header className={styles.introduction}>
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <p className={styles.kicker}>Campus reports</p>
         <h1>Find an item</h1>
         <p>Search privacy-safe lost and found reports shared by campus members.</p>

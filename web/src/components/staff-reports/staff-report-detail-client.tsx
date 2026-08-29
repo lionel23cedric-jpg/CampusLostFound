@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { isInternalReportImagePath } from "@/lib/reports/photo-reference";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   StaffReportBrowserError,
   getStaffReport,
@@ -172,7 +172,7 @@ function StaffReportDetailSurface({ reportId }: { reportId: string }) {
 
   return (
     <div className={styles.detailPage}>
-      <Link className={styles.backLink} href="/staff/reports">Back to report handling</Link>
+      <PageBackLink href="/staff/reports">Back to report handling</PageBackLink>
       <article className={styles.detailPanel} aria-labelledby="staff-report-heading">
         <header className={styles.detailHeader}>
           <div><p className={styles.eyebrow}>{report.reportType === "found" ? "Found report" : "Lost report"}</p><h1 id="staff-report-heading">Staff report</h1><p className={styles.detailTitle}>{report.title}</p></div>
@@ -232,5 +232,5 @@ function formatDate(value: string) {
 }
 
 function SafeState({ heading, text, alert = false }: { heading: string; text: string; alert?: boolean }) {
-  return <section className={styles.statePanel} role={alert ? "alert" : "status"}><h1>{heading}</h1><p>{text}</p><Link href="/staff/reports">Back to report handling</Link></section>;
+  return <section className={styles.statePanel} role={alert ? "alert" : "status"}><PageBackLink href="/staff/reports">Back to report handling</PageBackLink><h1>{heading}</h1><p>{text}</p></section>;
 }

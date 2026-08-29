@@ -102,9 +102,12 @@ describe("NotificationCentre", () => {
 
     expect(screen.getByRole("heading", { name: "No notifications yet" })).toBeTruthy();
     expect(screen.getByText("0 unread notifications")).toBeTruthy();
+    const backLink = screen.getByRole("link", { name: "Back to dashboard" });
+    const heading = screen.getByRole("heading", { name: "Notifications" });
+    expect(backLink.getAttribute("href")).toBe("/dashboard");
     expect(
-      screen.getByRole("link", { name: "Back to dashboard" }).getAttribute("href"),
-    ).toBe("/dashboard");
+      backLink.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it.each([
