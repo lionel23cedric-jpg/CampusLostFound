@@ -1,0 +1,48 @@
+.link.link {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: fit-content;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  margin: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--campus-green-dark);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  line-height: 1.35;
+  padding: 0;
+  text-align: start;
+  text-underline-offset: 0.22em;
+}
+
+.link.link:hover {
+  background: transparent;
+  color: var(--campus-green);
+}
+
+.link.link[aria-disabled="true"] {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.link.link:focus-visible {
+  outline: 3px solid var(--campus-green-dark);
+  outline-offset: 3px;
+}
+
+.icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}

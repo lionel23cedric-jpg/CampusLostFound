@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserReportError,
   getReportCampusLocations,
@@ -102,12 +102,10 @@ export function ReportSubmissionClient() {
         aria-labelledby="report-permission-heading"
         role="alert"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <p className={styles.kicker}>Student reports</p>
         <h1 id="report-permission-heading">Report submission unavailable</h1>
         <p>Only active student accounts can submit lost and found reports.</p>
-        <Link className={styles.secondaryLink} href="/dashboard">
-          Back to dashboard
-        </Link>
       </section>
     );
   }
@@ -339,6 +337,7 @@ function ActiveReportSubmission({
   return (
     <div className={styles.page}>
       <header className={styles.introduction}>
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <p className={styles.kicker}>Campus noticeboard</p>
         <h1>Report an item</h1>
         <p>

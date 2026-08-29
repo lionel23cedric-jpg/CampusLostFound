@@ -23,15 +23,6 @@
   padding-block: clamp(2.5rem, 7vw, 5rem);
 }
 
-.backLink {
-  display: inline-flex;
-  width: fit-content;
-  min-height: 44px;
-  align-items: center;
-  color: var(--campus-green-dark);
-  font-weight: 800;
-}
-
 .detailArticle {
   display: grid;
   min-width: 0;

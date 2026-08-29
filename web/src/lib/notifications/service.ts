@@ -94,7 +94,7 @@ export async function markNotificationRead(
         },
       },
     ],
-    { new: true },
+    { returnDocument: "after", updatePipeline: true },
   )
     .lean<NotificationRecord | null>()
     .exec();

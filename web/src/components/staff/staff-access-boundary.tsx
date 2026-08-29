@@ -1,10 +1,10 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "../claims/staff-claim-review.module.css";
 
@@ -161,6 +161,7 @@ export function StaffAccessBoundary({
   } else if (!showTransition && hasAuthenticatedUser && !hasStaffAccess) {
     content = (
       <section className={styles.statePanel} aria-labelledby="staff-permission">
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1
           ref={forbiddenHeadingRef}
           id="staff-permission"
@@ -169,7 +170,6 @@ export function StaffAccessBoundary({
           {copy.forbiddenHeading}
         </h1>
         <p>{copy.forbiddenDescription}</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   } else if (!showTransition && hasStaffAccess && session.user) {

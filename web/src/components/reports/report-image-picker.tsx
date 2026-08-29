@@ -62,25 +62,34 @@ function ImagePreview({
   disabled: boolean;
   onRemove: () => void;
 }) {
-  const [previewUrl] = useState(() => URL.createObjectURL(image.file));
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  useEffect(
-    () => () => {
-      URL.revokeObjectURL(previewUrl);
-    },
-    [previewUrl],
-  );
+  useEffect(() => {
+    const nextPreviewUrl = URL.createObjectURL(image.file);
+    let isActive = true;
+
+    queueMicrotask(() => {
+      if (isActive) setPreviewUrl(nextPreviewUrl);
+    });
+
+    return () => {
+      isActive = false;
+      URL.revokeObjectURL(nextPreviewUrl);
+    };
+  }, [image.file]);
 
   return (
     <li className={styles.previewItem}>
-      <Image
-        className={styles.previewImage}
-        src={previewUrl}
-        alt={`Selected image ${index + 1}`}
-        width={320}
-        height={240}
-        unoptimized
-      />
+      {previewUrl && (
+        <Image
+          className={styles.previewImage}
+          src={previewUrl}
+          alt={`Selected image ${index + 1}`}
+          width={320}
+          height={240}
+          unoptimized
+        />
+      )}
       <button
         className={styles.removeButton}
         type="button"

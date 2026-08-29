@@ -11,6 +11,7 @@ import {
   type ClaimPage,
   type ClaimStatus,
 } from "@/lib/claims/browser-client";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   claimListHref,
   parseClaimListSearchParams,
@@ -121,15 +122,16 @@ export function ClaimListClient() {
         role="alert"
         aria-labelledby="claim-list-forbidden-heading"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1 id="claim-list-forbidden-heading">Claim access unavailable</h1>
         <p>Your account cannot view student claim history.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }
 
   return (
     <div className={styles.listPage}>
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
       <header className={styles.listHeader}>
         <h1>My claims</h1>
         <p>Track the ownership claims you have submitted for found items.</p>

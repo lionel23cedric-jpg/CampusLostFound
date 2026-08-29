@@ -10,6 +10,7 @@ import {
   submitClaim,
   type ClaimQuestions,
 } from "@/lib/claims/browser-client";
+import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "./claim-management.module.css";
 
@@ -222,8 +223,7 @@ function ClaimSubmissionForm({ reportId }: { reportId: string }) {
 
   return (
     <div className={styles.submissionPage}>
-      <Link
-        className={styles.backLink}
+      <PageBackLink
         href={reportHref}
         aria-disabled={isSubmitting}
         tabIndex={isSubmitting ? -1 : undefined}
@@ -232,7 +232,7 @@ function ClaimSubmissionForm({ reportId }: { reportId: string }) {
         }}
       >
         Back to report
-      </Link>
+      </PageBackLink>
       <section className={styles.submissionPanel} aria-labelledby="claim-heading">
         <header className={styles.submissionHeader}>
           <h1 id="claim-heading">Claim {loadState.data.report.title}</h1>
@@ -327,9 +327,9 @@ function SafeState({
       aria-live={alert ? undefined : "polite"}
       aria-labelledby="claim-safe-state-heading"
     >
+      <PageBackLink href={href}>{linkText}</PageBackLink>
       <h1 id="claim-safe-state-heading">{heading}</h1>
       <p>This claim action is not available from this report.</p>
-      <Link href={href}>{linkText}</Link>
     </section>
   );
 }

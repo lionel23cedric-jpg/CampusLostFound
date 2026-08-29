@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { isInternalReportImagePath } from "@/lib/reports/photo-reference";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   StaffReportBrowserError,
   getStaffReports,
@@ -115,9 +116,9 @@ export function StaffReportListClient() {
   if (visibleState.status === "forbidden") {
     return (
       <section className={styles.statePanel}>
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1>Report handling access unavailable</h1>
         <p>Your account cannot handle reports.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }
@@ -138,6 +139,7 @@ export function StaffReportListClient() {
 
   return (
     <div className={styles.listPage}>
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
       <header className={styles.listHeader}>
         <h1>Report handling</h1>
         <p>Verify reports and track where Found items are held for recovery.</p>

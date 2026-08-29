@@ -9,6 +9,7 @@ import {
   ClaimBrowserError,
   type ClaimStatus,
 } from "@/lib/claims/browser-client";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   getStaffClaims,
   type StaffClaimPage,
@@ -118,17 +119,18 @@ export function StaffClaimListClient() {
         role="alert"
         aria-labelledby="staff-claim-list-forbidden-heading"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1 id="staff-claim-list-forbidden-heading">
           Claim review access unavailable
         </h1>
         <p>Your account cannot review ownership Claims.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }
 
   return (
     <div className={styles.listPage}>
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
       <header className={styles.listHeader}>
         <h1>Claim reviews</h1>
         <p>

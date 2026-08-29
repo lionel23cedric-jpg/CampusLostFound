@@ -143,8 +143,12 @@ describe("ClaimDetailClient route and safe detail", () => {
     expect(screen.getByText("Found report")).toBeTruthy();
     expect(screen.getByText("Report status: Claim pending")).toBeTruthy();
     expect(screen.getByText("Pending")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Back to My claims" }).getAttribute("href"))
-      .toBe("/claims");
+    const backLink = screen.getByRole("link", { name: "Back to My claims" });
+    const heading = screen.getByRole("heading", { name: "Claim details" });
+    expect(backLink.getAttribute("href")).toBe("/claims");
+    expect(
+      backLink.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByRole("link", { name: "View report" }).getAttribute("href"))
       .toBe("/reports/report%2Fid%20with%20spaces");
 

@@ -282,7 +282,7 @@ describe("notification service", () => {
           },
         },
       ],
-      { new: true },
+      { returnDocument: "after", updatePipeline: true },
     );
     expect(updateQuery.lean).toHaveBeenCalledOnce();
     expect(result).toMatchObject({
@@ -315,7 +315,7 @@ describe("notification service", () => {
           },
         },
       ],
-      { new: true },
+      { returnDocument: "after", updatePipeline: true },
     );
   });
 

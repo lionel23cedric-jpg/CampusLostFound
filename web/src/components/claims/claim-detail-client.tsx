@@ -11,6 +11,7 @@ import {
   type ClaimantClaim,
   type ClaimStatus,
 } from "@/lib/claims/browser-client";
+import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "./claim-management.module.css";
 
@@ -288,9 +289,9 @@ function ClaimDetailSurface({
 
   return (
     <div className={styles.detailPage}>
-      <Link className={styles.backLink} href={backHref}>
+      <PageBackLink href={backHref}>
         {backLabel}
-      </Link>
+      </PageBackLink>
 
       <article className={styles.detailPanel} aria-labelledby="claim-detail-heading">
         <header className={styles.detailHeader}>
@@ -453,11 +454,11 @@ function SafeDetailState({
       aria-live={alert ? undefined : "polite"}
       aria-labelledby="claim-detail-safe-heading"
     >
+      <PageBackLink href={href}>{linkText}</PageBackLink>
       <h1 ref={headingRef} id="claim-detail-safe-heading" tabIndex={-1}>
         {heading}
       </h1>
       <p>{message}</p>
-      <Link href={href}>{linkText}</Link>
     </section>
   );
 }

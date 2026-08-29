@@ -1,10 +1,10 @@
 "use client";
 
 import { Fragment, useEffect, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "./notification-centre.module.css";
 import { useNotifications } from "./notification-provider";
@@ -61,9 +61,9 @@ export function NotificationAccessBoundary({ children }: { children: ReactNode }
         role="alert"
         aria-labelledby="notification-permission"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1 id="notification-permission">Notifications unavailable</h1>
         <p>Your account cannot use the notification centre.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }

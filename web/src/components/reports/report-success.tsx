@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { PageBackLink } from "@/components/page-back-link";
 import type { CreatedReport } from "@/lib/reports/browser-client";
 
 import type { PhotoUploadSummary } from "./report-submission-client";
@@ -28,6 +29,7 @@ export function ReportSuccess({
       className={styles.success}
       aria-labelledby="report-success-heading"
     >
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
       <p className={styles.kicker}>Report received</p>
       <h1 id="report-success-heading">Report submitted</h1>
       <p>
@@ -94,9 +96,6 @@ export function ReportSuccess({
           href={`/reports/${encodeURIComponent(report.id)}`}
         >
           View submitted report
-        </Link>
-        <Link className={styles.secondaryLink} href="/dashboard">
-          Back to dashboard
         </Link>
         <button
           className={styles.secondaryButton}

@@ -308,9 +308,12 @@ describe("ReportDetailClient data and privacy", () => {
     expect(screen.getByText("Location hidden")).toBeTruthy();
     expect(screen.getByText("Date hidden")).toBeTruthy();
     expect(screen.getByText("Your report")).toBeTruthy();
+    const backLink = screen.getByRole("link", { name: "Back to My reports" });
+    const heading = screen.getByRole("heading", { name: memberReport.title });
+    expect(backLink.getAttribute("href")).toBe("/reports/mine");
     expect(
-      screen.getByRole("link", { name: "Back to My reports" }).getAttribute("href"),
-    ).toBe("/reports/mine");
+      backLink.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(document.body.textContent).not.toMatch(
       /reporterId|privacySettings|serialNumber|expectedAnswer|privateNotes/i,
     );
