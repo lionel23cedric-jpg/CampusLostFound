@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 
 import { render, screen } from "@testing-library/react";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
+
+vi.mock("./admin-moderation-flag-queue", () => ({
+  AdminModerationFlagQueue: () => <div data-testid="flag-queue" />,
+}));
 
 import { AdminModerationClient } from "./admin-moderation-client";
 
@@ -10,4 +14,5 @@ it("provides one moderation heading and two labelled work areas", () => {
   expect(screen.getByRole("heading", { level: 1, name: "Report moderation" })).toBeTruthy();
   expect(screen.getByRole("region", { name: "Flag queue" })).toBeTruthy();
   expect(screen.getByRole("region", { name: "Report visibility" })).toBeTruthy();
+  expect(screen.getByTestId("flag-queue")).toBeTruthy();
 });

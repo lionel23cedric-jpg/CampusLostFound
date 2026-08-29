@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminModerationFlagQueue } from "./admin-moderation-flag-queue";
 import styles from "./admin-moderation.module.css";
 
 export function AdminModerationClient() {
@@ -16,7 +17,7 @@ export function AdminModerationClient() {
 
       <section className={styles.section} aria-labelledby="moderation-flags">
         <h2 id="moderation-flags">Flag queue</h2>
-        <p role="status">Loading flagged reports</p>
+        <AdminModerationFlagQueue />
       </section>
 
       <section className={styles.section} aria-labelledby="moderation-reports">
