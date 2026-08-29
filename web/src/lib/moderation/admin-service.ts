@@ -164,6 +164,7 @@ function buildAdminReportFlagPipeline(
           {
             $project: {
               _id: 1,
+              reportId: 1,
               reason: 1,
               details: 1,
               status: 1,

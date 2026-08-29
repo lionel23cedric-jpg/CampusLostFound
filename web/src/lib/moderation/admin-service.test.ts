@@ -401,6 +401,25 @@ describe("administrator moderation query service", () => {
         },
       },
     ]);
+    expect(
+      (
+        (
+          (pipeline[3] as { $facet: { flags: unknown[] } }).$facet
+            .flags[3] as { $project: Record<string, unknown> }
+        ).$project
+      ),
+    ).toEqual({
+      _id: 1,
+      reportId: 1,
+      reason: 1,
+      details: 1,
+      status: 1,
+      reviewedAt: 1,
+      resolutionNote: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      report: 1,
+    });
     expect(JSON.stringify(pipeline)).not.toMatch(
       /submittedByUserId|reviewedByAdministratorId|reporterId|verification|password/i,
     );

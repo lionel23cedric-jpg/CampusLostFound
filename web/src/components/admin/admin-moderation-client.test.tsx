@@ -19,4 +19,9 @@ it("provides one moderation heading and two labelled work areas", () => {
   expect(screen.getByRole("region", { name: "Report visibility" })).toBeTruthy();
   expect(screen.getByTestId("flag-queue")).toBeTruthy();
   expect(screen.getByTestId("report-list")).toBeTruthy();
+  expect(
+    screen
+      .getByRole("link", { name: "Back to administrator overview" })
+      .getAttribute("href"),
+  ).toBe("/admin");
 });

@@ -27,7 +27,7 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
   const router = useRouter();
   const { refreshSession } = useAuthSession();
   const [phase, setPhase] = useState<
-    "closed" | "editing" | "submitting" | "submitted"
+    "closed" | "editing" | "submitting" | "submitted" | "alreadyPending"
   >("closed");
   const [reason, setReason] = useState<BrowserReportFlagReason | "">("");
   const [details, setDetails] = useState("");
@@ -119,7 +119,7 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
           return;
         }
         if (code === "REPORT_FLAG_ALREADY_PENDING") {
-          setMessage("A concern for this report is already awaiting administrator review.");
+          setPhase("alreadyPending");
           return;
         }
         if (code === "REPORT_FLAG_FORBIDDEN") {
@@ -141,6 +141,17 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
         <h2 id="report-flag-sent">Concern submitted</h2>
         <p role="status" aria-live="polite">
           Your concern has been sent for administrator review.
+        </p>
+      </section>
+    );
+  }
+
+  if (phase === "alreadyPending") {
+    return (
+      <section className={styles.success} aria-labelledby="report-flag-pending">
+        <h2 id="report-flag-pending">Concern already submitted</h2>
+        <p role="status" aria-live="polite">
+          A concern for this report is already awaiting administrator review.
         </p>
       </section>
     );
