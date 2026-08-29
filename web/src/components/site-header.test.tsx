@@ -184,6 +184,7 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   );
   expect(screen.getByRole("button", { name: "Sign out" })).toBeTruthy();
   expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Report handling" })).toBeNull();
 });
 
 it.each(["student", "staff", "administrator"] as const)(
@@ -278,7 +279,7 @@ it.each([
 });
 
 it.each(["staff", "administrator"] as const)(
-  "shows Claim reviews only to an active %s",
+  "shows staff tools only to an active %s",
   (role) => {
     mockSession({
       status: "authenticated",
@@ -289,6 +290,9 @@ it.each(["staff", "administrator"] as const)(
     expect(
       screen.getByRole("link", { name: "Claim reviews" }).getAttribute("href"),
     ).toBe("/staff/claims");
+    expect(
+      screen.getByRole("link", { name: "Report handling" }).getAttribute("href"),
+    ).toBe("/staff/reports");
     expect(screen.getByRole("link", { name: "Profile" }).getAttribute("href")).toBe(
       "/profile",
     );
@@ -353,6 +357,7 @@ it.each([
 
   expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Report handling" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
 });
 

@@ -9,7 +9,10 @@ import {
 } from "@/lib/notifications/delivery";
 import { ClaimEvidenceModel } from "@/models/claim-evidence";
 import { ClaimModel } from "@/models/claim";
-import { ItemReportModel } from "@/models/item-report";
+import {
+  ItemReportModel,
+  normalizeStaffReportHandling,
+} from "@/models/item-report";
 import { ProfileModel } from "@/models/profile";
 import { UserModel } from "@/models/user";
 
@@ -33,6 +36,12 @@ const CLAIM_REPORT_PROJECTION = {
   title: 1,
   reportType: 1,
   status: 1,
+} as const;
+const CLAIM_COMPLETION_REPORT_PROJECTION = {
+  _id: 1,
+  reportType: 1,
+  status: 1,
+  updatedAt: 1,
 } as const;
 const SAFE_USER_PROJECTION = { _id: 1, email: 1 } as const;
 const SAFE_PROFILE_PROJECTION = {
@@ -422,10 +431,58 @@ export async function completeClaim(user: PublicUser, claimId: string) {
       }
 
       const now = new Date();
-      const report = await ItemReportModel.findOneAndUpdate(
+      const currentReport = await ItemReportModel.findOne(
         { _id: current.reportId, status: "claim_pending" },
-        { $set: { status: "resolved", resolvedAt: now } },
-        { new: true, session: transaction },
+        CLAIM_COMPLETION_REPORT_PROJECTION,
+      )
+        .select("+staffHandling")
+        .session(transaction)
+        .lean<{
+          reportType: "lost" | "found";
+          updatedAt: Date;
+          staffHandling?: unknown;
+        } | null>()
+        .exec();
+      if (!currentReport) throw new ClaimError("CLAIM_STATE_CONFLICT");
+
+      let handling;
+      try {
+        handling = normalizeStaffReportHandling(
+          currentReport.reportType,
+          currentReport.staffHandling,
+        );
+      } catch {
+        throw new ClaimError("CLAIM_STATE_CONFLICT");
+      }
+
+      const reportFilter: Record<string, unknown> = {
+        _id: current.reportId,
+        status: "claim_pending",
+        updatedAt: currentReport.updatedAt,
+      };
+      if (currentReport.staffHandling === undefined) {
+        reportFilter.staffHandling = { $exists: false };
+      } else {
+        reportFilter["staffHandling.custodyStatus"] = handling.custodyStatus;
+      }
+
+      const reportChanges: Record<string, unknown> = {
+        status: "resolved",
+        resolvedAt: now,
+      };
+      if (
+        currentReport.reportType === "found" &&
+        handling.custodyStatus === "stored"
+      ) {
+        reportChanges["staffHandling.custodyStatus"] = "released";
+        reportChanges["staffHandling.releasedAt"] = now;
+        reportChanges["staffHandling.updatedBy"] = user.id;
+      }
+
+      const report = await ItemReportModel.findOneAndUpdate(
+        reportFilter,
+        { $set: reportChanges },
+        { new: true, runValidators: true, session: transaction },
       ).exec();
       if (!report) throw new ClaimError("CLAIM_STATE_CONFLICT");
 

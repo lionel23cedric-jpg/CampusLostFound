@@ -2,7 +2,10 @@ import type { PublicUser } from "@/lib/auth/public-user";
 import { connectToDatabase } from "@/lib/db";
 import { CampusLocationModel } from "@/models/campus-location";
 import { CategoryModel } from "@/models/category";
-import { ItemReportModel } from "@/models/item-report";
+import {
+  ItemReportModel,
+  defaultStaffReportHandling,
+} from "@/models/item-report";
 import { PrivateVerificationDetailsModel } from "@/models/private-verification-details";
 
 import { ReportError } from "./errors";
@@ -57,6 +60,7 @@ export async function createReport(
             privacySettings: input.privacySettings,
             status: "open",
             resolvedAt: null,
+            staffHandling: defaultStaffReportHandling(input.reportType),
           },
         ],
         { session: transaction },

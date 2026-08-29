@@ -131,12 +131,12 @@ it("loads page one and renders privacy-safe category cards", async () => {
   const { container } = render(<CategoryManagementPanel />);
 
   expect(screen.getByRole("status").textContent).toContain("Loading categories");
-  expect(await screen.findByRole("heading", { name: "Categories" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "Categories" })).toBeTruthy();
+  expect(await screen.findByRole("heading", { name: "Wallet" })).toBeTruthy();
   expect(listAdministratorCategories).toHaveBeenCalledWith(
     { q: undefined, status: "all", page: 1 },
     expect.any(AbortSignal),
   );
-  expect(screen.getByRole("heading", { name: "Wallet" })).toBeTruthy();
   expect(screen.getByRole("heading", { name: "Keys" })).toBeTruthy();
   expect(screen.getByText("Wallets and purses")).toBeTruthy();
   expect(screen.getByText("No description provided")).toBeTruthy();
