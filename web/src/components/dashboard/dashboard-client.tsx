@@ -76,6 +76,9 @@ export function DashboardClient() {
 
   if (!user) return null;
 
+  const canUseStaffTools =
+    user.status === "active" &&
+    (user.role === "staff" || user.role === "administrator");
   const recoveryAction =
     user.status === "active" && user.role === "student"
       ? {
@@ -103,6 +106,16 @@ export function DashboardClient() {
             title: "Review my report history",
             description: "Review every lost or found report submitted by this account.",
             href: "/reports/mine",
+          },
+        ]
+      : []),
+    ...(canUseStaffTools
+      ? [
+          {
+            title: "Handle item reports",
+            description:
+              "Verify reports and record where Found items are held for recovery.",
+            href: "/staff/reports",
           },
         ]
       : []),

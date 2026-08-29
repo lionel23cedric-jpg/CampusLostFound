@@ -137,6 +137,9 @@ it.each(["staff", "administrator"] as const)(
     expect(
       screen.getByRole("link", { name: "Review ownership claims" }).getAttribute("href"),
     ).toBe("/staff/claims");
+    expect(
+      screen.getByRole("link", { name: "Handle item reports" }).getAttribute("href"),
+    ).toBe("/staff/reports");
     expect(screen.queryByRole("link", { name: "Manage recovery requests" })).toBeNull();
     expect(
       screen.getByRole("link", { name: "Manage profile settings" }).getAttribute("href"),
@@ -145,7 +148,7 @@ it.each(["staff", "administrator"] as const)(
       screen.getByRole("link", { name: "Review my report history" }).getAttribute("href"),
     ).toBe("/reports/mine");
     expect(screen.getAllByText("Available now")).toHaveLength(
-      role === "administrator" ? 6 : 5,
+      role === "administrator" ? 7 : 6,
     );
     expect(screen.queryByText("Upcoming")).toBeNull();
   },
@@ -197,6 +200,7 @@ it.each([
 
   expect(screen.queryByRole("link", { name: "Manage recovery requests" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Review ownership claims" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Handle item reports" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Manage profile settings" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Review my report history" })).toBeNull();
   expect(screen.getAllByText("Available now")).toHaveLength(2);

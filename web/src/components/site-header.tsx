@@ -16,7 +16,7 @@ export function SiteHeader() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState(false);
   const isActive = user?.status === "active";
-  const canReviewClaims =
+  const canUseStaffTools =
     isActive && (user?.role === "staff" || user?.role === "administrator");
   const canManageOwnClaims = isActive && user?.role === "student";
   const canViewAdminOverview = isActive && user?.role === "administrator";
@@ -82,10 +82,15 @@ export function SiteHeader() {
                   My claims
                 </Link>
               ) : null}
-              {canReviewClaims ? (
-                <Link className={`${styles.navLink} text-link`} href="/staff/claims">
-                  Claim reviews
-                </Link>
+              {canUseStaffTools ? (
+                <>
+                  <Link className={`${styles.navLink} text-link`} href="/staff/reports">
+                    Report handling
+                  </Link>
+                  <Link className={`${styles.navLink} text-link`} href="/staff/claims">
+                    Claim reviews
+                  </Link>
+                </>
               ) : null}
               <Link className={`${styles.navLink} text-link`} href="/reports/new">
                 Report item
