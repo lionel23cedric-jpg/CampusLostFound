@@ -148,26 +148,35 @@ describe("ReportFlagPanel", () => {
     ).toBe(true);
   });
 
-  it("shows safe duplicate and retryable failure states", async () => {
-    vi.mocked(submitBrowserReportFlag)
-      .mockRejectedValueOnce(
-        new BrowserModerationError("REPORT_FLAG_ALREADY_PENDING", 409),
-      )
-      .mockRejectedValueOnce(
-        new BrowserModerationError("REPORT_MODERATION_FAILED", 500),
-      );
+  it("presents an existing pending concern without another submit form", async () => {
+    vi.mocked(submitBrowserReportFlag).mockRejectedValue(
+      new BrowserModerationError("REPORT_FLAG_ALREADY_PENDING", 409),
+    );
+    const user = userEvent.setup();
+    render(<ReportFlagPanel reportId={reportId} />);
+    await user.click(screen.getByRole("button", { name: "Report this listing" }));
+    await user.selectOptions(screen.getByLabelText("Reason"), "duplicate_report");
+    await user.click(screen.getByRole("button", { name: "Submit report" }));
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "already awaiting administrator review",
+    );
+    expect(screen.queryByRole("button", { name: "Submit report" })).toBeNull();
+    expect(submitBrowserReportFlag).toHaveBeenCalledOnce();
+  });
+
+  it("keeps an ordinary server failure retryable", async () => {
+    vi.mocked(submitBrowserReportFlag).mockRejectedValue(
+      new BrowserModerationError("REPORT_MODERATION_FAILED", 500),
+    );
     const user = userEvent.setup();
     render(<ReportFlagPanel reportId={reportId} />);
     await user.click(screen.getByRole("button", { name: "Report this listing" }));
     await user.selectOptions(screen.getByLabelText("Reason"), "duplicate_report");
     await user.click(screen.getByRole("button", { name: "Submit report" }));
     expect((await screen.findByRole("alert")).textContent).toContain(
-      "already awaiting administrator review",
-    );
-    await user.click(screen.getByRole("button", { name: "Submit report" }));
-    expect((await screen.findByRole("alert")).textContent).toContain(
       "We could not send your concern",
     );
+    expect(screen.getByRole("button", { name: "Submit report" })).toBeTruthy();
   });
 
   it("refreshes and redirects after authentication expiry", async () => {
