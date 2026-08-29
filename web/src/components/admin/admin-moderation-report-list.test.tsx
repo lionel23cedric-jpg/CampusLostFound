@@ -20,12 +20,15 @@ import {
   listBrowserAdminReports,
   moderateBrowserReport,
 } from "@/lib/moderation/browser-client";
-import type { BrowserAdminReportPage } from "@/lib/moderation/browser-contract";
+import type {
+  BrowserAdminReport,
+  BrowserAdminReportPage,
+} from "@/lib/moderation/browser-contract";
 
 import { AdminModerationReportList } from "./admin-moderation-report-list";
 
 const timestamp = "2026-08-29T01:00:00.000Z";
-const report = {
+const report: BrowserAdminReport = {
   id: "a".repeat(24), reportType: "lost", title: "Black laptop charger",
   publicDescription: "A black laptop charger left near the library.",
   categoryId: "b".repeat(24), campusLocationId: "c".repeat(24),
@@ -33,7 +36,7 @@ const report = {
   status: "open", moderationStatus: "visible",
   privacySettings: { showPhoto: true, showEventDate: true, showCampusLocation: true },
   resolvedAt: null, createdAt: timestamp, updatedAt: timestamp,
-} as const;
+};
 const page: BrowserAdminReportPage = {
   reports: [report],
   pagination: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
@@ -78,6 +81,10 @@ describe("AdminModerationReportList", () => {
     await user.click(screen.getByRole("button", { name: "Hide report" }));
     await user.click(screen.getByRole("button", { name: "Confirm hiding" }));
     expect(screen.getByRole("alert").textContent).toContain("Choose a reason");
+    expect(screen.getByLabelText("Hide reason").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Hide reason").getAttribute("aria-describedby")).toBe(
+      "report-hide-reason-error",
+    );
     await user.selectOptions(screen.getByLabelText("Hide reason"), "administrative_review");
     await user.click(screen.getByRole("button", { name: "Confirm hiding" }));
     expect(moderateBrowserReport).toHaveBeenCalledWith(

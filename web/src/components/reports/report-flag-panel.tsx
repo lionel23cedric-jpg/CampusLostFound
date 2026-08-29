@@ -32,6 +32,7 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
   const [reason, setReason] = useState<BrowserReportFlagReason | "">("");
   const [details, setDetails] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<"reason" | "details" | null>(null);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
   const alertHeading = useRef<HTMLHeadingElement>(null);
@@ -52,6 +53,7 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
     setReason("");
     setDetails("");
     setMessage(null);
+    setErrorField(null);
     setPhase("editing");
   }
 
@@ -59,6 +61,7 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
     setReason("");
     setDetails("");
     setMessage(null);
+    setErrorField(null);
     setPhase("closed");
   }
 
@@ -67,10 +70,12 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
     const normalizedDetails = details.normalize("NFKC").trim().replace(/\s+/gu, " ");
     if (!reason) {
       setMessage("Choose a reason before submitting your concern.");
+      setErrorField("reason");
       return;
     }
     if (reason === "other" && !normalizedDetails) {
       setMessage("Add details for another concern.");
+      setErrorField("details");
       return;
     }
 
@@ -78,6 +83,7 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
     const nextController = new AbortController();
     controller.current = nextController;
     setMessage(null);
+    setErrorField(null);
     setPhase("submitting");
 
     try {
@@ -160,7 +166,7 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
       </p>
 
       {message ? (
-        <div className={styles.alert} role="alert">
+        <div id="report-flag-error" className={styles.alert} role="alert">
           <h3 ref={alertHeading} tabIndex={-1}>Concern needs attention</h3>
           <p>{message}</p>
         </div>
@@ -172,9 +178,12 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
           id="report-flag-reason"
           value={reason}
           disabled={submitting}
+          aria-invalid={errorField === "reason" || undefined}
+          aria-describedby={errorField === "reason" ? "report-flag-error" : undefined}
           onChange={(event) => {
             setReason(event.target.value as BrowserReportFlagReason | "");
             setMessage(null);
+            setErrorField(null);
           }}
         >
           <option value="">Choose a reason</option>
@@ -193,10 +202,16 @@ export function ReportFlagPanel({ reportId }: { reportId: string }) {
           maxLength={500}
           rows={5}
           disabled={submitting}
-          aria-describedby="report-flag-details-help"
+          aria-invalid={errorField === "details" || undefined}
+          aria-describedby={
+            errorField === "details"
+              ? "report-flag-details-help report-flag-error"
+              : "report-flag-details-help"
+          }
           onChange={(event) => {
             setDetails(event.target.value);
             setMessage(null);
+            setErrorField(null);
           }}
         />
         <p id="report-flag-details-help" className={styles.help}>

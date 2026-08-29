@@ -77,12 +77,24 @@ describe("ReportFlagPanel", () => {
     await user.click(screen.getByRole("button", { name: "Report this listing" }));
     await user.click(screen.getByRole("button", { name: "Submit report" }));
     expect(screen.getByRole("alert").textContent).toContain("Choose a reason");
+    expect(screen.getByLabelText("Reason").getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByLabelText("Reason").getAttribute("aria-describedby")).toBe(
+      "report-flag-error",
+    );
 
     await user.selectOptions(screen.getByLabelText("Reason"), "other");
     await user.click(screen.getByRole("button", { name: "Submit report" }));
     expect(screen.getByRole("alert").textContent).toContain(
       "Add details for another concern",
     );
+    expect(
+      screen.getByLabelText("Additional details (optional)").getAttribute("aria-invalid"),
+    ).toBe("true");
+    expect(
+      screen
+        .getByLabelText("Additional details (optional)")
+        .getAttribute("aria-describedby"),
+    ).toContain("report-flag-error");
     expect(submitBrowserReportFlag).not.toHaveBeenCalled();
   });
 

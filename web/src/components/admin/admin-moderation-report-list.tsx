@@ -283,13 +283,20 @@ export function AdminModerationReportList() {
           {action.kind === "hide" ? (
             <label>
               Hide reason
-              <select value={hideReason} disabled={mutating} onChange={(event) => { setHideReason(event.target.value as BrowserDirectHideReason | ""); setActionError(null); }}>
+              <select
+                id="report-hide-reason"
+                value={hideReason}
+                disabled={mutating}
+                aria-invalid={Boolean(actionError) || undefined}
+                aria-describedby={actionError ? "report-hide-reason-error" : undefined}
+                onChange={(event) => { setHideReason(event.target.value as BrowserDirectHideReason | ""); setActionError(null); }}
+              >
                 <option value="">Choose a reason</option>
                 {DIRECT_HIDE_REASON_VALUES.map((value) => <option key={value} value={value}>{hideReasonLabels[value]}</option>)}
               </select>
             </label>
           ) : null}
-          {actionError ? <p className={styles.fieldError} role="alert">{actionError}</p> : null}
+          {actionError ? <p id="report-hide-reason-error" className={styles.fieldError} role="alert">{actionError}</p> : null}
           <label htmlFor="report-moderation-note">Internal note (optional)</label>
           <textarea id="report-moderation-note" value={note} maxLength={500} rows={4} disabled={mutating} onChange={(event) => setNote(event.target.value)} />
           <div className={styles.cardActions}>

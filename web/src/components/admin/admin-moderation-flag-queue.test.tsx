@@ -24,12 +24,16 @@ import {
   decideBrowserReportFlag,
   listBrowserAdminReportFlags,
 } from "@/lib/moderation/browser-client";
-import type { BrowserAdminReportFlagPage } from "@/lib/moderation/browser-contract";
+import type {
+  BrowserAdminReport,
+  BrowserAdminReportFlag,
+  BrowserAdminReportFlagPage,
+} from "@/lib/moderation/browser-contract";
 
 import { AdminModerationFlagQueue } from "./admin-moderation-flag-queue";
 
 const timestamp = "2026-08-29T01:00:00.000Z";
-const report = {
+const report: BrowserAdminReport = {
   id: "a".repeat(24), reportType: "lost", title: "Black laptop charger",
   publicDescription: "A black laptop charger left near the library.",
   categoryId: "b".repeat(24), campusLocationId: "c".repeat(24),
@@ -37,12 +41,12 @@ const report = {
   status: "open", moderationStatus: "visible",
   privacySettings: { showPhoto: true, showEventDate: true, showCampusLocation: true },
   resolvedAt: null, createdAt: timestamp, updatedAt: timestamp,
-} as const;
-const flag = {
+};
+const flag: BrowserAdminReportFlag = {
   id: "d".repeat(24), reason: "privacy_concern", details: "Contains a phone number.",
   status: "pending", reviewedAt: null, resolutionNote: null,
   createdAt: timestamp, updatedAt: timestamp, report,
-} as const;
+};
 const page: BrowserAdminReportFlagPage = {
   flags: [flag],
   pagination: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },

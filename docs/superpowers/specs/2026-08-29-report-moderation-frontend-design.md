@@ -263,4 +263,3 @@ The feature is complete when:
   deletion work is added;
 - focused and repository-wide quality gates pass and verification evidence is
   recorded.
-
