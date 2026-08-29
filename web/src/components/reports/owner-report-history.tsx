@@ -311,6 +311,7 @@ function ActiveOwnerReportHistory({ role }: { role: PublicUser["role"] }) {
 
 function OwnerReportCard({ report }: { report: OwnerReport }) {
   const imagePath = report.photoUrls.find(isInternalReportImagePath);
+  const reportHref = `/reports/${encodeURIComponent(report.id)}`;
   const typeLabel = report.reportType === "lost" ? "Lost" : "Found";
   const photoLabel = `${report.photoUrls.length} ${
     report.photoUrls.length === 1 ? "photo" : "photos"
@@ -342,7 +343,7 @@ function OwnerReportCard({ report }: { report: OwnerReport }) {
             ) : null}
           </div>
           <h3>
-            <Link href={`/reports/${encodeURIComponent(report.id)}`}>{report.title}</Link>
+            <Link href={reportHref}>{report.title}</Link>
           </h3>
           <p>{report.publicDescription}</p>
           <dl className={styles.meta}>
@@ -359,6 +360,13 @@ function OwnerReportCard({ report }: { report: OwnerReport }) {
               <dd>{photoLabel}</dd>
             </div>
           </dl>
+          {report.status !== "draft" ? (
+            <Link className={styles.cardAction} href={reportHref}>
+              {report.status === "open"
+                ? "View report and find matches"
+                : "View report details"}
+            </Link>
+          ) : null}
         </div>
       </article>
     </li>

@@ -220,6 +220,38 @@ describe("owner report history", () => {
     );
   });
 
+  it("makes the manual matching path explicit for an open report", async () => {
+    vi.mocked(getOwnReports).mockResolvedValue({
+      ...ownerPage,
+      reports: [{ ...ownerReport, status: "open", moderationStatus: "visible" }],
+    });
+    render(<OwnerReportHistory />);
+
+    const action = await screen.findByRole("link", {
+      name: "View report and find matches",
+    });
+    expect(action.getAttribute("href")).toBe(`/reports/${ownerReport.id}`);
+  });
+
+  it("uses a report-details action when matching is unavailable", async () => {
+    vi.mocked(getOwnReports).mockResolvedValue({
+      ...ownerPage,
+      reports: [
+        {
+          ...ownerReport,
+          status: "claim_pending",
+          moderationStatus: "visible",
+        },
+      ],
+    });
+    render(<OwnerReportHistory />);
+
+    const action = await screen.findByRole("link", {
+      name: "View report details",
+    });
+    expect(action.getAttribute("href")).toBe(`/reports/${ownerReport.id}`);
+  });
+
   it("embeds only a same-origin photo and reserves descriptive alt text", async () => {
     const { container } = render(<OwnerReportHistory />);
 

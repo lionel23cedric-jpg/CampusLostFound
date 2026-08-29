@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { mongo, Types } from "mongoose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({ connectToDatabase: vi.fn() }));
@@ -136,6 +136,24 @@ describe("report image read service", () => {
       moderationStatus: 1,
       "privacySettings.showPhoto": 1,
     });
+  });
+
+  it("reads BSON Binary bytes returned by a lean MongoDB query", async () => {
+    configure({
+      actorId: ownerId,
+      image: {
+        ...imageRecord(),
+        data: new mongo.Binary(data),
+      },
+    });
+
+    await expect(
+      readReportImage({
+        imageId,
+        actorId: ownerId.toString(),
+        actorRole: "student",
+      }),
+    ).resolves.toEqual({ contentType: "image/jpeg", byteLength: 4, data });
   });
 
   it.each([
