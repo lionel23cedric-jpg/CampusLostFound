@@ -45,7 +45,7 @@
 
 .queryNotice {
   margin-bottom: 1rem;
-  border-left: 4px solid var(--warm-accent);
+  border-color: var(--warm-accent);
 }
 
 .queryNotice a,
@@ -248,6 +248,16 @@
 .meta dd {
   margin: 0.2rem 0 0;
   font-weight: 700;
+}
+
+.cardAction {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  margin-top: 0.75rem;
+  color: var(--campus-green);
+  font-weight: 800;
+  text-underline-offset: 0.2em;
 }
 
 .inlineState,

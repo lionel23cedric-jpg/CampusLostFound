@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { mongo, Types } from "mongoose";
 
 import { connectToDatabase } from "@/lib/db";
 import { ItemReportModel } from "@/models/item-report";
@@ -28,9 +28,12 @@ export type ReadReportImageInput = {
 
 export type ReadReportImageReceipt = ValidatedReportImage;
 
-type ImageRecord = ReadReportImageReceipt & {
+type ImageRecord = {
   reportId: Types.ObjectId;
   uploadedByUserId: Types.ObjectId;
+  contentType: ValidatedReportImage["contentType"];
+  byteLength: number;
+  data: Buffer | mongo.Binary;
 };
 
 type ReportRecord = {
@@ -39,6 +42,12 @@ type ReportRecord = {
   moderationStatus?: string;
   privacySettings: { showPhoto: boolean };
 };
+
+function normaliseImageData(data: unknown): Buffer | null {
+  if (Buffer.isBuffer(data)) return data;
+  if (data instanceof mongo.Binary) return Buffer.from(data.value());
+  return null;
+}
 
 export async function readReportImage(
   input: ReadReportImageInput,
@@ -70,12 +79,13 @@ export async function readReportImage(
     .lean<ImageRecord | null>()
     .exec();
   if (!image) throw new ReportImageError("REPORT_IMAGE_NOT_FOUND");
+  const data = normaliseImageData(image.data);
   if (
     !REPORT_IMAGE_CONTENT_TYPES.includes(image.contentType) ||
-    !Buffer.isBuffer(image.data) ||
+    !data ||
     image.byteLength < 1 ||
     image.byteLength > REPORT_IMAGE_MAX_BYTES ||
-    image.data.length !== image.byteLength
+    data.length !== image.byteLength
   ) {
     throw new ReportImageError("REPORT_IMAGE_NOT_FOUND");
   }
@@ -102,6 +112,6 @@ export async function readReportImage(
   return {
     contentType: image.contentType,
     byteLength: image.byteLength,
-    data: image.data,
+    data,
   };
 }

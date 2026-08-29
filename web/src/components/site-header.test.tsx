@@ -106,16 +106,20 @@ it("keeps the home link as a centred 44 pixel touch target", () => {
 
 it("keeps compact account navigation within narrow screens", () => {
   const css = readFileSync(resolve("src/components/site-header.module.css"), "utf8");
+  const navigationRule = css.match(/\.navigation\s*\{([^}]*)\}/)?.[1];
   const navLinkRule = css.match(/\.navLink\s*\{([^}]*)\}/)?.[1];
   const accountButtonRule = css.match(/\.signOut,\s*\.retry\s*\{([^}]*)\}/)?.[1];
-  const wrapRuleIndex = css.indexOf("flex-wrap: wrap");
-  const compactStart = css.lastIndexOf("@media", wrapRuleIndex);
+  const compactStart = css.indexOf("@media (max-width: 24rem)");
   const compactHeader = css.slice(compactStart, css.indexOf("{", compactStart));
   const compactBreakpoint = compactHeader.match(/max-width:\s*([\d.]+)rem/)?.[1];
   const compactCss = css.slice(compactStart);
 
+  expect(navigationRule).toMatch(/min-width:\s*0/);
+  expect(navigationRule).toMatch(/flex-wrap:\s*wrap/);
   expect(navLinkRule).toMatch(/min-width:\s*44px/);
   expect(navLinkRule).toMatch(/min-height:\s*44px/);
+  expect(navLinkRule).toMatch(/flex:\s*0 0 auto/);
+  expect(navLinkRule).toMatch(/white-space:\s*nowrap/);
   expect(accountButtonRule).toMatch(/min-width:\s*44px/);
   expect(accountButtonRule).toMatch(/min-height:\s*44px/);
   expect(Number(compactBreakpoint)).toBeGreaterThanOrEqual(24);

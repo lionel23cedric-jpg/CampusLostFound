@@ -11,6 +11,7 @@
   justify-content: space-between;
   gap: 1rem;
   margin: 0 auto;
+  padding-block: 0.35rem;
 }
 
 .brand {
@@ -51,7 +52,9 @@
 
 .navigation {
   display: flex;
-  min-width: 14rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.75rem;
@@ -67,10 +70,11 @@
   display: inline-flex;
   min-width: 44px;
   min-height: 44px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  overflow-wrap: anywhere;
   text-align: center;
+  white-space: nowrap;
 }
 
 .navLink:active {
@@ -157,7 +161,7 @@
   }
 
   .navigation {
-    min-width: auto;
+    min-width: 0;
     gap: 0.5rem;
   }
 
@@ -165,6 +169,12 @@
     padding-inline: 0.65rem;
   }
 
+  .userName {
+    display: none;
+  }
+}
+
+@media (max-width: 80rem) {
   .userName {
     display: none;
   }
