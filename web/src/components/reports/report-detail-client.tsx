@@ -21,6 +21,7 @@ import {
 } from "@/lib/reports/photo-reference";
 
 import styles from "./report-browsing.module.css";
+import { ReportFlagPanel } from "./report-flag-panel";
 import { ReportMatchesPanel } from "./report-matches-panel";
 
 type ReportState =
@@ -457,6 +458,8 @@ function ActiveReportDetail({
           </section>
         ) : null}
       </article>
+
+      {!report.isOwner ? <ReportFlagPanel reportId={report.id} /> : null}
 
       {report.isOwner && report.status === "open" ? (
         <ReportMatchesPanel reportId={report.id} />

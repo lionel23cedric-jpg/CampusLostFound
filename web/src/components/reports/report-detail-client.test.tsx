@@ -194,6 +194,18 @@ describe("ReportDetailClient route and session boundary", () => {
 });
 
 describe("ReportDetailClient data and privacy", () => {
+  it("shows report flagging only for a report owned by someone else", async () => {
+    const view = render(<ReportDetailClient reportId={memberReport.id} />);
+    await screen.findByRole("heading", { name: memberReport.title });
+    expect(screen.queryByRole("button", { name: "Report this listing" })).toBeNull();
+
+    mockReadyResponses({ ...memberReport, isOwner: false });
+    view.unmount();
+    render(<ReportDetailClient reportId={memberReport.id} />);
+    await screen.findByRole("heading", { name: memberReport.title });
+    expect(screen.getByRole("button", { name: "Report this listing" })).toBeTruthy();
+  });
+
   it.each([
     ["open owner report", "open", true, true],
     ["open report owned by someone else", "open", false, false],
