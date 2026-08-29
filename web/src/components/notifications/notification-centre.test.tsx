@@ -75,7 +75,7 @@ describe("NotificationCentre", () => {
     expect(screen.getByText("Read")).toBeTruthy();
     expect(
       screen.getByRole("link", { name: "View claim" }).getAttribute("href"),
-    ).toBe(unreadClaim.action.href);
+    ).toBe(`${unreadClaim.action.href}?returnTo=%2Fnotifications`);
     expect(screen.getByRole("button", { name: "Mark as read" })).toBeTruthy();
     expect(screen.getAllByRole("article")).toHaveLength(2);
   });
@@ -208,9 +208,17 @@ describe("NotificationCentre", () => {
     expect(screen.getByRole("button", { name: "Mark as read" })).toBeTruthy();
   });
 
-  it("does not automatically mark a notification from its action link", () => {
+  it("marks an unread notification from its action link", () => {
     renderCentre({ notifications: [unreadClaim] });
     const link = screen.getByRole("link", { name: "View claim" });
+    link.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(link);
+    expect(actions.markRead).toHaveBeenCalledWith(unreadClaim.id);
+  });
+
+  it("does not mark an already-read action again", () => {
+    renderCentre({ notifications: [readReport], unreadCount: 0 });
+    const link = screen.getByRole("link", { name: "View report" });
     link.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(link);
     expect(actions.markRead).not.toHaveBeenCalled();

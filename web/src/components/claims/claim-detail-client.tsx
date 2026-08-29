@@ -52,11 +52,29 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-NZ", {
   timeZone: "Pacific/Auckland",
 });
 
-export function ClaimDetailClient({ claimId }: { claimId: string }) {
-  return <ClaimDetailSurface key={claimId} claimId={claimId} />;
+export function ClaimDetailClient({
+  claimId,
+  fromNotifications = false,
+}: {
+  claimId: string;
+  fromNotifications?: boolean;
+}) {
+  return (
+    <ClaimDetailSurface
+      key={claimId}
+      claimId={claimId}
+      fromNotifications={fromNotifications}
+    />
+  );
 }
 
-function ClaimDetailSurface({ claimId }: { claimId: string }) {
+function ClaimDetailSurface({
+  claimId,
+  fromNotifications,
+}: {
+  claimId: string;
+  fromNotifications: boolean;
+}) {
   const router = useRouter();
   const [detailState, setDetailState] = useState<DetailState>({ status: "loading" });
   const [refreshing, setRefreshing] = useState(false);
@@ -263,11 +281,15 @@ function ClaimDetailSurface({ claimId }: { claimId: string }) {
   const { claim } = detailState;
   const canWithdraw = claim.status === "pending" || claim.status === "approved";
   const reportHref = `/reports/${encodeURIComponent(claim.report.id)}`;
+  const backHref = fromNotifications ? "/notifications" : "/claims";
+  const backLabel = fromNotifications
+    ? "Back to notifications"
+    : "Back to My claims";
 
   return (
     <div className={styles.detailPage}>
-      <Link className={styles.backLink} href="/claims">
-        Back to My claims
+      <Link className={styles.backLink} href={backHref}>
+        {backLabel}
       </Link>
 
       <article className={styles.detailPanel} aria-labelledby="claim-detail-heading">

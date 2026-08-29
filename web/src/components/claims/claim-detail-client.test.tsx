@@ -97,6 +97,31 @@ describe("ClaimDetailClient route and safe detail", () => {
     expect(getMyClaim).toHaveBeenCalledWith(claimantClaim.id);
   });
 
+  it("accepts only the notifications return source", async () => {
+    const notificationRoute = await ClaimDetailPage({
+      params: Promise.resolve({ id: claimantClaim.id }),
+      searchParams: Promise.resolve({ returnTo: "/notifications" }),
+    });
+    const notificationView = render(notificationRoute);
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to notifications" })
+      ).getAttribute("href"),
+    ).toBe("/notifications");
+    notificationView.unmount();
+
+    const unsafeRoute = await ClaimDetailPage({
+      params: Promise.resolve({ id: claimantClaim.id }),
+      searchParams: Promise.resolve({ returnTo: "https://example.com" }),
+    });
+    render(unsafeRoute);
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to My claims" })
+      ).getAttribute("href"),
+    ).toBe("/claims");
+  });
+
   it("shows loading then only claimant-safe fields, links and local dates", async () => {
     const pending = deferred<ClaimantClaim>();
     vi.mocked(getMyClaim).mockReturnValue(pending.promise);
@@ -133,6 +158,16 @@ describe("ClaimDetailClient route and safe detail", () => {
     expect(document.body.textContent).not.toMatch(
       /secret blue sticker|secret answer|private staff note|private reviewer|private@example.com/,
     );
+  });
+
+  it("returns notification-sourced claims to notifications", async () => {
+    render(<ClaimDetailClient claimId={claimantClaim.id} fromNotifications />);
+
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to notifications" })
+      ).getAttribute("href"),
+    ).toBe("/notifications");
   });
 
   it.each([

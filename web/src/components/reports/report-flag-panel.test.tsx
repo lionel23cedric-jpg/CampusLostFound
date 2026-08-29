@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { StrictMode } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,6 +67,23 @@ describe("ReportFlagPanel", () => {
       },
       expect.any(AbortSignal),
     );
+    expect((await screen.findByRole("status")).textContent).toContain(
+      "Your concern has been sent for administrator review",
+    );
+  });
+
+  it("completes submission under React Strict Mode", async () => {
+    const user = userEvent.setup();
+    render(
+      <StrictMode>
+        <ReportFlagPanel reportId={reportId} />
+      </StrictMode>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Report this listing" }));
+    await user.selectOptions(screen.getByLabelText("Reason"), "privacy_concern");
+    await user.click(screen.getByRole("button", { name: "Submit report" }));
+
     expect((await screen.findByRole("status")).textContent).toContain(
       "Your concern has been sent for administrator review",
     );
