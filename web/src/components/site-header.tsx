@@ -96,9 +96,17 @@ export function SiteHeader() {
                 Report item
               </Link>
               {canViewAdminOverview ? (
-                <Link className={`${styles.navLink} text-link`} href="/admin">
-                  Admin overview
-                </Link>
+                <>
+                  <Link className={`${styles.navLink} text-link`} href="/admin">
+                    Admin overview
+                  </Link>
+                  <Link
+                    className={`${styles.navLink} text-link`}
+                    href="/admin/moderation"
+                  >
+                    Report moderation
+                  </Link>
+                </>
               ) : null}
               {isActive ? (
                 <Link
