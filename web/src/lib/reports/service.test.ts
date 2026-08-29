@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({ connectToDatabase: vi.fn() }));
+vi.mock("@/lib/notifications/delivery", () => ({
+  deliverNotifications: vi.fn(),
+}));
 vi.mock("@/models/category", () => ({
   CategoryModel: { findOne: vi.fn() },
 }));
@@ -24,13 +27,18 @@ vi.mock("@/models/private-verification-details", () => ({
   PrivateVerificationDetailsModel: { create: vi.fn() },
 }));
 vi.mock("./public-report", () => ({ toOwnerReport: vi.fn() }));
+vi.mock("./match-notifications", () => ({
+  planPossibleMatchNotifications: vi.fn(),
+}));
 
 import { connectToDatabase } from "@/lib/db";
+import { deliverNotifications } from "@/lib/notifications/delivery";
 import { CampusLocationModel } from "@/models/campus-location";
 import { CategoryModel } from "@/models/category";
 import { ItemReportModel } from "@/models/item-report";
 import { PrivateVerificationDetailsModel } from "@/models/private-verification-details";
 
+import { planPossibleMatchNotifications } from "./match-notifications";
 import { toOwnerReport } from "./public-report";
 import { createReport } from "./service";
 
@@ -85,6 +93,15 @@ const input = {
 
 const reportDocument = { _id: "report-id" };
 const ownerReport = { id: "report-id", status: "open" } as never;
+const notificationPlans = [
+  {
+    kind: "possible_match" as const,
+    recipientId: "64b64c6f2f4d9f1a2b3c4d61",
+    reportId: "64b64c6f2f4d9f1a2b3c4d62",
+    claimId: null,
+    eventId: "64b64c6f2f4d9f1a2b3c4d63",
+  },
+];
 const transaction = {
   withTransaction: vi.fn(
     async (work: () => Promise<unknown>) => await work(),
@@ -111,6 +128,10 @@ describe("report service", () => {
     vi.mocked(PrivateVerificationDetailsModel.create).mockResolvedValue(
       [] as never,
     );
+    vi.mocked(planPossibleMatchNotifications).mockResolvedValue(
+      notificationPlans,
+    );
+    vi.mocked(deliverNotifications).mockResolvedValue(undefined);
     vi.mocked(toOwnerReport).mockReturnValue(ownerReport);
   });
 
@@ -168,6 +189,25 @@ describe("report service", () => {
         },
       ],
       { session: transaction },
+    );
+    expect(planPossibleMatchNotifications).toHaveBeenCalledWith(
+      reportDocument,
+      transaction,
+    );
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      notificationPlans,
+      transaction,
+    );
+    expect(
+      vi.mocked(PrivateVerificationDetailsModel.create).mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(planPossibleMatchNotifications).mock.invocationCallOrder[0],
+    );
+    expect(
+      vi.mocked(planPossibleMatchNotifications).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      vi.mocked(deliverNotifications).mock.invocationCallOrder[0],
     );
     expect(toOwnerReport).toHaveBeenCalledWith(reportDocument);
     expect(transaction.endSession).toHaveBeenCalledOnce();
@@ -259,6 +299,26 @@ describe("report service", () => {
 
     await expect(createReport(user, input)).rejects.toBe(failure);
 
+    expect(toOwnerReport).not.toHaveBeenCalled();
+    expect(planPossibleMatchNotifications).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
+    expect(transaction.endSession).toHaveBeenCalledOnce();
+  });
+
+  it("preserves notification delivery failures for transaction rollback", async () => {
+    const failure = new Error("notification delivery failed");
+    vi.mocked(deliverNotifications).mockRejectedValueOnce(failure);
+
+    await expect(createReport(user, input)).rejects.toBe(failure);
+
+    expect(planPossibleMatchNotifications).toHaveBeenCalledWith(
+      reportDocument,
+      transaction,
+    );
+    expect(deliverNotifications).toHaveBeenCalledWith(
+      notificationPlans,
+      transaction,
+    );
     expect(toOwnerReport).not.toHaveBeenCalled();
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });
