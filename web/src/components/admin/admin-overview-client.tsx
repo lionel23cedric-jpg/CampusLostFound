@@ -259,7 +259,10 @@ export function AdminOverviewClient() {
             <h2 id="report-overview">Reports</h2>
             <p>Submitted reports and recovery outcomes.</p>
           </div>
-          <Link href="/admin/reference-data">Manage reference data</Link>
+          <div className={styles.sectionLinks}>
+            <Link href="/admin/moderation">Review flagged reports</Link>
+            <Link href="/admin/reference-data">Manage reference data</Link>
+          </div>
         </div>
         <MetricList entries={reportMetrics} values={data.reports} />
       </section>

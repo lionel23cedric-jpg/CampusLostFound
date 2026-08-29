@@ -29,11 +29,10 @@ The product combines campus-specific report data with privacy-aware public views
 ## Capabilities and Constraints
 
 - Existing stack: Next.js App Router, TypeScript, React, MongoDB Atlas through Mongoose, Zod, CSS Modules, Vitest, and ESLint.
-- Current delivered capabilities include authentication, report submission, privacy-safe report browsing APIs, database health checks, and responsive authenticated navigation.
+- Delivered workflows include revocable-session authentication, profile settings, report submission with uploaded-image preview, privacy-safe report browsing and owner history, explainable deterministic matching, ownership Claims and handover, in-app notifications, staff report handling, and administrator overview, account, reference-data, and report moderation.
 - Public/member report responses must never expose passwords, session tokens, reporter identifiers, private verification details, serial numbers, exact private locations, or other restricted evidence.
 - Real credentials remain only in ignored local environment files and must never be committed.
-- Issue #20 adds report browsing and search frontend surfaces against the existing APIs; it does not change database models or create new backend contracts.
-- Matching/claim management, notifications, administration, and the required AI-enhanced feature remain future work.
+- Future work is limited to assessed refinements and deployment/reporting evidence; new product subsystems require an explicit course requirement.
 
 ## Brand Commitments
 
@@ -43,9 +42,9 @@ The product combines campus-specific report data with privacy-aware public views
 
 ## Evidence on Hand
 
-- The repository contains implemented authentication, submission, and browsing API contracts with automated tests.
+- The repository contains implemented and automated-tested authentication, report, matching, Claim, notification, staff, and administrator workflows.
 - The supplied course project brief defines the required users, core workflows, database/privacy obligations, quality expectations, and the requirement for at least one clearly explained AI-related feature.
-- No approved production photography, testimonials, performance benchmarks, or completed AI feature are currently available and none should be fabricated.
+- The required intelligent feature is the local, deterministic, explainable report matcher; no external AI API, approved production photography, testimonials, or performance benchmark is available and none should be fabricated.
 
 ## Product Principles
 

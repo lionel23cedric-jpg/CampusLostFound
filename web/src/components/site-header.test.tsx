@@ -310,6 +310,9 @@ it("shows Admin overview only to an active administrator", () => {
   expect(
     screen.getByRole("link", { name: "Admin overview" }).getAttribute("href"),
   ).toBe("/admin");
+  expect(
+    screen.getByRole("link", { name: "Report moderation" }).getAttribute("href"),
+  ).toBe("/admin/moderation");
 });
 
 it.each([
@@ -328,6 +331,7 @@ it.each([
   render(<SiteHeader />);
 
   expect(screen.queryByRole("link", { name: "Admin overview" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Report moderation" })).toBeNull();
 });
 
 it.each([

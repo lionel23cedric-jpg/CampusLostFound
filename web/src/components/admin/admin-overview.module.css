@@ -233,6 +233,13 @@
   min-width: 0;
 }
 
+.sectionLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
 .sectionHeading h2 {
   margin: 0;
   color: var(--ink);
@@ -338,6 +345,10 @@
 
   .sectionHeading p {
     text-align: start;
+  }
+
+  .sectionLinks {
+    justify-content: flex-start;
   }
 }
 

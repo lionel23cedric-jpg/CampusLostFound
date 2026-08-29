@@ -133,6 +133,9 @@ it("loads once and renders every metric with a definition", async () => {
       .getByRole("link", { name: "Manage reference data" })
       .getAttribute("href"),
   ).toBe("/admin/reference-data");
+  expect(
+    screen.getByRole("link", { name: "Review flagged reports" }).getAttribute("href"),
+  ).toBe("/admin/moderation");
   expect(container.textContent).not.toMatch(
     /admin@example|userId|reportId|claimId|password|token|verification/i,
   );
