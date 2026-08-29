@@ -154,6 +154,31 @@ describe("ReportDetailClient route and session boundary", () => {
     expect(getReportById).toHaveBeenCalledWith(memberReport.id);
   });
 
+  it("accepts only the notifications return source", async () => {
+    const notificationRoute = await ReportDetailPage({
+      params: Promise.resolve({ id: memberReport.id }),
+      searchParams: Promise.resolve({ returnTo: "/notifications" }),
+    });
+    const notificationView = render(notificationRoute);
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to notifications" })
+      ).getAttribute("href"),
+    ).toBe("/notifications");
+    notificationView.unmount();
+
+    const unsafeRoute = await ReportDetailPage({
+      params: Promise.resolve({ id: memberReport.id }),
+      searchParams: Promise.resolve({ returnTo: "https://example.com" }),
+    });
+    render(unsafeRoute);
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to My reports" })
+      ).getAttribute("href"),
+    ).toBe("/reports/mine");
+  });
+
   it("waits for the session and redirects unauthenticated visitors", async () => {
     mockSession({ status: "loading", user: null });
     const { rerender } = render(<ReportDetailClient reportId={memberReport.id} />);
@@ -284,11 +309,34 @@ describe("ReportDetailClient data and privacy", () => {
     expect(screen.getByText("Date hidden")).toBeTruthy();
     expect(screen.getByText("Your report")).toBeTruthy();
     expect(
-      screen.getByRole("link", { name: "Back to reports" }).getAttribute("href"),
-    ).toBe("/reports");
+      screen.getByRole("link", { name: "Back to My reports" }).getAttribute("href"),
+    ).toBe("/reports/mine");
     expect(document.body.textContent).not.toMatch(
       /reporterId|privacySettings|serialNumber|expectedAnswer|privateNotes/i,
     );
+  });
+
+  it("returns notification-sourced reports to notifications", async () => {
+    render(
+      <ReportDetailClient reportId={memberReport.id} fromNotifications />,
+    );
+
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to notifications" })
+      ).getAttribute("href"),
+    ).toBe("/notifications");
+  });
+
+  it("returns reports owned by someone else to public reports", async () => {
+    mockReadyResponses({ ...memberReport, isOwner: false });
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    expect(
+      (await screen.findByRole("link", { name: "Back to reports" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/reports");
   });
 
   it("resolves labels and formats every visible date in Pacific/Auckland", async () => {

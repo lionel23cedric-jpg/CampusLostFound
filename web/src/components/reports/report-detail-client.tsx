@@ -52,7 +52,13 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-NZ", {
   timeZone: "Pacific/Auckland",
 });
 
-export function ReportDetailClient({ reportId }: { reportId: string }) {
+export function ReportDetailClient({
+  reportId,
+  fromNotifications = false,
+}: {
+  reportId: string;
+  fromNotifications?: boolean;
+}) {
   const router = useRouter();
   const session = useAuthSession();
 
@@ -98,6 +104,7 @@ export function ReportDetailClient({ reportId }: { reportId: string }) {
       key={`${session.user.id}-${reportId}`}
       reportId={reportId}
       canClaim={session.user.role === "student"}
+      fromNotifications={fromNotifications}
     />
   );
 }
@@ -122,9 +129,11 @@ function PermissionUnavailable() {
 function ActiveReportDetail({
   reportId,
   canClaim,
+  fromNotifications,
 }: {
   reportId: string;
   canClaim: boolean;
+  fromNotifications: boolean;
 }) {
   const router = useRouter();
   const [reportState, setReportState] = useState<ReportState>({
@@ -318,11 +327,16 @@ function ActiveReportDetail({
   const legacyPhotoLinks = photoEntries.filter(({ url }) =>
     isLegacyHttpsPhotoUrl(url),
   );
+  const backLink = fromNotifications
+    ? { href: "/notifications", label: "Back to notifications" }
+    : report.isOwner
+      ? { href: "/reports/mine", label: "Back to My reports" }
+      : { href: "/reports", label: "Back to reports" };
 
   return (
     <div className={styles.detailPage}>
-      <Link className={styles.backLink} href="/reports">
-        Back to reports
+      <Link className={styles.backLink} href={backLink.href}>
+        {backLink.label}
       </Link>
 
       {referenceState.status === "error" ? (
