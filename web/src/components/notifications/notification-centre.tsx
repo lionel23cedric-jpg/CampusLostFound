@@ -102,7 +102,15 @@ export function NotificationCentre() {
                           {dateTimeFormatter.format(new Date(notification.createdAt))}
                         </time>
                         <div className={styles.notificationActions}>
-                          <Link className={styles.detailLink} href={notification.action.href}>
+                          <Link
+                            className={styles.detailLink}
+                            href={`${notification.action.href}?returnTo=%2Fnotifications`}
+                            onClick={() => {
+                              if (!notification.isRead) {
+                                void notifications.markRead(notification.id);
+                              }
+                            }}
+                          >
                             {notification.action.label}
                           </Link>
                           {!notification.isRead ? (
