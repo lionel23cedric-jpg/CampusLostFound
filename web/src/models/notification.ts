@@ -3,6 +3,7 @@ import mongoose, { type InferSchemaType, type Model } from "mongoose";
 const { Schema, model, models } = mongoose;
 
 export const NOTIFICATION_KINDS = [
+  "possible_match",
   "claim_received",
   "claim_withdrawn",
   "claim_approved",
@@ -33,7 +34,7 @@ export const notificationSchema = new Schema(
     claimId: {
       type: Schema.Types.ObjectId,
       ref: "Claim",
-      required: true,
+      default: null,
     },
     eventKey: {
       type: String,

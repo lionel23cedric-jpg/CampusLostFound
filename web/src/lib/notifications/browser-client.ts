@@ -4,6 +4,7 @@ const GENERIC_MESSAGE = "We could not complete that request. Please try again.";
 const NETWORK_MESSAGE = "We could not reach the service. Please try again.";
 
 export const NOTIFICATION_KINDS = [
+  "possible_match",
   "claim_received",
   "claim_withdrawn",
   "claim_approved",

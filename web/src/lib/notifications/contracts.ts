@@ -11,12 +11,18 @@ export type NotificationRecord = {
   _id: Identifier;
   kind: NotificationKind;
   reportId: Identifier;
-  claimId: Identifier;
+  claimId: Identifier | null;
   readAt: Date | null;
   createdAt: Date;
 };
 
 const content = {
+  possible_match: {
+    title: "Possible item match",
+    summary: "A new opposite-type report may match one of your open reports.",
+    label: "View report",
+    target: "report",
+  },
   claim_received: {
     title: "New claim received",
     summary: "A claim was submitted for one of your reports.",
@@ -109,10 +115,13 @@ export function toPublicNotification(
   record: NotificationRecord,
 ): PublicNotification {
   const copy = content[record.kind];
+  if (copy.target === "claim" && record.claimId === null) {
+    throw new Error("Claim notification is missing a claim ID");
+  }
   const targetId =
     copy.target === "report"
       ? record.reportId.toString()
-      : record.claimId.toString();
+      : record.claimId!.toString();
   const readAt = record.readAt?.toISOString() ?? null;
 
   return publicNotificationSchema.parse({
