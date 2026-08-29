@@ -47,6 +47,21 @@ export const notificationSchema = new Schema(
   { collection: "notifications", timestamps: true },
 );
 
+notificationSchema.pre("validate", function () {
+  if (this.kind === "possible_match") {
+    if (this.claimId !== null && this.claimId !== undefined) {
+      this.invalidate(
+        "claimId",
+        "Possible-match notifications cannot reference a claim",
+      );
+    }
+    return;
+  }
+  if (this.claimId === null || this.claimId === undefined) {
+    this.invalidate("claimId", "Claim notifications require a claim");
+  }
+});
+
 notificationSchema.index({ recipientId: 1, createdAt: -1, _id: -1 });
 notificationSchema.index({ recipientId: 1, readAt: 1 });
 notificationSchema.index({ eventKey: 1 }, { unique: true });
