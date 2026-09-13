@@ -106,6 +106,8 @@ export function AdminOverviewClient() {
   const loadOverview = useCallback(
     async (mode: "initial" | "refresh") => {
       const currentRequest = ++requestId.current;
+      // Cancel the previous request and also compare request IDs so a slower,
+      // stale response cannot replace a newer administrator snapshot.
       controller.current?.abort();
       const nextController = new AbortController();
       controller.current = nextController;
@@ -135,6 +137,8 @@ export function AdminOverviewClient() {
         }
 
         if (error instanceof BrowserAdminOverviewError) {
+          // Refresh the shared session when the server reports lost access;
+          // the API, rather than this component, remains the source of truth.
           if (error.code === "AUTHENTICATION_REQUIRED") {
             setState({ status: "accessChanged" });
             await refreshSession().catch(() => undefined);
@@ -246,6 +250,7 @@ export function AdminOverviewClient() {
 
       {state.refreshFailed ? (
         <p className={styles.refreshAlert} role="alert">
+          {/* Keep the last schema-validated snapshot visible when refresh fails. */}
           We could not refresh the overview. The last valid snapshot remains
           visible.
         </p>

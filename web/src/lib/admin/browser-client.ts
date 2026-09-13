@@ -76,6 +76,8 @@ async function responseError(response: Response) {
 
   const definition = approvedErrors[parsed.data.error.code];
 
+  // Accept only the documented code, status, and message combinations. This
+  // prevents an unexpected server response from becoming trusted UI copy.
   if (
     response.status !== definition.status ||
     parsed.data.error.message !== definition.message
@@ -111,6 +113,8 @@ export async function getAdministratorOverview(
     throw await responseError(response);
   }
 
+  // Browser code treats network JSON as untrusted until the shared contract
+  // verifies its shape and the relationships between all totals.
   const parsed = administratorOverviewSchema.safeParse(await readJson(response));
 
   if (!parsed.success) {
