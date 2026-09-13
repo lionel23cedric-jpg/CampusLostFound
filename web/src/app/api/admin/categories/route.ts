@@ -59,6 +59,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   let administrator: PublicUser;
   try {
+    // Authenticate first, then apply bounded decoding and strict schema validation
+    // before any value can reach the database service.
     administrator = await getCurrentReferenceDataAdministrator();
   } catch (error) {
     return noStore(referenceDataManagementErrorResponse(error));

@@ -30,6 +30,7 @@ function isJsonContentType(request: Request) {
 export async function PATCH(request: Request, context: Context) {
   let administrator: PublicUser;
   try {
+    // Role is read from the signed session, not accepted from client-controlled JSON.
     administrator = await getCurrentReferenceDataAdministrator();
   } catch (error) {
     return noStore(referenceDataManagementErrorResponse(error));

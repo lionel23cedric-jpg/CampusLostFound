@@ -60,6 +60,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   let administrator: PublicUser;
   try {
+    // Active-administrator authorization precedes parsing of the bounded JSON body.
     administrator = await getCurrentReferenceDataAdministrator();
   } catch (error) {
     return noStore(referenceDataManagementErrorResponse(error));

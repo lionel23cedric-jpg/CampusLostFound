@@ -30,6 +30,8 @@ function isJsonContentType(request: Request) {
 export async function PATCH(request: Request, context: Context) {
   let administrator: PublicUser;
   try {
+    // The administrator identity is session-derived; the request can supply only
+    // the record ID, expected version, and permitted category changes.
     administrator = await getCurrentReferenceDataAdministrator();
   } catch (error) {
     return noStore(referenceDataManagementErrorResponse(error));

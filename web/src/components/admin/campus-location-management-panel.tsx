@@ -198,6 +198,8 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
       nextQuery: ReferenceDataListQuery,
       mode: "initial" | "refresh",
     ): Promise<AdminCampusLocationPage | null> => {
+      // Only the newest filter request may update the list; older work is aborted
+      // and also guarded by a monotonically increasing request ID.
       const currentRequest = ++listRequestId.current;
       listController.current?.abort();
       const controller = new AbortController();
@@ -505,6 +507,8 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
         error instanceof BrowserReferenceDataError &&
         error.code === "REFERENCE_DATA_STATE_CONFLICT"
       ) {
+        // A 409 means the record changed elsewhere. Reloading protects that newer
+        // work from being overwritten by the currently open editor.
         setEditor((current) =>
           current?.recordId === targetId
             ? { ...current, conflict: true }
@@ -589,6 +593,8 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
       setEditorErrors({ form: "Check the campus location values and try again." });
       return;
     }
+    // Deactivation removes the choice from future reports without deleting the
+    // location referenced by reports that already exist.
     void submitUpdate(
       parsed.data,
       editor.desiredActive ? "restore" : "deactivate",

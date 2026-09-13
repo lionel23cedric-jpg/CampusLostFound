@@ -185,6 +185,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
       nextQuery: ReferenceDataListQuery,
       mode: "initial" | "refresh",
     ): Promise<AdminCategoryPage | null> => {
+      // Abort the previous list request and ignore stale completions so a slow
+      // search cannot replace the results from a newer filter.
       const currentRequest = ++listRequestId.current;
       listController.current?.abort();
       const controller = new AbortController();
@@ -487,6 +489,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
         error instanceof BrowserReferenceDataError &&
         error.code === "REFERENCE_DATA_STATE_CONFLICT"
       ) {
+        // Keep the administrator's draft visible, but require an explicit reload
+        // of the current database version before another save is attempted.
         setEditor((current) =>
           current?.recordId === targetId
             ? { ...current, conflict: true }
@@ -563,6 +567,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
       setEditorErrors({ form: "Check the category values and try again." });
       return;
     }
+    // Reference data is soft-deactivated, never deleted, so reports that already
+    // refer to this category retain their historical meaning.
     void submitUpdate(
       parsed.data,
       editor.desiredActive ? "restore" : "deactivate",
