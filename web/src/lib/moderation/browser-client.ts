@@ -131,6 +131,8 @@ async function responseError(response: Response, signal?: AbortSignal) {
   const { code, message, fields } = parsed.data.error;
   const definition = approvedErrors[code];
   if (response.status !== definition.status || message !== definition.message) {
+    // Unknown combinations are replaced with one generic message so server and
+    // database details cannot be reflected into the interface.
     return unavailable(response.status);
   }
   return new BrowserModerationError(code, response.status, fields);
@@ -143,6 +145,7 @@ async function parseResponse<T>(
 ) {
   if (!response.ok) throw await responseError(response, signal);
   const parsed = schema.safeParse(await readJson(response, signal));
+  // Even a successful API response must satisfy the browser's strict Zod contract.
   if (!parsed.success) throw unavailable(response.status);
   return parsed.data;
 }

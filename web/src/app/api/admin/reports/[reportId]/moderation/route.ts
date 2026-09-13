@@ -23,6 +23,8 @@ function noStore(response: Response) {
 export async function PATCH(request: Request, context: Context) {
   let administrator: PublicUser;
   try {
+    // Session authorization, strict IDs, JSON-only input, and Zod validation form
+    // the route boundary before the transactional service is called.
     administrator = await getCurrentModerationAdministrator();
   } catch (error) {
     return noStore(moderationErrorResponse(error));

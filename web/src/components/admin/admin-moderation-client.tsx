@@ -6,6 +6,8 @@ import { AdminModerationReportList } from "./admin-moderation-report-list";
 import styles from "./admin-moderation.module.css";
 
 export function AdminModerationClient() {
+  // Moderation has two deliberate entry points: resolve a member-submitted flag,
+  // or directly manage report visibility when an administrator spots a problem.
   return (
     <article className={styles.workspace}>
       <header className={styles.header}>

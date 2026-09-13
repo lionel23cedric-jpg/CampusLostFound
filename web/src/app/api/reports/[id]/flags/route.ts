@@ -23,6 +23,7 @@ function noStore(response: Response) {
 export async function POST(request: Request, context: Context) {
   let member: PublicUser;
   try {
+    // Actor identity comes from the session; the body contains concern details only.
     member = await getCurrentModerationMember();
   } catch (error) {
     return noStore(moderationErrorResponse(error));

@@ -23,6 +23,8 @@ function noStore(response: Response) {
 export async function PATCH(request: Request, context: Context) {
   let administrator: PublicUser;
   try {
+    // The server session supplies the administrator; strict parsing limits the body
+    // to one documented decision shape and its concurrency timestamps.
     administrator = await getCurrentModerationAdministrator();
   } catch (error) {
     return noStore(moderationErrorResponse(error));
