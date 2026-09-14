@@ -93,6 +93,14 @@
   line-height: 1.4;
 }
 
+.hint,
+.form :global(.field-hint) {
+  margin: 0;
+  color: var(--ink-soft, #53635e);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .form :global(.form-alert) {
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--danger, #a43b32) 35%, transparent);

@@ -59,6 +59,26 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
+it("shows registration requirements before submission", () => {
+  render(<RegisterForm />);
+
+  expect(screen.getByText("Use 2–80 characters.")).toBeTruthy();
+  expect(
+    screen.getByText(
+      "Use a valid email address, for example name@example.com.",
+    ),
+  ).toBeTruthy();
+  expect(screen.getByText("Use 10–128 characters.")).toBeTruthy();
+  expect(screen.getByText("Enter the same password again.")).toBeTruthy();
+
+  expect(
+    screen.getByLabelText("Display name").getAttribute("aria-describedby"),
+  ).toBe("displayName-hint");
+  expect(
+    screen.getByLabelText("Email address").getAttribute("aria-describedby"),
+  ).toBe("email-hint");
+});
+
 async function fillForm(values: {
   displayName: string;
   email: string;
@@ -95,6 +115,14 @@ it("reports boundary errors and focuses the first invalid control", async () => 
   expect(screen.getByText("Email must be valid")).toBeTruthy();
   expect(screen.getByText("Password must contain at least 10 characters")).toBeTruthy();
   expect(document.activeElement).toBe(screen.getByLabelText("Display name"));
+  expect(
+    screen.getByLabelText("Display name").getAttribute("aria-describedby"),
+  ).toBe("displayName-hint displayName-error");
+  expect(
+    screen.getByLabelText("Password").getAttribute("aria-describedby"),
+  ).toBe("password-hint password-error");
+  expect(screen.getByText("Use 2–80 characters.")).toBeTruthy();
+  expect(screen.getByText("Use 10–128 characters.")).toBeTruthy();
 });
 
 it("reports a mismatched confirmation and does not submit", async () => {
