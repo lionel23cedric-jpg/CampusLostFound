@@ -21,11 +21,11 @@
 
 ## File structure
 
-- Create `web/public/illustrations/auth.svg`: authentication illustration.
-- Create `web/public/illustrations/reports.svg`: report workflow illustration.
-- Create `web/public/illustrations/claims.svg`: ownership Claim illustration.
-- Create `web/public/illustrations/notifications.svg`: notification/dashboard illustration.
-- Create `web/public/illustrations/administration.svg`: staff/admin illustration.
+- Create `web/public/illustrations/auth.webp`: authentication illustration.
+- Create `web/public/illustrations/reports.webp`: report workflow illustration.
+- Create `web/public/illustrations/claims.webp`: ownership Claim illustration.
+- Create `web/public/illustrations/notifications.webp`: notification/dashboard illustration.
+- Create `web/public/illustrations/administration.webp`: staff/admin illustration.
 - Create `web/src/components/context-illustration.tsx`: typed local-asset renderer.
 - Create `web/src/components/context-illustration.module.css`: shared responsive image frame.
 - Create `web/src/components/context-illustration.test.tsx`: asset, alt-text, and size contract tests.
@@ -241,11 +241,11 @@ Mock `next/image` as an ordinary `img`, render all five kinds, and assert the ex
 
 ```tsx
 const expected = {
-  auth: "/illustrations/auth.svg",
-  reports: "/illustrations/reports.svg",
-  claims: "/illustrations/claims.svg",
-  notifications: "/illustrations/notifications.svg",
-  administration: "/illustrations/administration.svg",
+  auth: "/illustrations/auth.webp",
+  reports: "/illustrations/reports.webp",
+  claims: "/illustrations/claims.webp",
+  notifications: "/illustrations/notifications.webp",
+  administration: "/illustrations/administration.webp",
 };
 
 for (const [kind, src] of Object.entries(expected)) {
@@ -264,19 +264,22 @@ npx vitest run src/components/context-illustration.test.tsx
 
 Expected: FAIL because the module does not exist.
 
-- [ ] **Step 3: Create five coherent SVG assets**
+- [ ] **Step 3: Create five coherent local WebP assets**
 
-Each asset must use `viewBox="0 0 640 420"`, a `#fffdf8` background, `#17372f` line art, `#1f6a52` primary shape, and `#b85f3d` accent. Use these exact subjects:
+Generate original 3:2 editorial images, resize them to 960 by 640 pixels, and
+encode as WebP quality 82. Use the established cream, forest-green and
+terracotta visual world and these exact subjects:
 
 ```text
-auth.svg             campus ID card beside a key
-reports.svg          backpack, bottle and report card
-claims.svg           two hands exchanging a labelled item box
-notifications.svg    notice card with a restrained bell indicator
-administration.svg   three data cards with a small shield/check mark
+auth.webp             campus ID card beside a key
+reports.webp          backpack, bottle and report card
+claims.webp           two hands exchanging a labelled item box
+notifications.webp    notice cards with a recovered keyring
+administration.webp   three data cards with a small shield/check mark
 ```
 
-All SVGs must omit scripts, external references, embedded raster data, animation, institution logos, and factual text.
+All assets must omit readable personal data, institution logos, watermarks,
+factual text, and invented claims.
 
 - [ ] **Step 4: Implement the typed renderer**
 
@@ -285,11 +288,11 @@ import Image from "next/image";
 import styles from "./context-illustration.module.css";
 
 const sources = {
-  auth: "/illustrations/auth.svg",
-  reports: "/illustrations/reports.svg",
-  claims: "/illustrations/claims.svg",
-  notifications: "/illustrations/notifications.svg",
-  administration: "/illustrations/administration.svg",
+  auth: "/illustrations/auth.webp",
+  reports: "/illustrations/reports.webp",
+  claims: "/illustrations/claims.webp",
+  notifications: "/illustrations/notifications.webp",
+  administration: "/illustrations/administration.webp",
 } as const;
 
 export type IllustrationKind = keyof typeof sources;
@@ -308,8 +311,8 @@ export function ContextIllustration({
       <Image
         src={sources[kind]}
         alt=""
-        width={640}
-        height={420}
+        width={960}
+        height={640}
         priority={priority}
         sizes="(max-width: 48rem) 100vw, 32rem"
       />
@@ -324,7 +327,6 @@ export function ContextIllustration({
 .frame {
   overflow: hidden;
   margin: 0;
-  border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--paper-light);
   box-shadow: var(--shadow);
@@ -333,7 +335,7 @@ export function ContextIllustration({
 .frame img {
   width: 100%;
   height: auto;
-  aspect-ratio: 32 / 21;
+  aspect-ratio: 3 / 2;
   object-fit: cover;
 }
 ```
@@ -342,10 +344,10 @@ export function ContextIllustration({
 
 ```powershell
 npx vitest run src/components/context-illustration.test.tsx
-rg -n "<script|https?://|data:image|<animate" public/illustrations
+Get-ChildItem public/illustrations | Select-Object Name,Length
 ```
 
-Expected: test PASS; `rg` returns no match.
+Expected: test PASS; exactly five WebP files exist and each stays below 100 KB.
 
 - [ ] **Step 7: Commit**
 

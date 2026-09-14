@@ -49,7 +49,8 @@ Primary files:
 
 ## 4. Visual system
 
-Five small local SVG illustrations will represent the main functional areas:
+Five small local WebP editorial illustrations will represent the main
+functional areas:
 
 - Authentication
 - Reports
@@ -57,16 +58,17 @@ Five small local SVG illustrations will represent the main functional areas:
 - Notifications and dashboard
 - Staff and administration
 
-They will be stored under `web/public/illustrations` and rendered through a
-shared responsive component using `next/image`. Authentication pages may use a
+They will be generated as original project assets, reduced to 960 by 640 pixels,
+stored under `web/public/illustrations`, and rendered through a shared
+responsive component using `next/image`. Authentication pages may use a
 larger visual. Lists, empty states, and functional dashboards will use smaller
 contextual visuals. Report detail pages will continue to prioritise images
 uploaded by users. Administrative forms will not be turned into promotional
 pages.
 
 Local assets prevent broken remote-image URLs and avoid transmitting page visits
-to third-party image hosts. Decorative images will use empty alternative text;
-informative images will have concise meaningful alternatives.
+to third-party image hosts. These contextual images are decorative and use
+empty alternative text; uploaded report evidence remains informative content.
 
 ## 5. Administrator overview charts
 
