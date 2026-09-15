@@ -14,4 +14,7 @@ and local, deterministic, explainable item matching.
 - [Database ERD and privacy boundaries](docs/erd.md)
 - [Role-based user guide](docs/user-guide.md)
 - [Requirement and test matrix](docs/test-matrix.md)
+- [Team responsibilities](TEAM.md)
+- [Project decisions](project_management/decision_log.csv)
+- [Contribution record](project_management/contribution_log.csv)
 - [Project design](docs/superpowers/specs/2026-09-15-project-quality-polish-design.md)
