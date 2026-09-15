@@ -12,11 +12,11 @@ import {
 } from "./matching-score";
 import { toMemberReport, type MemberReport } from "./public-report";
 
-const CANDIDATE_LIMIT = 500;
-const RESULT_LIMIT = 5;
-const MINIMUM_SCORE = 35;
+export const MATCH_CANDIDATE_LIMIT = 500;
+export const MATCH_RESULT_LIMIT = 5;
+export const MATCH_MINIMUM_SCORE = 35;
 
-const MATCH_REPORT_PROJECTION = {
+export const MATCH_REPORT_PROJECTION = {
   _id: 1,
   reporterId: 1,
   reportType: 1,
@@ -29,6 +29,7 @@ const MATCH_REPORT_PROJECTION = {
   tags: 1,
   photoUrls: 1,
   status: 1,
+  moderationStatus: 1,
   privacySettings: 1,
   resolvedAt: 1,
   createdAt: 1,
@@ -51,7 +52,7 @@ export type ReportMatches = {
   matches: ReportMatch[];
 };
 
-function toSourceInput(report: MatchReportDocument): ScoringReport {
+export function toSourceInput(report: MatchReportDocument): ScoringReport {
   return {
     id: report._id.toString(),
     title: report.title,
@@ -65,7 +66,7 @@ function toSourceInput(report: MatchReportDocument): ScoringReport {
   };
 }
 
-function toCandidateInput(report: MemberReport): ScoringReport {
+export function toCandidateInput(report: MemberReport): ScoringReport {
   return {
     id: report.id,
     title: report.title,
@@ -86,7 +87,11 @@ export async function findReportMatches(
   await connectToDatabase();
 
   const source = await ItemReportModel.findOne(
-    { _id: reportId, reporterId: user.id },
+    {
+      _id: reportId,
+      reporterId: user.id,
+      moderationStatus: { $ne: "hidden" },
+    },
     MATCH_REPORT_PROJECTION,
   ).exec();
 
@@ -101,11 +106,12 @@ export async function findReportMatches(
       reporterId: { $ne: source.reporterId },
       reportType: source.reportType === "lost" ? "found" : "lost",
       status: "open",
+      moderationStatus: { $ne: "hidden" },
     },
     MATCH_REPORT_PROJECTION,
   )
     .sort({ createdAt: -1, _id: -1 })
-    .limit(CANDIDATE_LIMIT)
+    .limit(MATCH_CANDIDATE_LIMIT)
     .exec();
 
   const sourceInput = toSourceInput(source);
@@ -115,14 +121,14 @@ export async function findReportMatches(
       const result = scoreReportMatch(sourceInput, toCandidateInput(report));
       return { report, score: result.score, factors: result.factors };
     })
-    .filter((match) => match.score >= MINIMUM_SCORE)
+    .filter((match) => match.score >= MATCH_MINIMUM_SCORE)
     .sort(
       (left, right) =>
         right.score - left.score ||
         right.report.createdAt.localeCompare(left.report.createdAt) ||
         right.report.id.localeCompare(left.report.id),
     )
-    .slice(0, RESULT_LIMIT);
+    .slice(0, MATCH_RESULT_LIMIT);
 
   return { sourceReportId: source._id.toString(), matches };
 }

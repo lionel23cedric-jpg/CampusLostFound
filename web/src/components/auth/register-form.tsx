@@ -116,8 +116,15 @@ export function RegisterForm() {
           onChange={(event) => updateValue("displayName", event.target.value)}
           disabled={isPending}
           aria-invalid={Boolean(errors.displayName)}
-          aria-describedby={errors.displayName ? "displayName-error" : undefined}
+          aria-describedby={
+            errors.displayName
+              ? "displayName-hint displayName-error"
+              : "displayName-hint"
+          }
         />
+        <p className={styles.hint} id="displayName-hint">
+          Use 2–80 characters.
+        </p>
         <FieldError id="displayName-error" message={errors.displayName} />
       </div>
 
@@ -133,8 +140,11 @@ export function RegisterForm() {
           onChange={(event) => updateValue("email", event.target.value)}
           disabled={isPending}
           aria-invalid={Boolean(errors.email)}
-          aria-describedby={errors.email ? "email-error" : undefined}
+          aria-describedby={errors.email ? "email-hint email-error" : "email-hint"}
         />
+        <p className={styles.hint} id="email-hint">
+          Use a valid email address, for example name@example.com.
+        </p>
         <FieldError id="email-error" message={errors.email} />
       </div>
 
@@ -145,6 +155,7 @@ export function RegisterForm() {
         autoComplete="new-password"
         value={values.password}
         onChange={(event) => updateValue("password", event.target.value)}
+        hint="Use 10–128 characters."
         error={errors.password}
         disabled={isPending}
       />
@@ -156,6 +167,7 @@ export function RegisterForm() {
         autoComplete="new-password"
         value={values.confirmPassword}
         onChange={(event) => updateValue("confirmPassword", event.target.value)}
+        hint="Enter the same password again."
         error={errors.confirmPassword}
         disabled={isPending}
       />

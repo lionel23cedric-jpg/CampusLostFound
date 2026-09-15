@@ -102,6 +102,43 @@ it("renders protected content only for an active administrator", () => {
   expect(screen.getByText("Protected overview fixture")).toBeTruthy();
 });
 
+it("uses account-management labels without changing the permission boundary", () => {
+  mockSession({ status: "authenticated", user: activeAdministrator });
+  render(
+    <AdministratorAccessBoundary
+      workspaceLabel="Administrator account management workspace"
+      forbiddenDescription="Only active administrators can manage student and staff accounts."
+    >
+      <p>Protected account fixture</p>
+    </AdministratorAccessBoundary>,
+  );
+
+  expect(
+    screen.getByRole("region", {
+      name: "Administrator account management workspace",
+    }),
+  ).toBeTruthy();
+});
+
+it("uses the supplied forbidden description", () => {
+  mockSession({
+    status: "authenticated",
+    user: { ...activeAdministrator, role: "staff" },
+  });
+  render(
+    <AdministratorAccessBoundary forbiddenDescription="Only active administrators can manage student and staff accounts.">
+      <p>Must not mount</p>
+    </AdministratorAccessBoundary>,
+  );
+
+  expect(
+    screen.getByText(
+      "Only active administrators can manage student and staff accounts.",
+    ),
+  ).toBeTruthy();
+  expect(screen.queryByText("Must not mount")).toBeNull();
+});
+
 it.each([
   ["student", { ...activeAdministrator, role: "student" as const }],
   ["staff", { ...activeAdministrator, role: "staff" as const }],

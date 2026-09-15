@@ -22,7 +22,7 @@ import {
 } from "@/lib/claims/claimant-service";
 import { ClaimError, type ClaimErrorCode } from "@/lib/claims/errors";
 import type { ClaimantClaim } from "@/lib/claims/public-claim";
-import { BodyTooLarge } from "@/lib/claims/request-body";
+import { RequestBodyError } from "@/lib/request-body";
 
 import { GET as questionsGet } from "../reports/[id]/claim-questions/route";
 import { POST as claimsPost } from "../reports/[id]/claims/route";
@@ -362,12 +362,12 @@ describe("claimant claim routes", () => {
     ],
     [
       "creation with a size-shaped stream error",
-      () => claimsPost(failingBodyPost(new BodyTooLarge()), context(reportId)),
+      () => claimsPost(failingBodyPost(new RequestBodyError("BODY_TOO_LARGE")), context(reportId)),
       createClaim,
     ],
     [
       "withdrawal with a size-shaped stream error",
-      () => withdrawPost(failingBodyPost(new BodyTooLarge()), context(claimId)),
+      () => withdrawPost(failingBodyPost(new RequestBodyError("BODY_TOO_LARGE")), context(claimId)),
       withdrawOwnClaim,
     ],
   ] as const)("hides %s body stream failures", async (_case, invoke, service) => {
@@ -415,7 +415,14 @@ describe("claimant claim routes", () => {
       withdrawOwnClaim,
     ],
   ] as const)("rejects an oversized %s body", async (_case, invoke, service) => {
-    await expectValidationError(await invoke());
+    const response = await invoke();
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "PAYLOAD_TOO_LARGE",
+        message: "Request body is too large",
+      },
+    });
     expect(service).not.toHaveBeenCalled();
   });
 

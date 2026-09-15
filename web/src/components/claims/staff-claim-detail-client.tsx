@@ -15,6 +15,7 @@ import {
   ClaimBrowserError,
   type ClaimStatus,
 } from "@/lib/claims/browser-client";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   completeStaffClaim,
   decideStaffClaim,
@@ -343,9 +344,9 @@ function StaffClaimDetailSurface({ claimId }: { claimId: string }) {
 
   return (
     <div className={styles.detailPage}>
-      <Link className={styles.backLink} href="/staff/claims">
+      <PageBackLink href="/staff/claims">
         Back to Claim reviews
-      </Link>
+      </PageBackLink>
 
       <article className={styles.detailPanel} aria-labelledby="staff-claim-detail-heading">
         <header className={styles.detailHeader}>
@@ -716,11 +717,11 @@ function SafeDetailState({
       aria-live={alert ? undefined : "polite"}
       aria-labelledby="staff-claim-detail-safe-heading"
     >
+      <PageBackLink href={href}>{linkText}</PageBackLink>
       <h1 ref={headingRef} id="staff-claim-detail-safe-heading" tabIndex={-1}>
         {heading}
       </h1>
       <p>{message}</p>
-      <Link href={href}>{linkText}</Link>
     </section>
   );
 }

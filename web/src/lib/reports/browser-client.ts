@@ -1,17 +1,15 @@
 import { z } from "zod";
 
+import {
+  REPORT_IMAGE_CONTENT_TYPES,
+  REPORT_IMAGE_MAX_BYTES,
+  isInternalReportImagePath,
+  reportPhotoReferenceSchema,
+} from "./photo-reference";
 import type { CreateReportInput } from "./validation";
 
 const GENERIC_MESSAGE = "We could not complete that request. Please try again.";
 const NETWORK_MESSAGE = "We could not reach the service. Please try again.";
-
-const httpsUrlSchema = z.string().refine((value) => {
-  try {
-    return new URL(value).protocol === "https:";
-  } catch {
-    return false;
-  }
-});
 
 export type ReportCategory = {
   id: string;
@@ -39,6 +37,7 @@ export type CreatedReport = {
   tags: string[];
   photoUrls: string[];
   status: "draft" | "open" | "claim_pending" | "resolved" | "closed";
+  moderationStatus: "visible" | "hidden";
   privacySettings: {
     showPhoto: boolean;
     showEventDate: boolean;
@@ -47,6 +46,24 @@ export type CreatedReport = {
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type OwnerReport = CreatedReport;
+
+export type OwnerReportHistoryRequest = {
+  reportType?: OwnerReport["reportType"];
+  status?: OwnerReport["status"];
+  page?: number;
+};
+
+export type OwnerReportHistoryPage = {
+  reports: OwnerReport[];
+  pagination: {
+    page: number;
+    pageSize: 10;
+    total: number;
+    totalPages: number;
+  };
 };
 
 export type MemberReport = {
@@ -61,6 +78,7 @@ export type MemberReport = {
   tags: string[];
   photoUrls: string[];
   status: "open" | "claim_pending" | "resolved" | "closed";
+  moderationStatus: "visible" | "hidden";
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -105,6 +123,12 @@ export type ReportMatches = {
   matches: ReportMatch[];
 };
 
+export type UploadedReportImage = {
+  url: string;
+  contentType: (typeof REPORT_IMAGE_CONTENT_TYPES)[number];
+  byteLength: number;
+};
+
 export type ReportBrowseRequest = {
   q?: string;
   reportType?: "lost" | "found";
@@ -142,8 +166,9 @@ const createdReportSchema = z.strictObject({
   occurredAt: z.string().datetime({ offset: true }),
   colors: z.array(z.string()),
   tags: z.array(z.string()),
-  photoUrls: z.array(z.string()),
+  photoUrls: z.array(reportPhotoReferenceSchema),
   status: z.enum(["draft", "open", "claim_pending", "resolved", "closed"]),
+  moderationStatus: z.enum(["visible", "hidden"]),
   privacySettings: z.strictObject({
     showPhoto: z.boolean(),
     showEventDate: z.boolean(),
@@ -153,6 +178,40 @@ const createdReportSchema = z.strictObject({
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 }) satisfies z.ZodType<CreatedReport>;
+
+const ownerReportHistoryPageSchema = z
+  .strictObject({
+    reports: z.array(createdReportSchema),
+    pagination: z.strictObject({
+      page: z.number().int().positive(),
+      pageSize: z.literal(10),
+      total: z.number().int().nonnegative(),
+      totalPages: z.number().int().nonnegative(),
+    }),
+  })
+  .superRefine(({ reports, pagination }, context) => {
+    if (pagination.totalPages !== Math.ceil(pagination.total / 10)) {
+      context.addIssue({
+        code: "custom",
+        path: ["pagination", "totalPages"],
+        message: "Owner history page count is inconsistent",
+      });
+    }
+    if (reports.length > 10 || reports.length > pagination.total) {
+      context.addIssue({
+        code: "custom",
+        path: ["reports"],
+        message: "Owner history result count is inconsistent",
+      });
+    }
+    if (reports.length > 0 && pagination.page > pagination.totalPages) {
+      context.addIssue({
+        code: "custom",
+        path: ["pagination", "page"],
+        message: "Owner history page is inconsistent",
+      });
+    }
+  }) satisfies z.ZodType<OwnerReportHistoryPage>;
 
 const memberReportSchema = z.strictObject({
   id: z.string().min(1),
@@ -164,8 +223,9 @@ const memberReportSchema = z.strictObject({
   occurredAt: z.string().datetime({ offset: true }).nullable(),
   colors: z.array(z.string()),
   tags: z.array(z.string()),
-  photoUrls: z.array(httpsUrlSchema),
+  photoUrls: z.array(reportPhotoReferenceSchema),
   status: z.enum(["open", "claim_pending", "resolved", "closed"]),
+  moderationStatus: z.enum(["visible", "hidden"]),
   resolvedAt: z.string().datetime({ offset: true }).nullable(),
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
@@ -276,6 +336,16 @@ const campusLocationResponseSchema = z.strictObject({
 });
 
 const reportResponseSchema = z.strictObject({ report: createdReportSchema });
+
+const uploadedReportImageSchema = z.strictObject({
+  url: z.string().refine(isInternalReportImagePath),
+  contentType: z.enum(REPORT_IMAGE_CONTENT_TYPES),
+  byteLength: z.number().int().min(1).max(REPORT_IMAGE_MAX_BYTES),
+}) satisfies z.ZodType<UploadedReportImage>;
+
+const reportImageResponseSchema = z.strictObject({
+  image: uploadedReportImageSchema,
+});
 
 const errorResponseSchema = z.strictObject({
   error: z.strictObject({
@@ -405,6 +475,23 @@ export async function getReports(
   return parseResponse(response, reportPageSchema);
 }
 
+export async function getOwnReports(
+  input: OwnerReportHistoryRequest,
+  signal?: AbortSignal,
+): Promise<OwnerReportHistoryPage> {
+  const search = new URLSearchParams();
+  if (input.reportType) search.set("reportType", input.reportType);
+  if (input.status) search.set("status", input.status);
+  if (input.page && input.page !== 1) search.set("page", String(input.page));
+
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  const response = await fetchSameOrigin(`/api/reports/mine${suffix}`, {
+    method: "GET",
+    signal,
+  });
+  return parseResponse(response, ownerReportHistoryPageSchema);
+}
+
 export async function getReportById(id: string): Promise<MemberReport> {
   const response = await fetchSameOrigin(
     `/api/reports/${encodeURIComponent(id)}`,
@@ -436,4 +523,19 @@ export async function submitReport(
   });
   const data = await parseResponse(response, reportResponseSchema);
   return data.report;
+}
+
+export async function uploadReportImage(
+  reportId: string,
+  file: File,
+  uploadKey: string,
+): Promise<UploadedReportImage> {
+  const body = new FormData();
+  body.append("image", file);
+  body.append("uploadKey", uploadKey);
+  const response = await fetchSameOrigin(
+    `/api/reports/${encodeURIComponent(reportId)}/images`,
+    { method: "POST", body },
+  );
+  return (await parseResponse(response, reportImageResponseSchema)).image;
 }

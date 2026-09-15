@@ -21,10 +21,6 @@ const validValues = (): ReportFormValues => ({
   occurredAt: "2026-08-14T14:00",
   colors: " Black,  Silver ",
   tags: " Laptop, BAG ",
-  photoUrls: [
-    { id: "photo-1", value: " https://images.example/item.jpg " },
-    { id: "photo-2", value: " " },
-  ],
   privacySettings: {
     showPhoto: false,
     showEventDate: true,
@@ -84,7 +80,6 @@ describe("report form validation", () => {
       occurredAt: "",
       colors: "",
       tags: "",
-      photoUrls: [{ id: "photo-0", value: "" }],
       privacySettings: {
         showPhoto: true,
         showEventDate: true,
@@ -204,38 +199,17 @@ describe("report form validation", () => {
     expect(expectValid({ ...validValues(), tags }).tags).toEqual(expected);
   });
 
-  it.each([
-    ["http://images.example/item.jpg"],
-    ["not-a-url"],
-  ])("rejects an invalid photo URL: %s", (value) => {
-    const values = validValues();
-    values.photoUrls = [{ id: "photo-1", value }];
-
-    expectInvalid(values, "photoUrls.0");
+  it("always leaves photo references empty for the later upload step", () => {
+    expect(expectValid(validValues()).photoUrls).toEqual([]);
   });
 
-  it("rejects more than five nonblank photo URLs", () => {
-    const values = validValues();
-    values.photoUrls = Array.from({ length: 6 }, (_, index) => ({
-      id: `photo-${index}`,
-      value: `https://images.example/${index}.jpg`,
-    }));
+  it("rejects injected legacy photo URL rows", () => {
+    const values = {
+      ...validValues(),
+      photoUrls: [{ id: "photo-1", value: "https://images.example/item.jpg" }],
+    } as ReportFormValues;
 
-    expectInvalid(values, "photoUrls");
-  });
-
-  it("accepts five nonblank photo URLs and omits blank rows", () => {
-    const values = validValues();
-    const expected = Array.from(
-      { length: 5 },
-      (_, index) => `https://images.example/${index}.jpg`,
-    );
-    values.photoUrls = [
-      { id: "blank", value: " " },
-      ...expected.map((value, index) => ({ id: `photo-${index}`, value })),
-    ];
-
-    expect(expectValid(values).photoUrls).toEqual(expected);
+    expectInvalid(values, "_form");
   });
 
   it.each([
@@ -422,7 +396,7 @@ describe("report form validation", () => {
         occurredAt: new Date("2026-08-14T14:00"),
         colors: ["Black", "Silver"],
         tags: ["laptop", "bag"],
-        photoUrls: ["https://images.example/item.jpg"],
+        photoUrls: [],
         privacySettings: {
           showPhoto: false,
           showEventDate: true,
@@ -442,7 +416,6 @@ describe("report form validation", () => {
         },
       },
     });
-    expect(JSON.stringify(result)).not.toContain("photo-1");
     expect(JSON.stringify(result)).not.toContain("feature-1");
     expect(JSON.stringify(result)).not.toContain("question-1");
   });

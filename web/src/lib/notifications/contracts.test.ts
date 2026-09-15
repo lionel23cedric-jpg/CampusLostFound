@@ -45,6 +45,12 @@ describe("notification public contracts", () => {
   });
 
   it("uses report links for owner events and claim links for claimant events", () => {
+    expect(
+      toPublicNotification({
+        ...record("possible_match"),
+        claimId: null,
+      }).action.href,
+    ).toBe(`/reports/${reportId}`);
     expect(toPublicNotification(record("claim_received")).action.href).toBe(
       `/reports/${reportId}`,
     );
@@ -57,6 +63,32 @@ describe("notification public contracts", () => {
     expect(toPublicNotification(record("claim_approved")).action.href).toBe(
       `/claims/${claimId}`,
     );
+  });
+
+  it("maps a possible match without a claim reference", () => {
+    expect(
+      toPublicNotification({
+        ...record("possible_match"),
+        claimId: null,
+      }),
+    ).toMatchObject({
+      kind: "possible_match",
+      title: "Possible item match",
+      summary: "A new opposite-type report may match one of your open reports.",
+      action: {
+        label: "View report",
+        href: `/reports/${reportId}`,
+      },
+    });
+  });
+
+  it("rejects a claim notification without a claim reference", () => {
+    expect(() =>
+      toPublicNotification({
+        ...record("claim_approved"),
+        claimId: null,
+      }),
+    ).toThrow("Claim notification is missing a claim ID");
   });
 
   it("preserves read time and derives a consistent read flag", () => {

@@ -1,20 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserReportError,
   getReportCampusLocations,
   getReportCategories,
+  uploadReportImage,
   type CreatedReport,
   type ReportCampusLocation,
   type ReportCategory,
 } from "@/lib/reports/browser-client";
 
-import { ReportForm } from "./report-form";
+import {
+  ReportForm,
+  type CreatedSubmission,
+} from "./report-form";
 import { ReportSuccess } from "./report-success";
 import styles from "./report-submission.module.css";
 
@@ -27,6 +32,13 @@ type ReferenceState =
       campusLocations: ReportCampusLocation[];
     }
   | { status: "error" };
+
+export type PhotoUploadSummary = {
+  total: number;
+  uploaded: number;
+  pending: CreatedSubmission["images"];
+  status: "complete" | "uploading" | "partial";
+};
 
 export function ReportSubmissionClient() {
   const router = useRouter();
@@ -91,12 +103,10 @@ export function ReportSubmissionClient() {
         aria-labelledby="report-permission-heading"
         role="alert"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <p className={styles.kicker}>Student reports</p>
         <h1 id="report-permission-heading">Report submission unavailable</h1>
         <p>Only active student accounts can submit lost and found reports.</p>
-        <Link className={styles.secondaryLink} href="/dashboard">
-          Back to dashboard
-        </Link>
       </section>
     );
   }
@@ -123,10 +133,94 @@ function ActiveReportSubmission({
   const [referenceState, setReferenceState] = useState<ReferenceState>({
     status: "idle",
   });
-  const [createdReport, setCreatedReport] = useState<CreatedReport>();
+  const [createdSubmission, setCreatedSubmission] =
+    useState<CreatedSubmission>();
+  const [photoUploadSummary, setPhotoUploadSummary] =
+    useState<PhotoUploadSummary>();
   const [formKey, setFormKey] = useState(0);
   const requestId = useRef(0);
+  const uploadAttemptId = useRef(0);
   const isMounted = useRef(false);
+
+  const uploadPendingImages = useCallback(
+    async (
+      report: CreatedReport,
+      pending: CreatedSubmission["images"],
+      total: number,
+      uploaded: number,
+    ) => {
+      const currentAttempt = ++uploadAttemptId.current;
+      let remaining = pending;
+      let completed = uploaded;
+
+      setPhotoUploadSummary({
+        total,
+        uploaded: completed,
+        pending: remaining,
+        status: "uploading",
+      });
+
+      for (const pendingImage of pending) {
+        try {
+          await uploadReportImage(
+            report.id,
+            pendingImage.file,
+            pendingImage.uploadKey,
+          );
+        } catch (error) {
+          if (
+            !isMounted.current ||
+            currentAttempt !== uploadAttemptId.current
+          ) {
+            return;
+          }
+
+          if (error instanceof BrowserReportError) {
+            if (
+              error.status === 401 ||
+              error.code === "AUTHENTICATION_REQUIRED"
+            ) {
+              onAuthenticationRequired();
+              return;
+            }
+            if (
+              error.status === 403 ||
+              error.code === "ACCOUNT_UNAVAILABLE" ||
+              error.code === "REPORT_IMAGE_FORBIDDEN"
+            ) {
+              onPermissionLost(accountId);
+              return;
+            }
+          }
+
+          setPhotoUploadSummary({
+            total,
+            uploaded: completed,
+            pending: remaining,
+            status: "partial",
+          });
+          return;
+        }
+
+        if (
+          !isMounted.current ||
+          currentAttempt !== uploadAttemptId.current
+        ) {
+          return;
+        }
+
+        completed += 1;
+        remaining = remaining.slice(1);
+        setPhotoUploadSummary({
+          total,
+          uploaded: completed,
+          pending: remaining,
+          status: remaining.length === 0 ? "complete" : "uploading",
+        });
+      }
+    },
+    [accountId, onAuthenticationRequired, onPermissionLost],
+  );
 
   const loadReferences = useCallback(async (blocking = true) => {
     if (!isMounted.current) return;
@@ -179,15 +273,28 @@ function ActiveReportSubmission({
       isMounted.current = false;
       window.clearTimeout(timeoutId);
       requestId.current += 1;
+      uploadAttemptId.current += 1;
     };
   }, [loadReferences]);
 
-  if (createdReport) {
+  if (createdSubmission && photoUploadSummary) {
     return (
       <ReportSuccess
-        report={createdReport}
+        report={createdSubmission.report}
+        photoUploadSummary={photoUploadSummary}
+        onRetryImages={() =>
+          void uploadPendingImages(
+            createdSubmission.report,
+            photoUploadSummary.pending,
+            photoUploadSummary.total,
+            photoUploadSummary.uploaded,
+          )
+        }
         onSubmitAnother={() => {
-          setCreatedReport(undefined);
+          if (photoUploadSummary.status === "uploading") return;
+          uploadAttemptId.current += 1;
+          setCreatedSubmission(undefined);
+          setPhotoUploadSummary(undefined);
           setFormKey((current) => current + 1);
         }}
       />
@@ -231,6 +338,7 @@ function ActiveReportSubmission({
   return (
     <div className={styles.page}>
       <header className={styles.introduction}>
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <p className={styles.kicker}>Campus noticeboard</p>
         <h1>Report an item</h1>
         <p>
@@ -238,13 +346,25 @@ function ActiveReportSubmission({
           evidence that authorised staff can use to confirm ownership.
         </p>
       </header>
+      <ContextIllustration kind="reports" variant="banner" priority />
       <ReportForm
         key={`${accountId}-${formKey}`}
         categories={referenceState.categories}
         campusLocations={referenceState.campusLocations}
-        onSuccess={(report) => {
+        onSuccess={(submission) => {
+          const { report, images } = submission;
           if (isMounted.current && report.reporterId === accountId) {
-            setCreatedReport(report);
+            setCreatedSubmission(submission);
+            if (images.length === 0) {
+              setPhotoUploadSummary({
+                total: 0,
+                uploaded: 0,
+                pending: [],
+                status: "complete",
+              });
+            } else {
+              void uploadPendingImages(report, images, images.length, 0);
+            }
           }
         }}
         onAuthenticationRequired={() => {

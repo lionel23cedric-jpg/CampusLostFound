@@ -1,17 +1,24 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "./admin-overview.module.css";
 
+// This client boundary gives immediate navigation and accessibility feedback.
+// Every administrator API repeats the role check as the authoritative control.
 export function AdministratorAccessBoundary({
   children,
+  workspaceLabel = "Administrator overview workspace",
+  forbiddenDescription =
+    "Only active administrator accounts can view system statistics.",
 }: {
   children: ReactNode;
+  workspaceLabel?: string;
+  forbiddenDescription?: string;
 }) {
   const router = useRouter();
   const session = useAuthSession();
@@ -31,6 +38,7 @@ export function AdministratorAccessBoundary({
 
   const hasAuthenticatedUser =
     session.status === "authenticated" && session.user !== null;
+  // Both conditions matter: a suspended administrator must not retain access.
   const hasAdministratorAccess =
     session.status === "authenticated" &&
     session.user !== null &&
@@ -82,6 +90,8 @@ export function AdministratorAccessBoundary({
   }, [router, session.status]);
 
   useEffect(() => {
+    // Move keyboard focus to the result of a retry so the state change is also
+    // announced to screen-reader users.
     if (retryPhase === "checking") {
       liveRegionRef.current?.focus();
       return;
@@ -170,6 +180,7 @@ export function AdministratorAccessBoundary({
         className={styles.statePanel}
         aria-labelledby="administrator-permission"
       >
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1
           ref={forbiddenHeadingRef}
           id="administrator-permission"
@@ -177,8 +188,7 @@ export function AdministratorAccessBoundary({
         >
           Administrator access unavailable
         </h1>
-        <p>Only active administrator accounts can view system statistics.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
+        <p>{forbiddenDescription}</p>
       </section>
     );
   } else if (!showTransition && hasAdministratorAccess && session.user) {
@@ -188,7 +198,7 @@ export function AdministratorAccessBoundary({
           ref={workspaceRef}
           className={styles.authorizedContent}
           role="region"
-          aria-label="Administrator overview workspace"
+          aria-label={workspaceLabel}
           tabIndex={-1}
         >
           {children}

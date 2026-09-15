@@ -1,0 +1,606 @@
+.workspace {
+  display: grid;
+  box-sizing: border-box;
+  width: min(100% - 2rem, 72rem);
+  min-width: 0;
+  margin-inline: auto;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  overflow-wrap: anywhere;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.workspaceHeader {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.workspaceHeader h1 {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+.workspaceHeader p {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.tabs {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  border-block-end: 1px solid var(--line);
+}
+
+.tab {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-block-end: 3px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+}
+
+.tab[aria-selected="true"] {
+  border-block-end-color: var(--campus-green);
+  color: var(--ink);
+}
+
+.tab:hover:not(:disabled) {
+  background: #e4eee8;
+  color: var(--campus-green-dark);
+}
+
+.panel {
+  min-width: 0;
+}
+
+.resourcePanel {
+  display: grid;
+  min-width: 0;
+  gap: clamp(1.25rem, 3vw, 2rem);
+}
+
+.resourceHeading {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  border-block-end: 2px solid var(--ink);
+  padding-block-end: 1rem;
+}
+
+.resourceHeading h2,
+.sectionCopy h3,
+.statePanel h2,
+.statePanel h3,
+.emptyState h3,
+.cardHeading h3,
+.editor h4,
+.confirmation h5 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.15;
+}
+
+.resourceHeading h2 {
+  font-size: clamp(1.8rem, 5vw, 2.7rem);
+  letter-spacing: -0.025em;
+}
+
+.resourceHeading p,
+.sectionCopy p,
+.statePanel p,
+.emptyState p,
+.description {
+  max-width: 65ch;
+  margin: 0.65rem 0 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.createSection {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(12rem, 0.7fr) minmax(0, 1.3fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  border-block-end: 1px solid var(--line);
+  padding-block-end: clamp(1.25rem, 3vw, 2rem);
+}
+
+.sectionCopy h3,
+.statePanel h2,
+.statePanel h3,
+.emptyState h3,
+.cardHeading h3 {
+  font-size: clamp(1.2rem, 3vw, 1.55rem);
+}
+
+.formGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.field label {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.field input,
+.field textarea,
+.field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+}
+
+.field textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.fieldError {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.fullField {
+  grid-column: 1 / -1;
+}
+
+.notice,
+.alert {
+  margin: 0;
+  border-radius: 10px;
+  padding: 0.8rem 0.9rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.notice {
+  border: 1px solid var(--campus-green);
+  background: #edf7f1;
+  color: var(--ink);
+}
+
+.alert {
+  border: 1px solid #b86a31;
+  background: #fff5e8;
+  color: var(--ink);
+}
+
+.loading,
+.resultStatus {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.resultStatus {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.statePanel,
+.emptyState {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.statePanel button,
+.emptyState button {
+  min-width: 44px;
+  min-height: 44px;
+  margin-block-start: 1rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+}
+
+.resultList {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.cardHeading {
+  display: flex;
+  min-width: 0;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardHeading > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.cardHeading button,
+.editorActions button,
+.secondaryActions button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--campus-green);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--campus-green-dark);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.statusBadge {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+}
+
+.activeBadge {
+  background: #dcefe5;
+  color: var(--campus-green-dark);
+}
+
+.inactiveBadge {
+  background: #e8e5df;
+  color: var(--ink-soft);
+}
+
+.description {
+  overflow-wrap: anywhere;
+}
+
+.recordMeta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0 0;
+  gap: 0.75rem 1.25rem;
+}
+
+.recordMeta div {
+  min-width: 0;
+}
+
+.recordMeta dt {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.recordMeta dd {
+  margin: 0.25rem 0 0;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.editor {
+  display: grid;
+  min-width: 0;
+  margin-block-start: 1.25rem;
+  gap: 1rem;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 1.25rem;
+}
+
+.editor h4 {
+  font-size: 1.15rem;
+}
+
+.editorActions,
+.secondaryActions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.editorActions button:first-child,
+.secondaryActions button:first-child {
+  border-color: var(--campus-green);
+  background: var(--campus-green);
+  color: white;
+}
+
+.confirmation {
+  min-width: 0;
+  border: 1px solid #b86a31;
+  border-radius: 12px;
+  background: #fff9ef;
+  padding: 1rem;
+}
+
+.confirmation h5 {
+  font-size: 1rem;
+}
+
+.confirmation p {
+  max-width: 65ch;
+  margin: 0.55rem 0 1rem;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.cardHeading button:hover:not(:disabled),
+.editorActions button:hover:not(:disabled),
+.secondaryActions button:hover:not(:disabled),
+.statePanel button:hover:not(:disabled),
+.emptyState button:hover:not(:disabled) {
+  background: #e4eee8;
+}
+
+.editorActions button:first-child:hover:not(:disabled),
+.secondaryActions button:first-child:hover:not(:disabled),
+.statePanel button:hover:not(:disabled),
+.emptyState button:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+  color: white;
+}
+
+.cardHeading button:disabled,
+.editorActions button:disabled,
+.secondaryActions button:disabled,
+.statePanel button:disabled,
+.emptyState button:disabled,
+.field input:disabled,
+.field textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.filters {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 2fr) minmax(10rem, 1fr);
+  align-items: end;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  background: var(--paper-light);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.filterField {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.filterField label {
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.filterField input,
+.filterField select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+}
+
+.buttonRow {
+  display: flex;
+  min-width: 0;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.buttonRow button,
+.pagination button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+}
+
+.buttonRow button:first-child {
+  border: 0;
+  background: var(--campus-green);
+  color: white;
+}
+
+.buttonRow button:last-child,
+.pagination button {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green-dark);
+}
+
+.buttonRow button:first-child:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.buttonRow button:last-child:hover:not(:disabled),
+.pagination button:hover:not(:disabled) {
+  background: #e4eee8;
+}
+
+.buttonRow button:active:not(:disabled),
+.pagination button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.buttonRow button:disabled,
+.pagination button:disabled,
+.filterField input:disabled,
+.filterField select:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.pagination {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(7rem, 1fr) auto minmax(7rem, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pagination button:last-child {
+  justify-self: end;
+}
+
+.tab:focus-visible,
+.filters :focus-visible,
+.pagination :focus-visible,
+.resourcePanel :focus-visible,
+.notice:focus,
+.cardHeading h3:focus,
+.editor h4:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 42rem) {
+  .filters,
+  .createSection {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cardHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 20rem) {
+  .workspace {
+    width: min(100% - 1rem, 72rem);
+  }
+
+  .filters,
+  .formGrid,
+  .buttonRow,
+  .pagination,
+  .recordMeta,
+  .editorActions,
+  .secondaryActions {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .buttonRow button,
+  .pagination button,
+  .cardHeading button,
+  .editorActions button,
+  .secondaryActions button {
+    width: 100%;
+  }
+
+  .pagination p {
+    grid-row: 1;
+  }
+
+  .pagination button:last-child {
+    justify-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .buttonRow button:active:not(:disabled),
+  .pagination button:active:not(:disabled),
+  .cardHeading button:active:not(:disabled),
+  .editorActions button:active:not(:disabled),
+  .secondaryActions button:active:not(:disabled) {
+    transform: none;
+  }
+}

@@ -38,6 +38,7 @@ function queryChain<T>(result: T) {
 const recipientId = "64b64c6f2f4d9f1a2b3c4d51";
 const reportId = "64b64c6f2f4d9f1a2b3c4d52";
 const claimId = "64b64c6f2f4d9f1a2b3c4d53";
+const newReportId = "64b64c6f2f4d9f1a2b3c4d54";
 const session = { id: "transaction-session" };
 const enabled = {
   possibleMatches: false,
@@ -105,6 +106,107 @@ describe("notification delivery", () => {
         claimId,
       }),
     ).toThrow("Notification plan ID is invalid");
+  });
+
+  it("builds a report-only possible-match event key", () => {
+    const created = createNotificationPlan({
+      kind: "possible_match",
+      recipientId: recipientId.toUpperCase(),
+      reportId: reportId.toUpperCase(),
+      claimId: null,
+      eventId: newReportId.toUpperCase(),
+    });
+
+    expect(created).toEqual({
+      kind: "possible_match",
+      recipientId,
+      reportId,
+      claimId: null,
+      eventId: newReportId,
+    });
+    expect(notificationEventKey(created)).toBe(
+      `notification:v1:possible_match:${newReportId}:${recipientId}`,
+    );
+    expect(() =>
+      createNotificationPlan({
+        kind: "possible_match",
+        recipientId,
+        reportId,
+        claimId,
+        eventId: newReportId,
+      }),
+    ).toThrow("Possible-match notifications cannot reference a claim");
+    expect(() =>
+      createNotificationPlan({
+        kind: "claim_received",
+        recipientId,
+        reportId,
+        claimId: null,
+        eventId: newReportId,
+      }),
+    ).toThrow("Claim notifications require a claim ID");
+  });
+
+  it("writes an opted-in possible-match event without a claim ID", async () => {
+    configureRecipients(undefined, [
+      {
+        userId: identifier(recipientId),
+        notificationSettings: { ...enabled, possibleMatches: true },
+      },
+    ]);
+    await deliverNotifications(
+      [
+        createNotificationPlan({
+          kind: "possible_match",
+          recipientId,
+          reportId,
+          claimId: null,
+          eventId: newReportId,
+        }),
+      ],
+      session as never,
+    );
+
+    expect(NotificationModel.bulkWrite).toHaveBeenCalledWith(
+      [
+        {
+          updateOne: {
+            filter: {
+              eventKey: `notification:v1:possible_match:${newReportId}:${recipientId}`,
+            },
+            update: {
+              $setOnInsert: {
+                recipientId,
+                kind: "possible_match",
+                reportId,
+                claimId: null,
+                eventKey: `notification:v1:possible_match:${newReportId}:${recipientId}`,
+                readAt: null,
+              },
+            },
+            upsert: true,
+          },
+        },
+      ],
+      { session, ordered: true },
+    );
+  });
+
+  it("honours the possible-match preference", async () => {
+    await deliverNotifications(
+      [
+        createNotificationPlan({
+          kind: "possible_match",
+          recipientId,
+          reportId,
+          claimId: null,
+          eventId: newReportId,
+        }),
+      ],
+      session as never,
+    );
+
+    expect(NotificationModel.bulkWrite).not.toHaveBeenCalled();
   });
 
   it("writes an opted-in event once with the caller session", async () => {

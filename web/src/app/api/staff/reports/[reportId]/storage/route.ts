@@ -1,0 +1,88 @@
+import type { PublicUser } from "@/lib/auth/public-user";
+import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
+import { isJsonRequest } from "@/lib/moderation/validation";
+import { getCurrentStaffReportUser } from "@/lib/staff-reports/access";
+import {
+  invalidStaffReportResponse,
+  staffReportErrorResponse,
+} from "@/lib/staff-reports/errors";
+import { storeStaffReport } from "@/lib/staff-reports/service";
+import {
+  staffReportIdSchema,
+  storeReportSchema,
+} from "@/lib/staff-reports/validation";
+
+type Context = { params: Promise<{ reportId: string }> };
+
+function noStore(response: Response) {
+  response.headers.set("Cache-Control", "no-store");
+  return response;
+}
+
+export async function PUT(request: Request, context: Context) {
+  let user: PublicUser;
+  try {
+    user = await getCurrentStaffReportUser();
+  } catch (error) {
+    return noStore(staffReportErrorResponse(error));
+  }
+
+  let rawId: string;
+  try {
+    rawId = (await context.params).reportId;
+  } catch (error) {
+    return noStore(staffReportErrorResponse(error));
+  }
+  const parsedId = staffReportIdSchema.safeParse(rawId);
+  if (!parsedId.success) {
+    return noStore(invalidStaffReportResponse(parsedId.error));
+  }
+  if (!isJsonRequest(request)) {
+    return noStore(invalidStaffReportResponse());
+  }
+
+  const limit = consumeRateLimit(
+    `staff:report-storage:${user.id}`,
+    rateLimitPolicies.privilegedWrite,
+  );
+  if (!limit.allowed) {
+    return noStore(rateLimitedResponse(limit.retryAfterSeconds));
+  }
+
+  let body: unknown;
+  try {
+    body = await readJsonRequestBody(request);
+  } catch (error) {
+    if (error instanceof RequestBodyError) {
+      return noStore(
+        error.code === "BODY_TOO_LARGE"
+          ? requestBodyErrorResponse(error)
+          : invalidStaffReportResponse(),
+      );
+    }
+    return noStore(staffReportErrorResponse(error));
+  }
+  const parsedBody = storeReportSchema.safeParse(body);
+  if (!parsedBody.success) {
+    return noStore(invalidStaffReportResponse(parsedBody.error));
+  }
+
+  try {
+    return noStore(
+      Response.json({
+        report: await storeStaffReport(user, parsedId.data, parsedBody.data),
+      }),
+    );
+  } catch (error) {
+    return noStore(staffReportErrorResponse(error));
+  }
+}

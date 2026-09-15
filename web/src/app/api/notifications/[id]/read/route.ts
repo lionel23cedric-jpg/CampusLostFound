@@ -6,16 +6,16 @@ import {
   invalidNotificationResponse,
   notificationErrorResponse,
 } from "@/lib/notifications/errors";
-import {
-  InvalidNotificationBodyEncoding,
-  NotificationBodyTooLarge,
-  readNotificationRequestBody,
-} from "@/lib/notifications/request-body";
 import { markNotificationRead } from "@/lib/notifications/service";
 import {
   emptyNotificationBodySchema,
   notificationIdSchema,
 } from "@/lib/notifications/validation";
+import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -28,11 +28,6 @@ async function requireCurrentUser(): Promise<PublicUser> {
   const user = await getCurrentUser(await readSessionCookie());
   if (!user) throw new AuthError("AUTHENTICATION_REQUIRED");
   return user;
-}
-
-function isJsonContentType(request: Request) {
-  const contentType = request.headers.get("content-type");
-  return contentType !== null && /^application\/json(?:\s*;|$)/i.test(contentType);
 }
 
 export async function PATCH(request: Request, context: Context) {
@@ -55,31 +50,22 @@ export async function PATCH(request: Request, context: Context) {
     return noStore(invalidNotificationResponse());
   }
 
-  let text: string;
-  try {
-    text = await readNotificationRequestBody(request);
-  } catch (error) {
-    const response =
-      error instanceof NotificationBodyTooLarge ||
-      error instanceof InvalidNotificationBodyEncoding
-        ? invalidNotificationResponse()
-        : notificationErrorResponse(error);
-    return noStore(response);
-  }
-
   let body: unknown = {};
-  if (text.trim() !== "") {
-    if (!isJsonContentType(request)) {
-      return noStore(invalidNotificationResponse());
-    }
-    try {
-      body = JSON.parse(text);
-    } catch (error) {
-      const response =
-        error instanceof SyntaxError
-          ? invalidNotificationResponse()
-          : notificationErrorResponse(error);
-      return noStore(response);
+  try {
+    body = await readJsonRequestBody(request);
+  } catch (error) {
+    if (error instanceof RequestBodyError) {
+      if (error.code === "EMPTY_BODY") {
+        body = {};
+      } else {
+        return noStore(
+          error.code === "BODY_TOO_LARGE"
+            ? requestBodyErrorResponse(error)
+            : invalidNotificationResponse(),
+        );
+      }
+    } else {
+      return noStore(notificationErrorResponse(error));
     }
   }
 

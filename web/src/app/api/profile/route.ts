@@ -8,6 +8,11 @@ import {
 } from "@/lib/profile/errors";
 import { getOwnProfile, updateOwnProfile } from "@/lib/profile/service";
 import { updateProfileSchema } from "@/lib/profile/validation";
+import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
 
 async function requireCurrentUser(): Promise<PublicUser> {
   const user = await getCurrentUser(await readSessionCookie());
@@ -35,11 +40,14 @@ export async function PATCH(request: Request) {
 
   let body: unknown;
   try {
-    body = await request.json();
+    body = await readJsonRequestBody(request);
   } catch (error) {
-    return error instanceof SyntaxError
-      ? invalidProfileResponse()
-      : profileErrorResponse(error);
+    if (error instanceof RequestBodyError) {
+      return error.code === "BODY_TOO_LARGE"
+        ? requestBodyErrorResponse(error)
+        : invalidProfileResponse();
+    }
+    return profileErrorResponse(error);
   }
 
   const parsed = updateProfileSchema.safeParse(body);

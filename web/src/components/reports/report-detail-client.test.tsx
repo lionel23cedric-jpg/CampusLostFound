@@ -75,6 +75,7 @@ const memberReport: MemberReport = {
   tags: ["laptop", "bag"],
   photoUrls: [],
   status: "open",
+  moderationStatus: "visible",
   resolvedAt: null,
   createdAt: "2026-08-15T02:05:00.000Z",
   updatedAt: "2026-08-15T03:10:00.000Z",
@@ -153,6 +154,31 @@ describe("ReportDetailClient route and session boundary", () => {
     expect(getReportById).toHaveBeenCalledWith(memberReport.id);
   });
 
+  it("accepts only the notifications return source", async () => {
+    const notificationRoute = await ReportDetailPage({
+      params: Promise.resolve({ id: memberReport.id }),
+      searchParams: Promise.resolve({ returnTo: "/notifications" }),
+    });
+    const notificationView = render(notificationRoute);
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to notifications" })
+      ).getAttribute("href"),
+    ).toBe("/notifications");
+    notificationView.unmount();
+
+    const unsafeRoute = await ReportDetailPage({
+      params: Promise.resolve({ id: memberReport.id }),
+      searchParams: Promise.resolve({ returnTo: "https://example.com" }),
+    });
+    render(unsafeRoute);
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to My reports" })
+      ).getAttribute("href"),
+    ).toBe("/reports/mine");
+  });
+
   it("waits for the session and redirects unauthenticated visitors", async () => {
     mockSession({ status: "loading", user: null });
     const { rerender } = render(<ReportDetailClient reportId={memberReport.id} />);
@@ -193,6 +219,18 @@ describe("ReportDetailClient route and session boundary", () => {
 });
 
 describe("ReportDetailClient data and privacy", () => {
+  it("shows report flagging only for a report owned by someone else", async () => {
+    const view = render(<ReportDetailClient reportId={memberReport.id} />);
+    await screen.findByRole("heading", { name: memberReport.title });
+    expect(screen.queryByRole("button", { name: "Report this listing" })).toBeNull();
+
+    mockReadyResponses({ ...memberReport, isOwner: false });
+    view.unmount();
+    render(<ReportDetailClient reportId={memberReport.id} />);
+    await screen.findByRole("heading", { name: memberReport.title });
+    expect(screen.getByRole("button", { name: "Report this listing" })).toBeTruthy();
+  });
+
   it.each([
     ["open owner report", "open", true, true],
     ["open report owned by someone else", "open", false, false],
@@ -270,12 +308,38 @@ describe("ReportDetailClient data and privacy", () => {
     expect(screen.getByText("Location hidden")).toBeTruthy();
     expect(screen.getByText("Date hidden")).toBeTruthy();
     expect(screen.getByText("Your report")).toBeTruthy();
+    const backLink = screen.getByRole("link", { name: "Back to My reports" });
+    const heading = screen.getByRole("heading", { name: memberReport.title });
+    expect(backLink.getAttribute("href")).toBe("/reports/mine");
     expect(
-      screen.getByRole("link", { name: "Back to reports" }).getAttribute("href"),
-    ).toBe("/reports");
+      backLink.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(document.body.textContent).not.toMatch(
       /reporterId|privacySettings|serialNumber|expectedAnswer|privateNotes/i,
     );
+  });
+
+  it("returns notification-sourced reports to notifications", async () => {
+    render(
+      <ReportDetailClient reportId={memberReport.id} fromNotifications />,
+    );
+
+    expect(
+      (
+        await screen.findByRole("link", { name: "Back to notifications" })
+      ).getAttribute("href"),
+    ).toBe("/notifications");
+  });
+
+  it("returns reports owned by someone else to public reports", async () => {
+    mockReadyResponses({ ...memberReport, isOwner: false });
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    expect(
+      (await screen.findByRole("link", { name: "Back to reports" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/reports");
   });
 
   it("resolves labels and formats every visible date in Pacific/Auckland", async () => {
@@ -329,6 +393,47 @@ describe("ReportDetailClient data and privacy", () => {
     expect(container.querySelector('link[rel="preload"]')).toBeNull();
   });
 
+  it("renders protected images and legacy links in their original positions", async () => {
+    const firstImage = "/api/report-images/64b64c6f2f4d9f1a2b3c4d61";
+    const legacyImage = "https://photos.example/legacy.jpg";
+    const thirdImage = "/api/report-images/64b64c6f2f4d9f1a2b3c4d63";
+    mockReadyResponses({
+      ...memberReport,
+      photoUrls: [firstImage, legacyImage, thirdImage],
+    });
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    const images = await screen.findAllByRole("img");
+    expect(images.map((image) => image.getAttribute("alt"))).toEqual([
+      "Submitted photo 1",
+      "Submitted photo 3",
+    ]);
+    expect(images.map((image) => image.getAttribute("src"))).toEqual([
+      firstImage,
+      thirdImage,
+    ]);
+    const legacyLink = screen.getByRole("link", {
+      name: "View submitted photo 2 (external)",
+    });
+    expect(legacyLink.getAttribute("href")).toBe(legacyImage);
+    expect(legacyLink.getAttribute("target")).toBe("_blank");
+    expect(legacyLink.getAttribute("rel")).toBe("noreferrer");
+    expect(screen.queryByRole("link", { name: /photo (1|3)/i })).toBeNull();
+    expect(images.some((image) => image.getAttribute("src") === legacyImage)).toBe(
+      false,
+    );
+  });
+
+  it("omits the photo section when photo references are redacted", async () => {
+    mockReadyResponses({ ...memberReport, photoUrls: [] });
+    render(<ReportDetailClient reportId={memberReport.id} />);
+
+    await screen.findByRole("heading", { name: memberReport.title });
+    expect(
+      screen.queryByRole("heading", { name: "Submitted photos" }),
+    ).toBeNull();
+  });
+
   it("keeps detail links usable and facts stacked at narrow widths", () => {
     const css = readFileSync(
       resolve("src/components/reports/report-browsing.module.css"),
@@ -336,6 +441,8 @@ describe("ReportDetailClient data and privacy", () => {
     );
     const photoLinkRule = css.match(/\.photoLinks a\s*\{[^}]*\}/)?.[0] ?? "";
     expect(photoLinkRule).toMatch(/min-height:\s*44px/);
+    expect(css).toMatch(/\.photoGallery\s*\{[^}]*min-width:\s*0/);
+    expect(css).toMatch(/\.photoImage\s*\{[^}]*max-width:\s*100%/);
     expect(css).toContain("@media (max-width: 20rem)");
     expect(css).toMatch(
       /@media \(max-width: 40rem\)[\s\S]*?\.detailFacts[\s\S]*?grid-template-columns:\s*1fr/,

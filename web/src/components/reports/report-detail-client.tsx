@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserReportError,
   getReportById,
@@ -14,8 +16,13 @@ import {
   type ReportCampusLocation,
   type ReportCategory,
 } from "@/lib/reports/browser-client";
+import {
+  isInternalReportImagePath,
+  isLegacyHttpsPhotoUrl,
+} from "@/lib/reports/photo-reference";
 
 import styles from "./report-browsing.module.css";
+import { ReportFlagPanel } from "./report-flag-panel";
 import { ReportMatchesPanel } from "./report-matches-panel";
 
 type ReportState =
@@ -46,7 +53,13 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-NZ", {
   timeZone: "Pacific/Auckland",
 });
 
-export function ReportDetailClient({ reportId }: { reportId: string }) {
+export function ReportDetailClient({
+  reportId,
+  fromNotifications = false,
+}: {
+  reportId: string;
+  fromNotifications?: boolean;
+}) {
   const router = useRouter();
   const session = useAuthSession();
 
@@ -92,6 +105,7 @@ export function ReportDetailClient({ reportId }: { reportId: string }) {
       key={`${session.user.id}-${reportId}`}
       reportId={reportId}
       canClaim={session.user.role === "student"}
+      fromNotifications={fromNotifications}
     />
   );
 }
@@ -103,12 +117,10 @@ function PermissionUnavailable() {
       role="alert"
       aria-labelledby="detail-permission-heading"
     >
+      <PageBackLink href="/reports">Back to reports</PageBackLink>
       <p className={styles.kicker}>Campus reports</p>
       <h1 id="detail-permission-heading">Report details unavailable</h1>
       <p>Your account cannot view member report details at the moment.</p>
-      <Link className={styles.secondaryLink} href="/reports">
-        Back to reports
-      </Link>
     </section>
   );
 }
@@ -116,9 +128,11 @@ function PermissionUnavailable() {
 function ActiveReportDetail({
   reportId,
   canClaim,
+  fromNotifications,
 }: {
   reportId: string;
   canClaim: boolean;
+  fromNotifications: boolean;
 }) {
   const router = useRouter();
   const [reportState, setReportState] = useState<ReportState>({
@@ -250,12 +264,10 @@ function ActiveReportDetail({
   if (reportState.status === "not-found") {
     return (
       <section className={styles.statePanel} aria-labelledby="not-found-heading">
+        <PageBackLink href="/reports">Back to reports</PageBackLink>
         <p className={styles.kicker}>Campus reports</p>
         <h1 id="not-found-heading">Report not found</h1>
         <p>This report is unavailable or no longer visible to members.</p>
-        <Link className={styles.secondaryLink} href="/reports">
-          Back to reports
-        </Link>
       </section>
     );
   }
@@ -305,12 +317,24 @@ function ActiveReportDetail({
           })()
         : "Campus location unavailable";
   const typeLabel = report.reportType === "lost" ? "Lost" : "Found";
+  const photoEntries = report.photoUrls.map((url, index) => ({ url, index }));
+  const uploadedPhotos = photoEntries.filter(({ url }) =>
+    isInternalReportImagePath(url),
+  );
+  const legacyPhotoLinks = photoEntries.filter(({ url }) =>
+    isLegacyHttpsPhotoUrl(url),
+  );
+  const backLink = fromNotifications
+    ? { href: "/notifications", label: "Back to notifications" }
+    : report.isOwner
+      ? { href: "/reports/mine", label: "Back to My reports" }
+      : { href: "/reports", label: "Back to reports" };
 
   return (
     <div className={styles.detailPage}>
-      <Link className={styles.backLink} href="/reports">
-        Back to reports
-      </Link>
+      <PageBackLink href={backLink.href}>
+        {backLink.label}
+      </PageBackLink>
 
       {referenceState.status === "error" ? (
         <div className={styles.inlineState} role="alert">
@@ -406,22 +430,47 @@ function ActiveReportDetail({
           </section>
         ) : null}
 
-        {report.photoUrls.length > 0 ? (
+        {uploadedPhotos.length > 0 || legacyPhotoLinks.length > 0 ? (
           <section className={styles.detailSection} aria-labelledby="photos-heading">
             <h2 id="photos-heading">Submitted photos</h2>
-            <p>Photo links open an external website only when you activate them.</p>
-            <ul className={styles.photoLinks}>
-              {report.photoUrls.map((photoUrl, index) => (
-                <li key={`${photoUrl}-${index}`}>
-                  <a href={photoUrl} target="_blank" rel="noreferrer">
-                    View submitted photo {index + 1} (external)
-                  </a>
-                </li>
-              ))}
-            </ul>
+            {uploadedPhotos.length > 0 ? (
+              <ul className={styles.photoGallery}>
+                {uploadedPhotos.map(({ url, index }) => (
+                  <li key={`${url}-${index}`}>
+                    <Image
+                      className={styles.photoImage}
+                      src={url}
+                      alt={`Submitted photo ${index + 1}`}
+                      width={640}
+                      height={480}
+                      unoptimized
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {legacyPhotoLinks.length > 0 ? (
+              <>
+                <p>
+                  External photo links open another website only when you
+                  activate them.
+                </p>
+                <ul className={styles.photoLinks}>
+                  {legacyPhotoLinks.map(({ url, index }) => (
+                    <li key={`${url}-${index}`}>
+                      <a href={url} target="_blank" rel="noreferrer">
+                        View submitted photo {index + 1} (external)
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
           </section>
         ) : null}
       </article>
+
+      {!report.isOwner ? <ReportFlagPanel reportId={report.id} /> : null}
 
       {report.isOwner && report.status === "open" ? (
         <ReportMatchesPanel reportId={report.id} />

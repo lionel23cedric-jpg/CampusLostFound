@@ -28,13 +28,39 @@ describe("Notification model", () => {
     expect(notification.readAt).toBeNull();
   });
 
-  it.each(NOTIFICATION_KINDS)("accepts kind %s", async (kind) => {
+  it.each(NOTIFICATION_KINDS.filter((kind) => kind !== "possible_match"))(
+    "accepts claim kind %s",
+    async (kind) => {
     const notification = new NotificationModel({
       ...validNotification(),
       kind,
       eventKey: `notification:v1:${kind}:${claimId}:${recipientId}`,
     });
     await expect(notification.validate()).resolves.toBeUndefined();
+    },
+  );
+
+  it("accepts a possible match without a claim", async () => {
+    const notification = new NotificationModel({
+      recipientId,
+      reportId,
+      kind: "possible_match",
+      eventKey: `notification:v1:possible_match:${reportId}:${recipientId}`,
+    });
+
+    await expect(notification.validate()).resolves.toBeUndefined();
+    expect(notification.claimId).toBeNull();
+  });
+
+  it("rejects a possible match with a claim", async () => {
+    const notification = new NotificationModel({
+      ...validNotification(),
+      kind: "possible_match",
+    });
+
+    await expect(notification.validate()).rejects.toMatchObject({
+      errors: { claimId: expect.anything() },
+    });
   });
 
   it("rejects an unknown kind", async () => {
@@ -47,7 +73,7 @@ describe("Notification model", () => {
     });
   });
 
-  it("requires recipient, report, claim, kind and event key", async () => {
+  it("requires recipient, report, claim-kind claim, kind and event key", async () => {
     const notification = new NotificationModel({});
     await expect(notification.validate()).rejects.toMatchObject({
       errors: {

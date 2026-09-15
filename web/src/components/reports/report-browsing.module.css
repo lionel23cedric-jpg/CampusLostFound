@@ -23,15 +23,6 @@
   padding-block: clamp(2.5rem, 7vw, 5rem);
 }
 
-.backLink {
-  display: inline-flex;
-  width: fit-content;
-  min-height: 44px;
-  align-items: center;
-  color: var(--campus-green-dark);
-  font-weight: 800;
-}
-
 .detailArticle {
   display: grid;
   min-width: 0;
@@ -100,6 +91,32 @@
 
 .detailSection h2 {
   font-size: 1.35rem;
+}
+
+.photoGallery {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photoGallery li {
+  min-width: 0;
+}
+
+.photoImage {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #eee9de;
+  object-fit: cover;
 }
 
 .photoLinks {

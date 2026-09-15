@@ -63,6 +63,8 @@ export const administratorOverviewSchema = z
     claims: claimsSchema,
     accounts: accountsSchema,
   })
+  // Cross-field checks ensure that a structurally valid response cannot carry
+  // contradictory totals into the administrator interface.
   .superRefine((value, context) => {
     if (
       value.reports.submittedTotal !==
@@ -119,6 +121,8 @@ export type AdministratorOverview = z.infer<
 >;
 
 function oneRow<T>(input: unknown, schema: z.ZodType<T>): T | undefined {
+  // MongoDB returns no group row for an empty collection; more than one row
+  // would violate the fixed aggregate contract and is rejected.
   return z.array(schema).max(1).parse(input)[0];
 }
 
@@ -177,6 +181,8 @@ export function buildAdministratorOverview(
   claims: ClaimOverviewCounts,
   accounts: AccountOverviewCounts,
 ): AdministratorOverview {
+  // Derived totals are calculated on the server, then the complete object is
+  // validated once more before it crosses the API boundary.
   return administratorOverviewSchema.parse({
     generatedAt,
     reports: {

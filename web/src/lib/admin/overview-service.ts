@@ -17,6 +17,8 @@ import {
 
 const submittedStatuses = ["open", "claim_pending", "resolved", "closed"];
 
+// One report aggregation defines submitted volume and recovery outcomes.
+// Draft records are deliberately excluded from administrator statistics.
 const reportPipeline: PipelineStage[] = [
   {
     $group: {
@@ -63,6 +65,8 @@ const reportPipeline: PipelineStage[] = [
   },
 ];
 
+// A report is counted as matched once staff have approved or completed at
+// least one Claim. $addToSet prevents duplicate Claims inflating the metric.
 const claimPipeline: PipelineStage[] = [
   {
     $group: {
@@ -108,6 +112,7 @@ const claimPipeline: PipelineStage[] = [
   },
 ];
 
+// Account totals describe current access states, not user activity or roles.
 const accountPipeline: PipelineStage[] = [
   {
     $group: {
@@ -137,6 +142,8 @@ export async function getAdministratorOverview(
   requireAdministrator(user);
   await connectToDatabase();
 
+  // These aggregates are independent, so running them together reduces
+  // dashboard latency without weakening any count definition.
   const [reportRows, claimRows, accountRows] = await Promise.all([
     ItemReportModel.aggregate(reportPipeline).exec(),
     ClaimModel.aggregate(claimPipeline).exec(),

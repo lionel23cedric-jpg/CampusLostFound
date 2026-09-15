@@ -127,7 +127,7 @@
 
 .headingCopy > p:last-child,
 .overviewActions p,
-.sectionHeading > p {
+.sectionHeading p {
   color: var(--ink-soft);
   line-height: 1.6;
 }
@@ -229,6 +229,17 @@
   gap: 1rem;
 }
 
+.sectionHeading > div {
+  min-width: 0;
+}
+
+.sectionLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
 .sectionHeading h2 {
   margin: 0;
   color: var(--ink);
@@ -237,7 +248,7 @@
   line-height: 1.1;
 }
 
-.sectionHeading > p {
+.sectionHeading p {
   max-width: 32rem;
   margin: 0;
   text-align: end;
@@ -250,6 +261,93 @@
   gap: 1px;
   border: 1px solid var(--line);
   background: var(--line);
+}
+
+.sectionBody {
+  display: grid;
+  grid-template-columns: minmax(13rem, 0.7fr) minmax(0, 2.3fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.chartFigure {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+  margin: 0;
+  border: 1px solid var(--line);
+  background: var(--paper-light);
+  padding: 1.25rem;
+}
+
+.donutChart {
+  display: grid;
+  width: min(100%, 13rem);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  border-radius: 50%;
+}
+
+.donutChart > span {
+  display: grid;
+  width: 58%;
+  aspect-ratio: 1;
+  place-content: center;
+  border-radius: 50%;
+  background: var(--paper-light);
+  text-align: center;
+}
+
+.donutChart strong {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.donutChart small {
+  margin-block-start: 0.25rem;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chartFigure h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.chartLegend {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chartLegend li {
+  display: grid;
+  grid-template-columns: 0.75rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.chartLegend strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.legendSwatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
 }
 
 .metricCard {
@@ -332,8 +430,27 @@
     flex-basis: auto;
   }
 
-  .sectionHeading > p {
+  .sectionHeading p {
     text-align: start;
+  }
+
+  .sectionLinks {
+    justify-content: flex-start;
+  }
+
+  .sectionBody {
+    grid-template-columns: 1fr;
+  }
+
+  .chartFigure {
+    grid-template-columns: minmax(8rem, 0.8fr) minmax(10rem, 1.2fr);
+    align-items: center;
+  }
+}
+
+@media (max-width: 30rem) {
+  .chartFigure {
+    grid-template-columns: 1fr;
   }
 }
 

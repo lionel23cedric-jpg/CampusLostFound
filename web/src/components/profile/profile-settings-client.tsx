@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 import {
   BrowserAuthError,
   getProfileSettings,
@@ -374,6 +375,8 @@ export function ProfileSettingsClient() {
         <h1>Profile settings</h1>
         <p>Keep your campus preferences and recovery notifications useful and up to date.</p>
       </header>
+
+      <ContextIllustration kind="auth" variant="banner" priority />
 
       <section className={styles.accountSummary} aria-labelledby="account-summary-heading">
         <div>

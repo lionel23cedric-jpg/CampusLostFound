@@ -1,0 +1,28 @@
+.frame {
+  overflow: hidden;
+  margin: 0;
+  border-radius: 16px;
+  background: var(--paper-light);
+  box-shadow: var(--shadow);
+}
+
+.frame img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.banner {
+  width: 100%;
+  max-height: clamp(8rem, 18vw, 12rem);
+}
+
+.banner img {
+  height: clamp(8rem, 18vw, 12rem);
+  aspect-ratio: auto;
+}
+
+.standard {
+  width: 100%;
+}

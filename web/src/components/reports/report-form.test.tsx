@@ -59,6 +59,7 @@ const createdReport: CreatedReport = {
   tags: ["laptop", "bag"],
   photoUrls: ["https://images.example/item.jpg"],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: true,
@@ -73,6 +74,8 @@ const onSuccess = vi.fn();
 const onAuthenticationRequired = vi.fn();
 const onPermissionLost = vi.fn();
 const onReferenceUnavailable = vi.fn().mockResolvedValue(undefined);
+const createObjectURL = vi.fn(() => "blob:report-preview");
+const revokeObjectURL = vi.fn();
 
 function renderForm() {
   return render(
@@ -110,9 +113,6 @@ async function fillValidForm() {
   fireEvent.change(screen.getByLabelText(/^Tags/), {
     target: { value: " Laptop, BAG " },
   });
-  fireEvent.change(screen.getByLabelText(/^Photo URL 1/), {
-    target: { value: "https://images.example/item.jpg" },
-  });
   fireEvent.change(screen.getByLabelText("Distinguishing feature 1"), {
     target: { value: "Small scratch beneath the handle" },
   });
@@ -128,6 +128,10 @@ async function fillValidForm() {
 beforeEach(() => {
   vi.clearAllMocks();
   onReferenceUnavailable.mockResolvedValue(undefined);
+  Object.defineProperties(URL, {
+    createObjectURL: { configurable: true, value: createObjectURL },
+    revokeObjectURL: { configurable: true, value: revokeObjectURL },
+  });
 });
 
 afterEach(cleanup);
@@ -166,7 +170,7 @@ describe("ReportForm", () => {
       );
     }
 
-    expect(screen.getByLabelText("Photo URL 1 (optional)")).toBeTruthy();
+    expect(screen.getByLabelText("Report images (optional)")).toBeTruthy();
     expect(screen.getByLabelText("Distinguishing feature 1")).toBeTruthy();
     expect(screen.getByLabelText("Verification question 1")).toBeTruthy();
     expect(screen.getByLabelText("Expected answer 1")).toBeTruthy();
@@ -185,13 +189,9 @@ describe("ReportForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    const firstPhoto = screen.getByLabelText("Photo URL 1 (optional)");
-    expect(firstPhoto.id).toMatch(/photo-0$/);
-    expect(
-      screen.getByRole("button", { name: "Remove photo URL 1" }).hasAttribute(
-        "disabled",
-      ),
-    ).toBe(true);
+    expect(screen.getByLabelText("Report images (optional)").id).toMatch(
+      /images$/,
+    );
     expect(
       screen
         .getByRole("button", { name: "Remove distinguishing feature 1" })
@@ -202,13 +202,6 @@ describe("ReportForm", () => {
         .getByRole("button", { name: "Remove verification question 1" })
         .hasAttribute("disabled"),
     ).toBe(true);
-
-    await user.click(screen.getByRole("button", { name: "Add photo URL" }));
-    const secondPhoto = screen.getByLabelText("Photo URL 2 (optional)");
-    const secondPhotoId = secondPhoto.id;
-    expect(secondPhotoId).not.toBe(firstPhoto.id);
-    await user.click(screen.getByRole("button", { name: "Remove photo URL 1" }));
-    expect(screen.getByLabelText("Photo URL 1 (optional)").id).toBe(secondPhotoId);
 
     await user.click(
       screen.getByRole("button", { name: "Add distinguishing feature" }),
@@ -233,14 +226,6 @@ describe("ReportForm", () => {
     expect(screen.getByLabelText("Verification question 1").id).toBe(
       secondQuestionId,
     );
-
-    for (let index = 0; index < 4; index += 1) {
-      await user.click(screen.getByRole("button", { name: "Add photo URL" }));
-    }
-    expect(screen.getAllByLabelText(/Photo URL \d \(optional\)/)).toHaveLength(5);
-    expect(
-      screen.getByRole("button", { name: "Add photo URL" }).hasAttribute("disabled"),
-    ).toBe(true);
 
     for (let index = 0; index < 9; index += 1) {
       await user.click(
@@ -302,13 +287,6 @@ describe("ReportForm", () => {
     const user = userEvent.setup();
     renderForm();
 
-    await user.click(screen.getByRole("button", { name: "Add photo URL" }));
-    fireEvent.change(screen.getByLabelText("Photo URL 1 (optional)"), {
-      target: { value: "http://images.example/one.jpg" },
-    });
-    fireEvent.change(screen.getByLabelText("Photo URL 2 (optional)"), {
-      target: { value: "http://images.example/two.jpg" },
-    });
     await user.click(
       screen.getByRole("button", { name: "Add distinguishing feature" }),
     );
@@ -318,15 +296,11 @@ describe("ReportForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Submit report" }));
 
-    const firstPhoto = screen.getByLabelText("Photo URL 1 (optional)");
-    const secondPhoto = screen.getByLabelText("Photo URL 2 (optional)");
     const firstFeature = screen.getByLabelText("Distinguishing feature 1");
     const secondFeature = screen.getByLabelText("Distinguishing feature 2");
     const firstQuestion = screen.getByLabelText("Verification question 1");
     const secondQuestion = screen.getByLabelText("Verification question 2");
     for (const control of [
-      firstPhoto,
-      secondPhoto,
       firstFeature,
       secondFeature,
       firstQuestion,
@@ -335,18 +309,13 @@ describe("ReportForm", () => {
       expect(control.getAttribute("aria-invalid")).toBe("true");
     }
 
-    fireEvent.change(firstPhoto, {
-      target: { value: "https://images.example/one.jpg" },
-    });
     fireEvent.change(firstFeature, { target: { value: "Blue stitched lining" } });
     fireEvent.change(firstQuestion, {
       target: { value: "What is attached to the zipper?" },
     });
 
-    expect(firstPhoto.getAttribute("aria-invalid")).toBe("false");
     expect(firstFeature.getAttribute("aria-invalid")).toBe("false");
     expect(firstQuestion.getAttribute("aria-invalid")).toBe("false");
-    expect(secondPhoto.getAttribute("aria-invalid")).toBe("true");
     expect(secondFeature.getAttribute("aria-invalid")).toBe("true");
     expect(secondQuestion.getAttribute("aria-invalid")).toBe("true");
   });
@@ -368,7 +337,7 @@ describe("ReportForm", () => {
       occurredAt: new Date("2000-01-01T12:00"),
       colors: ["Black", "Silver"],
       tags: ["laptop", "bag"],
-      photoUrls: ["https://images.example/item.jpg"],
+      photoUrls: [],
       privacySettings: {
         showPhoto: true,
         showEventDate: true,
@@ -387,7 +356,37 @@ describe("ReportForm", () => {
         privateNotes: null,
       },
     });
-    expect(onSuccess).toHaveBeenCalledWith(createdReport);
+    expect(onSuccess).toHaveBeenCalledWith({ report: createdReport, images: [] });
+  });
+
+  it("hands selected local images to its owner after creating the report", async () => {
+    vi.mocked(submitReport).mockResolvedValue(createdReport);
+    renderForm();
+    const user = await fillValidForm();
+    const file = new File([Uint8Array.from([0xff, 0xd8, 0xff])], "private.jpg", {
+      type: "image/jpeg",
+    });
+
+    fireEvent.change(screen.getByLabelText("Report images (optional)"), {
+      target: { files: [file] },
+    });
+    await user.click(screen.getByRole("button", { name: "Submit report" }));
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce());
+    expect(onSuccess).toHaveBeenCalledWith({
+      report: createdReport,
+      images: [
+        {
+          file,
+          uploadKey: expect.stringMatching(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+          ),
+        },
+      ],
+    });
+    expect(submitReport).toHaveBeenCalledWith(
+      expect.objectContaining({ photoUrls: [] }),
+    );
   });
 
   it("disables and relabels submission while ignoring a second submit", async () => {
@@ -407,7 +406,9 @@ describe("ReportForm", () => {
     expect(submitReport).toHaveBeenCalledOnce();
 
     resolve(createdReport);
-    await waitFor(() => expect(onSuccess).toHaveBeenCalledWith(createdReport));
+    await waitFor(() =>
+      expect(onSuccess).toHaveBeenCalledWith({ report: createdReport, images: [] }),
+    );
   });
 
   it("merges safe 400 field errors without exposing private values", async () => {
@@ -432,7 +433,6 @@ describe("ReportForm", () => {
   });
 
   it.each([
-    ["photoUrls", "Photo URL 1 (optional)", "Review the photo list"],
     ["privacySettings", "Show photos to other members", "Review privacy choices"],
     [
       "privateVerification",

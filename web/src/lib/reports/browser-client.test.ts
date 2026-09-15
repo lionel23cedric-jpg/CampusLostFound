@@ -9,8 +9,11 @@ import {
   getReportCategories,
   getReportMatches,
   getReports,
+  getOwnReports,
   submitReport,
+  uploadReportImage,
   type MemberReport,
+  type OwnerReportHistoryPage,
   type ReportMatches,
 } from "./browser-client";
 
@@ -27,6 +30,9 @@ const campusLocation = {
   description: null,
 };
 
+const internalPhotoPath =
+  "/api/report-images/64f0123456789abcdef01234";
+
 const report = {
   id: "507f191e810c19729de860eb",
   reporterId: "507f191e810c19729de860ec",
@@ -40,6 +46,7 @@ const report = {
   tags: ["charger"],
   photoUrls: ["https://example.com/charger.jpg"],
   status: "open",
+  moderationStatus: "visible",
   privacySettings: {
     showPhoto: true,
     showEventDate: true,
@@ -49,6 +56,25 @@ const report = {
   createdAt: "2026-08-15T00:00:00.000Z",
   updatedAt: "2026-08-15T00:00:00.000Z",
 } as const;
+
+const ownerReport = {
+  ...report,
+  colors: [...report.colors],
+  tags: [...report.tags],
+  photoUrls: [internalPhotoPath, "https://example.com/legacy.jpg"],
+  status: "draft" as const,
+  moderationStatus: "hidden" as const,
+  privacySettings: {
+    showPhoto: false,
+    showEventDate: false,
+    showCampusLocation: false,
+  },
+};
+
+const ownerPage = {
+  reports: [ownerReport],
+  pagination: { page: 2, pageSize: 10, total: 11, totalPages: 2 },
+} satisfies OwnerReportHistoryPage;
 
 const memberReport = {
   id: "64b64c6f2f4d9f1a2b3c4d54",
@@ -62,6 +88,7 @@ const memberReport = {
   tags: ["laptop", "bag"],
   photoUrls: ["https://example.com/laptop-bag.jpg"],
   status: "open",
+  moderationStatus: "visible",
   resolvedAt: null,
   createdAt: "2026-08-15T02:05:00.000Z",
   updatedAt: "2026-08-15T02:05:00.000Z",
@@ -149,6 +176,198 @@ afterEach(() => {
 });
 
 describe("report browser client", () => {
+  it("loads strict owner history with same-origin credentials and abort support", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(ownerPage));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      getOwnReports(
+        { reportType: "found", status: "closed", page: 2 },
+        controller.signal,
+      ),
+    ).resolves.toEqual(ownerPage);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/reports/mine?reportType=found&status=closed&page=2",
+      {
+        method: "GET",
+        signal: controller.signal,
+        credentials: "same-origin",
+      },
+    );
+  });
+
+  it("omits empty owner history query values and page one", async () => {
+    const emptyPage = {
+      reports: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+    };
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(emptyPage));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(getOwnReports({ page: 1 })).resolves.toEqual(emptyPage);
+    expect(fetchMock).toHaveBeenCalledWith("/api/reports/mine", {
+      method: "GET",
+      signal: undefined,
+      credentials: "same-origin",
+    });
+  });
+
+  it.each([
+    ["unknown top-level key", { ...ownerPage, internalVersion: 1 }],
+    [
+      "private verification field",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, expectedAnswer: "private answer" }],
+      },
+    ],
+    [
+      "invalid photo reference",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, photoUrls: ["javascript:alert(1)"] }],
+      },
+    ],
+    [
+      "invalid timestamp",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, createdAt: "not-a-date" }],
+      },
+    ],
+    [
+      "unknown report status",
+      {
+        ...ownerPage,
+        reports: [{ ...ownerReport, status: "archived" }],
+      },
+    ],
+    [
+      "wrong page size",
+      { ...ownerPage, pagination: { ...ownerPage.pagination, pageSize: 12 } },
+    ],
+    [
+      "inconsistent total pages",
+      { ...ownerPage, pagination: { ...ownerPage.pagination, totalPages: 3 } },
+    ],
+    [
+      "more than ten reports",
+      { ...ownerPage, reports: Array.from({ length: 11 }, () => ownerReport) },
+    ],
+    [
+      "reports when total is zero",
+      {
+        ...ownerPage,
+        pagination: { page: 1, pageSize: 10, total: 0, totalPages: 0 },
+      },
+    ],
+  ])("rejects owner history containing %s", async (_case, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+
+    await expect(getOwnReports({ page: 2 })).rejects.toMatchObject({
+      code: "REQUEST_FAILED",
+      status: 200,
+    });
+  });
+
+  it("preserves a safe owner history API error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "Invalid report query",
+              fields: { page: ["Invalid input"] },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+
+    await expect(getOwnReports({ page: 2 })).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      status: 400,
+      message: "Invalid report query",
+      fields: { page: ["Invalid input"] },
+    });
+  });
+
+  it.each([200, 201])(
+    "uploads a report image with a strict receipt for status %s",
+    async (status) => {
+      const image = {
+        url: internalPhotoPath,
+        contentType: "image/jpeg" as const,
+        byteLength: 4,
+      };
+      const fetchMock = vi.fn().mockResolvedValue(
+        Response.json({ image }, { status }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+      const file = new File([Uint8Array.from([0xff, 0xd8, 0xff, 0x01])], "private.jpg", {
+        type: "image/jpeg",
+      });
+      const uploadKey = "550e8400-e29b-41d4-a716-446655440000";
+
+      await expect(
+        uploadReportImage("report/id", file, uploadKey),
+      ).resolves.toEqual(image);
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(path).toBe("/api/reports/report%2Fid/images");
+      expect(init).toMatchObject({ method: "POST", credentials: "same-origin" });
+      expect(init.headers).toBeUndefined();
+      expect(init.body).toBeInstanceOf(FormData);
+      const form = init.body as FormData;
+      expect([...form.keys()]).toEqual(["image", "uploadKey"]);
+      expect(form.get("image")).toBe(file);
+      expect(form.get("uploadKey")).toBe(uploadKey);
+    },
+  );
+
+  it.each([
+    ["extra success key", { image: { url: internalPhotoPath, contentType: "image/jpeg", byteLength: 4, privateId: "secret" } }],
+    ["external receipt URL", { image: { url: "https://example.test/image.jpg", contentType: "image/jpeg", byteLength: 4 } }],
+    ["unsupported MIME", { image: { url: internalPhotoPath, contentType: "image/gif", byteLength: 4 } }],
+    ["invalid byte length", { image: { url: internalPhotoPath, contentType: "image/jpeg", byteLength: 0 } }],
+  ])("rejects an upload response with %s", async (_label, body) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
+    await expect(
+      uploadReportImage(
+        report.id,
+        new File([Uint8Array.from([0xff])], "x.jpg", { type: "image/jpeg" }),
+        "550e8400-e29b-41d4-a716-446655440000",
+      ),
+    ).rejects.toMatchObject({ code: "REQUEST_FAILED", status: 200 });
+  });
+
+  it("preserves safe upload errors and closes network failures", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce(
+        Response.json(
+          { error: { code: "IMAGE_TOO_LARGE", message: "Image is too large" } },
+          { status: 413 },
+        ),
+      ).mockRejectedValueOnce(new Error("private network detail")),
+    );
+    const file = new File([Uint8Array.from([0xff])], "x.jpg", { type: "image/jpeg" });
+
+    await expect(uploadReportImage(report.id, file, "key")).rejects.toMatchObject({
+      code: "IMAGE_TOO_LARGE",
+      status: 413,
+    });
+    await expect(uploadReportImage(report.id, file, "key")).rejects.toMatchObject({
+      code: "NETWORK_ERROR",
+      status: 0,
+    });
+  });
+
   it("loads a canonical member report page with same-origin credentials", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       Response.json({
@@ -191,7 +410,60 @@ describe("report browser client", () => {
     );
   });
 
+  it("accepts internal photo references at both browser response boundaries", async () => {
+    const internalMemberReport = {
+      ...memberReport,
+      photoUrls: [internalPhotoPath],
+    };
+    const internalCreatedReport = {
+      ...report,
+      photoUrls: [internalPhotoPath],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(Response.json({ report: internalMemberReport }))
+        .mockResolvedValueOnce(
+          Response.json({ report: internalCreatedReport }, { status: 201 }),
+        ),
+    );
+
+    await expect(getReportById(memberReport.id)).resolves.toEqual(
+      internalMemberReport,
+    );
+    await expect(submitReport(input)).resolves.toEqual(internalCreatedReport);
+  });
+
   it.each([
+    [
+      "missing moderation state",
+      () => getReportById(memberReport.id),
+      (() => {
+        const withoutModeration: Record<string, unknown> = {
+          ...memberReport,
+        };
+        delete withoutModeration.moderationStatus;
+        return { report: withoutModeration };
+      })(),
+    ],
+    [
+      "unknown moderation state",
+      () => getReportById(memberReport.id),
+      { report: { ...memberReport, moderationStatus: "removed" } },
+    ],
+    [
+      "moderation evidence",
+      () => getReportById(memberReport.id),
+      {
+        report: {
+          ...memberReport,
+          flag: true,
+          reason: "private",
+          note: "private",
+        },
+      },
+    ],
     [
       "list reporterId",
       () => getReports({}),
@@ -251,6 +523,40 @@ describe("report browser client", () => {
 
   it.each([
     [
+      "missing report moderation state",
+      () => submitReport(input),
+      (() => {
+        const withoutModeration: Record<string, unknown> = { ...report };
+        delete withoutModeration.moderationStatus;
+        return { report: withoutModeration };
+      })(),
+    ],
+    [
+      "unknown report moderation state",
+      () => submitReport(input),
+      { report: { ...report, moderationStatus: "removed" } },
+    ],
+    [
+      "created report insecure HTTP URL",
+      () => submitReport(input),
+      {
+        report: {
+          ...report,
+          photoUrls: ["http://example.com/private.jpg"],
+        },
+      },
+    ],
+    [
+      "created report javascript URL",
+      () => submitReport(input),
+      {
+        report: {
+          ...report,
+          photoUrls: ["javascript:alert(1)"],
+        },
+      },
+    ],
+    [
       "list malformed URL",
       () => getReports({}),
       {
@@ -288,7 +594,7 @@ describe("report browser client", () => {
         },
       },
     ],
-  ])("rejects %s in member photo URLs", async (_name, request, body) => {
+  ])("rejects malformed successful responses containing %s", async (_name, request, body) => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json(body)));
 
     await expect(request()).rejects.toEqual(

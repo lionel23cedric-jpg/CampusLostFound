@@ -17,13 +17,18 @@ vi.mock("@/models/claim", () => ({
 vi.mock("@/models/claim-evidence", () => ({
   ClaimEvidenceModel: { findOne: vi.fn() },
 }));
-vi.mock("@/models/item-report", () => ({
-  ItemReportModel: {
-    find: vi.fn(),
-    findById: vi.fn(),
-    findOneAndUpdate: vi.fn(),
-  },
-}));
+vi.mock("@/models/item-report", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/models/item-report")>();
+  return {
+    ...actual,
+    ItemReportModel: {
+      find: vi.fn(),
+      findOne: vi.fn(),
+      findById: vi.fn(),
+      findOneAndUpdate: vi.fn(),
+    },
+  };
+});
 vi.mock("@/models/profile", () => ({
   ProfileModel: { find: vi.fn(), findOne: vi.fn() },
 }));
@@ -136,8 +141,27 @@ const report = {
   title: "Black charger",
   reportType: "found" as const,
   status: "open" as const,
+  updatedAt: now,
 };
 const resolvedReport = { ...report, status: "resolved" as const };
+const claimPendingReport = { ...report, status: "claim_pending" as const };
+const verifiedHandling = {
+  verificationStatus: "verified" as const,
+  verifiedBy: staff.id,
+  verifiedAt: now,
+  custodyStatus: "not_held" as const,
+  storageLocation: null,
+  storedAt: null,
+  releasedAt: null,
+  updatedBy: staff.id,
+};
+const storedAt = new Date("2026-08-24T04:00:00.000Z");
+const storedHandling = {
+  ...verifiedHandling,
+  custodyStatus: "stored" as const,
+  storageLocation: "Library desk - locker B12",
+  storedAt,
+};
 const competingClaims = [
   {
     _id: identifier(competingClaimId),
@@ -271,6 +295,9 @@ describe("staff claim service", () => {
     vi.mocked(deliverNotifications).mockResolvedValue(undefined);
     configureQueue();
     configureDetail();
+    vi.mocked(ItemReportModel.findOne).mockReturnValue(
+      queryChain(claimPendingReport) as never,
+    );
   });
 
   it.each([
@@ -828,9 +855,14 @@ describe("staff claim service", () => {
     const completionTime = (reportUpdate[1] as { $set: { resolvedAt: Date } })
       .$set.resolvedAt;
     expect(reportUpdate).toEqual([
-      { _id: approvedClaim.reportId, status: "claim_pending" },
+      {
+        _id: approvedClaim.reportId,
+        status: "claim_pending",
+        updatedAt: now,
+        staffHandling: { $exists: false },
+      },
       { $set: { status: "resolved", resolvedAt: completionTime } },
-      { new: true, session: transaction },
+      { new: true, runValidators: true, session: transaction },
     ]);
     expect(ClaimModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: claimId, status: "approved" },
@@ -861,6 +893,91 @@ describe("staff claim service", () => {
       transaction,
     );
     expect(transaction.endSession).toHaveBeenCalledOnce();
+  });
+
+  it("releases a stored Found item in the existing completion transaction", async () => {
+    configureDetail(approvedClaim, resolvedReport);
+    const storedReport = {
+      ...claimPendingReport,
+      staffHandling: storedHandling,
+    };
+    const currentReportChain = queryChain(storedReport);
+    vi.mocked(ItemReportModel.findOne).mockReturnValue(
+      currentReportChain as never,
+    );
+    vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+      queryChain(resolvedReport) as never,
+    );
+    vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+      queryChain(completedClaim) as never,
+    );
+
+    await completeClaim(staff, claimId);
+
+    const reportUpdate = vi.mocked(ItemReportModel.findOneAndUpdate).mock
+      .calls[0];
+    const set = (reportUpdate[1] as { $set: Record<string, unknown> }).$set;
+    expect(currentReportChain.select).toHaveBeenCalledWith("+staffHandling");
+    expect(currentReportChain.session).toHaveBeenCalledWith(transaction);
+    expect(reportUpdate[0]).toEqual({
+      _id: approvedClaim.reportId,
+      status: "claim_pending",
+      updatedAt: now,
+      "staffHandling.custodyStatus": "stored",
+    });
+    expect(set).toMatchObject({
+      status: "resolved",
+      "staffHandling.custodyStatus": "released",
+      "staffHandling.releasedAt": set.resolvedAt,
+      "staffHandling.updatedBy": staff.id,
+    });
+    expect(reportUpdate[2]).toEqual({
+      new: true,
+      runValidators: true,
+      session: transaction,
+    });
+    expect(deliverNotifications).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ["Found not held", { ...claimPendingReport, staffHandling: verifiedHandling }],
+    ["Lost", { ...claimPendingReport, reportType: "lost" as const, staffHandling: { ...verifiedHandling, custodyStatus: "not_applicable" as const } }],
+    ["legacy", claimPendingReport],
+  ])("completes %s reports without inventing storage history", async (_case, currentReport) => {
+    configureDetail(approvedClaim, resolvedReport);
+    vi.mocked(ItemReportModel.findOne).mockReturnValue(
+      queryChain(currentReport) as never,
+    );
+    vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+      queryChain(resolvedReport) as never,
+    );
+    vi.mocked(ClaimModel.findOneAndUpdate).mockReturnValue(
+      queryChain(completedClaim) as never,
+    );
+
+    await completeClaim(staff, claimId);
+
+    const [, update] = vi.mocked(ItemReportModel.findOneAndUpdate).mock.calls[0];
+    expect((update as { $set: Record<string, unknown> }).$set).toEqual({
+      status: "resolved",
+      resolvedAt: expect.any(Date),
+    });
+  });
+
+  it("rejects a concurrent stored-item handling change before Claim completion", async () => {
+    configureDetail(approvedClaim, resolvedReport);
+    vi.mocked(ItemReportModel.findOne).mockReturnValue(
+      queryChain({ ...claimPendingReport, staffHandling: storedHandling }) as never,
+    );
+    vi.mocked(ItemReportModel.findOneAndUpdate).mockReturnValue(
+      queryChain(null) as never,
+    );
+
+    await expect(completeClaim(staff, claimId)).rejects.toMatchObject({
+      code: "CLAIM_STATE_CONFLICT",
+    });
+    expect(ClaimModel.findOneAndUpdate).not.toHaveBeenCalled();
+    expect(deliverNotifications).not.toHaveBeenCalled();
   });
 
   it.each([

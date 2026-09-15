@@ -1,0 +1,119 @@
+.workspace {
+  display: grid;
+  box-sizing: border-box;
+  width: min(100% - 2rem, 76rem);
+  margin-inline: auto;
+  gap: clamp(2rem, 5vw, 4rem);
+  overflow-wrap: anywhere;
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.header {
+  max-width: 58rem;
+  border-block-end: 1px solid var(--line);
+  padding-block-end: 1.5rem;
+}
+
+.kicker {
+  margin: 0 0 0.6rem;
+  color: var(--campus-green-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.header h1,
+.section h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.header h1 {
+  font-size: clamp(2.3rem, 7vw, 4.5rem);
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.header > p:last-child,
+.section > p {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.section {
+  display: grid;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.section h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+
+.panelBody { display: grid; min-width: 0; gap: 1rem; }
+.filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 0.8rem; }
+.filters label,
+.confirmation { display: grid; gap: 0.45rem; color: var(--ink); font-weight: 750; }
+.searchFilters { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: end; gap: 0.65rem; }
+.searchFilters label { display: grid; gap: 0.45rem; color: var(--ink); font-weight: 750; }
+.filters select,
+.searchFilters input,
+.confirmation select,
+.confirmation textarea,
+.panelBody button,
+.panelBody a {
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 9px;
+  font: inherit;
+}
+.filters select,
+.searchFilters input,
+.confirmation select,
+.confirmation textarea { width: 100%; border: 1px solid var(--line-strong); background: white; color: var(--ink); padding: 0.65rem 0.75rem; }
+.cardList { display: grid; margin: 0; padding: 0; gap: 1rem; list-style: none; }
+.card { display: grid; min-width: 0; gap: 1rem; border: 1px solid var(--line); border-radius: 14px; background: var(--paper-light); padding: clamp(1rem, 3vw, 1.4rem); }
+.cardHeader { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.cardHeader h3 { margin: 0.45rem 0 0; color: var(--ink); font-family: Georgia, "Times New Roman", serif; font-size: 1.3rem; }
+.cardHeader time { color: var(--ink-soft); font-size: 0.86rem; }
+.badges { display: flex; flex-wrap: wrap; margin: 0; gap: 0.4rem; }
+.badges span { border-radius: 999px; background: var(--paper); color: var(--ink-soft); font-size: 0.78rem; font-weight: 750; padding: 0.25rem 0.55rem; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); margin: 0; gap: 0.75rem; }
+.facts div { display: grid; gap: 0.2rem; }
+.facts dt { color: var(--ink-soft); font-size: 0.78rem; font-weight: 750; text-transform: uppercase; }
+.facts dd { margin: 0; color: var(--ink); text-transform: capitalize; }
+.cardActions,
+.pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; }
+.cardActions button,
+.pagination button,
+.notice button,
+.statePanel button { border: 1px solid var(--campus-green); background: transparent; color: var(--campus-green-dark); cursor: pointer; font-weight: 750; padding: 0.6rem 0.85rem; }
+.cardActions button:first-child { background: var(--campus-green); color: white; }
+.cardActions a { display: inline-flex; align-items: center; justify-content: center; color: var(--campus-green-dark); font-weight: 750; padding: 0.6rem 0.85rem; }
+.cardActions button:disabled,
+.pagination button:disabled { cursor: not-allowed; opacity: 0.6; }
+.notice,
+.statePanel,
+.empty,
+.confirmation { margin: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--paper-light); padding: 1rem; }
+.notice { border-color: #b86a31; background: #fff5e8; }
+.notice p,
+.statePanel p,
+.empty,
+.confirmation p { color: var(--ink-soft); line-height: 1.55; }
+.confirmation h3 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.35rem; }
+.fieldError { margin: 0; color: #8a2f22; font-weight: 700; }
+.tags { margin: 0; color: var(--ink-soft); font-size: 0.9rem; }
+.panelBody :focus-visible { outline: 3px solid var(--campus-green-dark); outline-offset: 3px; }
+
+@media (max-width: 20rem) {
+  .workspace { width: min(100% - 1rem, 76rem); }
+  .cardHeader,
+  .cardActions,
+  .pagination { align-items: stretch; flex-direction: column; }
+  .searchFilters { grid-template-columns: 1fr; }
+  .cardActions button,
+  .cardActions a,
+  .pagination button { width: 100%; }
+}

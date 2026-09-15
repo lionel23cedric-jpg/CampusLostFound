@@ -10,11 +10,13 @@ import { UserModel } from "@/models/user";
 const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
 
 type NotificationPreference =
+  | "possibleMatches"
   | "claimUpdates"
   | "statusChanges"
   | "handoverInstructions";
 
 const preferenceByKind = {
+  possible_match: "possibleMatches",
   claim_received: "claimUpdates",
   claim_withdrawn: "claimUpdates",
   claim_approved: "statusChanges",
@@ -28,7 +30,8 @@ export type NotificationPlan = {
   kind: NotificationKind;
   recipientId: string;
   reportId: string;
-  claimId: string;
+  claimId: string | null;
+  eventId?: string;
 };
 
 type UserRow = {
@@ -56,16 +59,39 @@ function canonicalId(value: string) {
 export function createNotificationPlan(
   input: NotificationPlan,
 ): NotificationPlan {
-  return {
+  const plan = {
     kind: input.kind,
     recipientId: canonicalId(input.recipientId),
     reportId: canonicalId(input.reportId),
-    claimId: canonicalId(input.claimId),
   };
+
+  if (input.kind === "possible_match") {
+    if (input.claimId !== null) {
+      throw new Error("Possible-match notifications cannot reference a claim");
+    }
+    if (!input.eventId) {
+      throw new Error("Possible-match notifications require an event ID");
+    }
+    return {
+      ...plan,
+      claimId: null,
+      eventId: canonicalId(input.eventId),
+    };
+  }
+
+  if (input.claimId === null) {
+    throw new Error("Claim notifications require a claim ID");
+  }
+  if (input.eventId !== undefined) {
+    throw new Error("Claim notifications cannot reference an event ID");
+  }
+  return { ...plan, claimId: canonicalId(input.claimId) };
 }
 
 export function notificationEventKey(plan: NotificationPlan) {
-  return `notification:v1:${plan.kind}:${plan.claimId}:${plan.recipientId}`;
+  const eventId = plan.kind === "possible_match" ? plan.eventId : plan.claimId;
+  if (!eventId) throw new Error("Notification plan event ID is missing");
+  return `notification:v1:${plan.kind}:${eventId}:${plan.recipientId}`;
 }
 
 export async function deliverNotifications(

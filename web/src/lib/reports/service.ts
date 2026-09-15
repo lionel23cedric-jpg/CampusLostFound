@@ -1,11 +1,16 @@
 import type { PublicUser } from "@/lib/auth/public-user";
 import { connectToDatabase } from "@/lib/db";
+import { deliverNotifications } from "@/lib/notifications/delivery";
 import { CampusLocationModel } from "@/models/campus-location";
 import { CategoryModel } from "@/models/category";
-import { ItemReportModel } from "@/models/item-report";
+import {
+  ItemReportModel,
+  defaultStaffReportHandling,
+} from "@/models/item-report";
 import { PrivateVerificationDetailsModel } from "@/models/private-verification-details";
 
 import { ReportError } from "./errors";
+import { planPossibleMatchNotifications } from "./match-notifications";
 import { type OwnerReport, toOwnerReport } from "./public-report";
 import type { CreateReportInput } from "./validation";
 
@@ -57,6 +62,7 @@ export async function createReport(
             privacySettings: input.privacySettings,
             status: "open",
             resolvedAt: null,
+            staffHandling: defaultStaffReportHandling(input.reportType),
           },
         ],
         { session: transaction },
@@ -71,6 +77,12 @@ export async function createReport(
         ],
         { session: transaction },
       );
+
+      const notificationPlans = await planPossibleMatchNotifications(
+        report,
+        transaction,
+      );
+      await deliverNotifications(notificationPlans, transaction);
 
       result = toOwnerReport(report);
     });

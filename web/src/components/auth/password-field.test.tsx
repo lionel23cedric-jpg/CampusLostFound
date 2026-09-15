@@ -19,6 +19,7 @@ function PasswordHarness() {
       autoComplete="current-password"
       value={value}
       onChange={(event) => setValue(event.target.value)}
+      hint="Use 10–128 characters."
       error="Password is invalid"
     />
   );
@@ -31,8 +32,13 @@ it("labels the password field and toggles visibility by pointer and keyboard", a
   const input = screen.getByLabelText("Password");
   expect(input.getAttribute("type")).toBe("password");
   expect(input.getAttribute("autocomplete")).toBe("current-password");
-  expect(input.getAttribute("aria-describedby")).toBe("password-error");
+  expect(input.getAttribute("aria-describedby")).toBe(
+    "password-hint password-error",
+  );
   expect(input.getAttribute("aria-invalid")).toBe("true");
+  expect(screen.getByText("Use 10–128 characters.").getAttribute("id")).toBe(
+    "password-hint",
+  );
   expect(screen.getByText("Password is invalid").getAttribute("id")).toBe(
     "password-error",
   );

@@ -1,7 +1,9 @@
 import Link from "next/link";
 
+import { PageBackLink } from "@/components/page-back-link";
 import type { CreatedReport } from "@/lib/reports/browser-client";
 
+import type { PhotoUploadSummary } from "./report-submission-client";
 import styles from "./report-submission.module.css";
 
 function formatStatus(status: CreatedReport["status"]) {
@@ -13,18 +15,21 @@ function formatStatus(status: CreatedReport["status"]) {
 
 export function ReportSuccess({
   report,
+  photoUploadSummary,
+  onRetryImages,
   onSubmitAnother,
 }: {
   report: CreatedReport;
+  photoUploadSummary: PhotoUploadSummary;
+  onRetryImages: () => void;
   onSubmitAnother: () => void;
 }) {
   return (
     <section
       className={styles.success}
       aria-labelledby="report-success-heading"
-      role="status"
-      aria-live="polite"
     >
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
       <p className={styles.kicker}>Report received</p>
       <h1 id="report-success-heading">Report submitted</h1>
       <p>
@@ -51,14 +56,52 @@ export function ReportSuccess({
         </div>
       </dl>
 
+      <div className={styles.uploadStatus}>
+        {photoUploadSummary.total === 0 ? (
+          <p>No images were selected.</p>
+        ) : photoUploadSummary.status === "uploading" ? (
+          <p role="status" aria-live="polite">
+            Uploading image {photoUploadSummary.uploaded + 1} of{" "}
+            {photoUploadSummary.total}
+          </p>
+        ) : photoUploadSummary.status === "complete" ? (
+          <p>
+            {photoUploadSummary.uploaded} of {photoUploadSummary.total} images
+            uploaded.
+          </p>
+        ) : (
+          <div role="alert">
+            <p>
+              {photoUploadSummary.uploaded} of {photoUploadSummary.total} images
+              uploaded.
+            </p>
+            <p>
+              Your report is saved, but some images could not be uploaded. Try
+              the remaining images again.
+            </p>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={onRetryImages}
+            >
+              Retry remaining images
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className={styles.successActions}>
-        <Link className={styles.primaryLink} href="/dashboard">
-          Back to dashboard
+        <Link
+          className={styles.primaryLink}
+          href={`/reports/${encodeURIComponent(report.id)}`}
+        >
+          View submitted report
         </Link>
         <button
           className={styles.secondaryButton}
           type="button"
           onClick={onSubmitAnother}
+          disabled={photoUploadSummary.status === "uploading"}
         >
           Submit another report
         </button>

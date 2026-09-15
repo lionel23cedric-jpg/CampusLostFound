@@ -369,7 +369,6 @@
   padding-block: clamp(2.5rem, 7vw, 5rem);
 }
 
-.backLink,
 .secondaryLink,
 .secondaryButton {
   display: inline-flex;
@@ -384,11 +383,6 @@
   font-weight: 700;
   padding: 0.65rem 0.9rem;
   text-align: center;
-}
-
-.backLink {
-  color: var(--campus-green-dark);
-  padding-inline: 0;
 }
 
 .detailPanel {

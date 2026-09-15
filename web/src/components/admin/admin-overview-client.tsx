@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
+import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserAdminOverviewError,
   getAdministratorOverview,
 } from "@/lib/admin/browser-client";
 import type { AdministratorOverview } from "@/lib/admin/overview-contract";
 
+import { OverviewDonut } from "./overview-donut";
 import styles from "./admin-overview.module.css";
 
 type OverviewState =
@@ -105,6 +108,8 @@ export function AdminOverviewClient() {
   const loadOverview = useCallback(
     async (mode: "initial" | "refresh") => {
       const currentRequest = ++requestId.current;
+      // Cancel the previous request and also compare request IDs so a slower,
+      // stale response cannot replace a newer administrator snapshot.
       controller.current?.abort();
       const nextController = new AbortController();
       controller.current = nextController;
@@ -134,6 +139,8 @@ export function AdminOverviewClient() {
         }
 
         if (error instanceof BrowserAdminOverviewError) {
+          // Refresh the shared session when the server reports lost access;
+          // the API, rather than this component, remains the source of truth.
           if (error.code === "AUTHENTICATION_REQUIRED") {
             setState({ status: "accessChanged" });
             await refreshSession().catch(() => undefined);
@@ -204,9 +211,9 @@ export function AdminOverviewClient() {
   if (state.status === "accessChanged") {
     return (
       <section className={styles.statePanel} aria-labelledby="overview-access-changed">
+        <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
         <h1 id="overview-access-changed">Administrator access changed</h1>
         <p>Your account no longer has access to this overview.</p>
-        <Link href="/dashboard">Back to dashboard</Link>
       </section>
     );
   }
@@ -221,6 +228,7 @@ export function AdminOverviewClient() {
     <article className={styles.overview}>
       <header className={styles.overviewHeader}>
         <div className={styles.headingCopy}>
+          <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
           <h1>Administrator overview</h1>
           <p>
             Monitor report recovery, ownership Claims and account availability
@@ -242,8 +250,11 @@ export function AdminOverviewClient() {
         </div>
       </header>
 
+      <ContextIllustration kind="administration" variant="banner" priority />
+
       {state.refreshFailed ? (
         <p className={styles.refreshAlert} role="alert">
+          {/* Keep the last schema-validated snapshot visible when refresh fails. */}
           We could not refresh the overview. The last valid snapshot remains
           visible.
         </p>
@@ -255,10 +266,26 @@ export function AdminOverviewClient() {
 
       <section className={`${styles.metricSection} ${styles.reportSection}`} aria-labelledby="report-overview">
         <div className={styles.sectionHeading}>
-          <h2 id="report-overview">Reports</h2>
-          <p>Submitted reports and recovery outcomes.</p>
+          <div>
+            <h2 id="report-overview">Reports</h2>
+            <p>Submitted reports and recovery outcomes.</p>
+          </div>
+          <div className={styles.sectionLinks}>
+            <Link href="/admin/moderation">Review flagged reports</Link>
+            <Link href="/admin/reference-data">Manage reference data</Link>
+          </div>
         </div>
-        <MetricList entries={reportMetrics} values={data.reports} />
+        <div className={styles.sectionBody}>
+          <OverviewDonut
+            title="Report type"
+            total={data.reports.submittedTotal}
+            segments={[
+              { label: "Lost", value: data.reports.submittedLost, color: "#1f6a52" },
+              { label: "Found", value: data.reports.submittedFound, color: "#b85f3d" },
+            ]}
+          />
+          <MetricList entries={reportMetrics} values={data.reports} />
+        </div>
       </section>
 
       <section className={styles.metricSection} aria-labelledby="claim-overview">
@@ -266,15 +293,42 @@ export function AdminOverviewClient() {
           <h2 id="claim-overview">Ownership Claims</h2>
           <Link href="/staff/claims">Review ownership Claims</Link>
         </div>
-        <MetricList entries={claimMetrics} values={data.claims} />
+        <div className={styles.sectionBody}>
+          <OverviewDonut
+            title="Claim status"
+            total={data.claims.total}
+            segments={[
+              { label: "Pending", value: data.claims.pending, color: "#d3a12d" },
+              { label: "Approved", value: data.claims.approved, color: "#1f6a52" },
+              { label: "Rejected", value: data.claims.rejected, color: "#9b2c2c" },
+              { label: "Withdrawn", value: data.claims.withdrawn, color: "#7a5a8a" },
+              { label: "Completed", value: data.claims.completed, color: "#526b7b" },
+            ]}
+          />
+          <MetricList entries={claimMetrics} values={data.claims} />
+        </div>
       </section>
 
       <section className={styles.metricSection} aria-labelledby="account-overview">
         <div className={styles.sectionHeading}>
-          <h2 id="account-overview">Accounts</h2>
-          <p>Current access states across all registered accounts.</p>
+          <div>
+            <h2 id="account-overview">Accounts</h2>
+            <p>Current access states across all registered accounts.</p>
+          </div>
+          <Link href="/admin/accounts">Manage accounts</Link>
         </div>
-        <MetricList entries={accountMetrics} values={data.accounts} />
+        <div className={styles.sectionBody}>
+          <OverviewDonut
+            title="Account status"
+            total={data.accounts.total}
+            segments={[
+              { label: "Active", value: data.accounts.active, color: "#1f6a52" },
+              { label: "Suspended", value: data.accounts.suspended, color: "#d3a12d" },
+              { label: "Deactivated", value: data.accounts.deactivated, color: "#526b7b" },
+            ]}
+          />
+          <MetricList entries={accountMetrics} values={data.accounts} />
+        </div>
       </section>
     </article>
   );

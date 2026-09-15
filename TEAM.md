@@ -1,104 +1,62 @@
-\# Campus Lost and Found Project Team
+# Campus Find Project Team
 
+## Project information
 
+- Course: 159.333 Computer Science Project
+- Project: Campus Find, a campus lost-and-found web application
+- Supervisor: Binglan Han
+- Group: Group 13
+- Team size: 5 members
+- Group coordinator: Luyang Liu
 
-\## Project Information
+## Confirmed responsibility allocation
 
+The current allocation follows the revised Project Progress Report. It replaces
+the broader role allocation in the original proposal.
 
+| Team member | Student ID | Email | Current workstream | Main responsibility |
+|---|---:|---|---|---|
+| Zheyu Feng | 25007580 | 3371807105@qq.com | Identity, profile, and account security | Registration, login, sessions, profile settings, role checks, and account status controls |
+| Tianyu Li | 25008551 | 863501837@qq.com | Reports, search, images, and privacy | Report creation, browsing, filters, owner history, protected images, and privacy boundaries |
+| Xinrui Han | 25007620 | b61s@qq.com | Member Claims and notifications | Claim submission and withdrawal, notification lists, unread counts, and mark-as-read behaviour |
+| Zhikai Wang | 25008100 | sanmao_email@126.com | Staff review and recovery | Report verification, custody records, Claim decisions, handover preparation, and completed recovery |
+| Luyang Liu | 25007541 | 86801163@qq.com | Administrator tools and project leadership | Overview statistics, reference data, report moderation, integration checks, project coordination, and evidence collection |
 
-\- Course: 159.333 Computer Science Project
+All five members share responsibility for learning, testing, evaluating, and
+explaining the deterministic item-matching feature.
 
-\- Project: Campus Lost and Found Web Application
+## Evidence boundaries
 
-\- Supervisor: Binglan Han
+- The current workstream allocation is recorded in the revised Project Progress Report.
+- The original proposal records the team names, student IDs, email addresses, and group coordinator.
+- Git currently shows `Luyang LIU` and `Cedric` with the same email address. They are treated as one repository identity, not as two team members.
+- A responsibility allocation does not by itself prove implementation time or authorship. Each member must add their own dated task, branch or pull request, evidence, hours, and reflection to `project_management/contribution_log.csv` before final submission.
+- Unknown individual hours and commit ownership are deliberately recorded as `Not recorded`; they are not inferred from the repository account.
 
-\- Team size: 5 members
+## Collaboration rules
 
+1. Link development work to a branch, commit, pull request, test result, document, or meeting record.
+2. Do not push unfinished work directly to `main`; integrate through the agreed branch and review process.
+3. Update the contribution log after meaningful work and use only evidence the member can verify.
+4. Record important architecture, security, database, and scope decisions in the decision log.
+5. Every member must understand the overall architecture, database, matching function, testing process, and final demonstration.
+6. Have at least one other member review a pull request before merging it.
+7. Never commit private credentials, passwords, API keys, or local environment files.
+8. All members contribute to the final report and video presentation.
 
+## Branch naming convention
 
-\## Team Members
+- `feature/short-description`
+- `fix/short-description`
+- `test/short-description`
+- `docs/short-description`
 
+## Commit message convention
 
-
-| Member | Student ID | Email | Primary Role | Secondary Responsibilities |
-
-|---|---|---|---|---|
-
-| Member 1 | ID | email | Project Manager and Requirements Lead | Documentation, integration review |
-
-| Member 2 | ID | email | Front-End and UI Developer | Accessibility, responsive design |
-
-| Member 3 | ID | email | Back-End Developer | Authentication, claims and notifications |
-
-| Member 4 | ID | email | Database and AI Developer | ERD, matching algorithm, evaluation |
-
-| Member 5 | ID | email | Testing, Security and Deployment Lead | Git quality, CI, user guide |
-
-
-
-\## Collaboration Rules
-
-
-
-1\. All development work must be linked to a Git branch, commit, or pull request.
-
-2\. No member should push unfinished work directly to the main branch.
-
-3\. Each member must update the contribution log after completing meaningful work.
-
-4\. Important design decisions must be recorded.
-
-5\. Every member must understand the overall architecture, database, AI function, testing process, and final demonstration.
-
-6\. Pull requests should be reviewed by at least one other team member.
-
-7\. Private credentials, passwords, API keys, and environment files must never be committed.
-
-8\. All members must contribute to the report and video presentation.
-
-
-
-\## Branch Naming Convention
-
-
-
-\- `feature/accounts`
-
-\- `feature/reports`
-
-\- `feature/claims`
-
-\- `feature/ai-matching`
-
-\- `feature/dashboards`
-
-\- `feature/testing`
-
-\- `docs/proposal`
-
-\- `docs/progress-report`
-
-\- `docs/final-report`
-
-\- `fix/short-description`
-
-
-
-\## Commit Message Convention
-
-
-
-\- `feat:` new functionality
-
-\- `fix:` bug fix
-
-\- `docs:` documentation
-
-\- `test:` testing
-
-\- `refactor:` code restructuring without changing behaviour
-
-\- `style:` interface or formatting change
-
-\- `chore:` configuration or project maintenance
-
+- `feat:` new functionality
+- `fix:` bug fix
+- `docs:` documentation
+- `test:` testing
+- `refactor:` code restructuring without changing behaviour
+- `style:` interface or formatting change
+- `chore:` configuration or project maintenance

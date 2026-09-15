@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 
 import styles from "./dashboard.module.css";
 
@@ -76,6 +77,9 @@ export function DashboardClient() {
 
   if (!user) return null;
 
+  const canUseStaffTools =
+    user.status === "active" &&
+    (user.role === "staff" || user.role === "administrator");
   const recoveryAction =
     user.status === "active" && user.role === "student"
       ? {
@@ -97,6 +101,25 @@ export function DashboardClient() {
   const workflow = [
     recoveryWorkflow[0],
     recoveryWorkflow[1],
+    ...(user.status === "active"
+      ? [
+          {
+            title: "Review my report history",
+            description: "Review every lost or found report submitted by this account.",
+            href: "/reports/mine",
+          },
+        ]
+      : []),
+    ...(canUseStaffTools
+      ? [
+          {
+            title: "Handle item reports",
+            description:
+              "Verify reports and record where Found items are held for recovery.",
+            href: "/staff/reports",
+          },
+        ]
+      : []),
     recoveryAction,
     ...(user.status === "active"
       ? [
@@ -126,6 +149,8 @@ export function DashboardClient() {
         <h1>Welcome, {user.profile.displayName}</h1>
         <p>Review your account status and see what is coming next in Campus Find.</p>
       </section>
+
+      <ContextIllustration kind="notifications" variant="banner" priority />
 
       <section className={styles.account} aria-labelledby="account-heading">
         <h2 id="account-heading">Account summary</h2>

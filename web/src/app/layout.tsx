@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AuthSessionProvider } from "@/components/auth/auth-session-provider";
+import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { SiteHeader } from "@/components/site-header";
 
 import "./globals.css";
@@ -23,11 +24,13 @@ export default function RootLayout({
     <html lang="en" data-scroll-behavior="smooth">
       <body>
         <AuthSessionProvider>
-          <a className="skip-link" href="#main-content">
-            Skip to main content
-          </a>
-          <SiteHeader />
-          {children}
+          <NotificationProvider>
+            <a className="skip-link" href="#main-content">
+              Skip to main content
+            </a>
+            <SiteHeader />
+            {children}
+          </NotificationProvider>
         </AuthSessionProvider>
       </body>
     </html>
