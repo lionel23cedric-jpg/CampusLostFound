@@ -31,6 +31,7 @@ not presented as passed evidence.
 | RATE-01 | Limit authentication and sensitive writes | All APIs | `rate-limit.test.ts`, `auth-routes.test.ts` | Repeatedly exceed a limit on disposable data | HTTP 429 includes `Retry-After` | Automated pass |
 | DB-01 | Idempotent reference bootstrap | Administrator/setup | `bootstrap-reference-data.test.ts` | With approval, run bootstrap twice on a test DB | Second run preserves records and administrator edits | Automated pass |
 | DB-02 | Dry-run legacy image audit | Administrator/setup | `audit-legacy-photo-urls.test.ts` | With approval, run dry mode on a backup/test DB | Counts print; no record changes | Automated pass |
+| DB-03 | Dry-run-first staff/administrator provisioning | Setup | `set-account-role.test.ts` | Register test accounts, dry-run each role change, then apply with approval | Only safe promotions succeed transactionally and existing sessions are revoked | Automated pass |
 | RESP-01 | Responsive layouts at narrow viewport | All | Component/CSS regression suite | Test 320, 390, 768, and desktop widths | No clipped actions, overlap, or horizontal page scroll | Not run |
 | A11Y-01 | Keyboard, focus, labels, and live messages | All | Testing Library role/label/user-event assertions | Complete core workflows using keyboard only | Visible focus; logical order; errors/status announced | Not run |
 | MANUAL-01 | End-to-end recovery on configured Atlas database | Student/staff/admin | Unit/integration layers mock database boundaries | Perform report→match→Claim→approve→handover across accounts | Final report recovered; Claim completed; notifications visible | Not run |
@@ -38,7 +39,7 @@ not presented as passed evidence.
 
 ## Automated baseline
 
-The final delivery gate passed 168 test files and 2922 tests, plus lint,
+The final delivery gate passed 169 test files and 2940 tests, plus lint,
 TypeScript, a Next.js 16.3.5 production build, and an npm audit with zero
 vulnerabilities. The independent matching evaluation passed six assertions
 across two files using 12 cases and 60 candidate comparisons. Manual rows remain
