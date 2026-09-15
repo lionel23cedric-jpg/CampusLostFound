@@ -344,6 +344,20 @@
   font-variant-numeric: tabular-nums;
 }
 
+.legendValue {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.legendValue small {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .legendSwatch {
   width: 0.75rem;
   height: 0.75rem;

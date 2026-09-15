@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
 import { ContextIllustration } from "@/components/context-illustration";
+import { PageBackLink } from "@/components/page-back-link";
 import type { PublicUser } from "@/lib/auth/public-user";
 import {
   BrowserReportError,
@@ -256,6 +257,8 @@ function ActiveOwnerReportHistory({ role }: { role: PublicUser["role"] }) {
 
   return (
     <div className={styles.page}>
+      <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
+
       <header className={styles.introduction}>
         <p className={styles.kicker}>Your submissions</p>
         <h1>Your report history</h1>

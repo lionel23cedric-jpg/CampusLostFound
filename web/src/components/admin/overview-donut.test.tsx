@@ -27,6 +27,8 @@ it("renders a labelled chart with a visible numeric legend", () => {
   expect(screen.getByText("Report type")).toBeTruthy();
   expect(screen.getByText("Lost")).toBeTruthy();
   expect(screen.getByText("Found")).toBeTruthy();
+  expect(screen.getByText("40%")).toBeTruthy();
+  expect(screen.getByText("60%")).toBeTruthy();
 });
 
 it("renders an empty ring without dividing by zero", () => {
@@ -43,4 +45,5 @@ it("renders an empty ring without dividing by zero", () => {
   });
 
   expect(chart.getAttribute("style")).toContain("var(--line)");
+  expect(screen.getByText("0%")).toBeTruthy();
 });

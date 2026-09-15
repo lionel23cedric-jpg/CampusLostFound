@@ -3,6 +3,7 @@
 import { useRef, useState, type KeyboardEvent } from "react";
 
 import { ContextIllustration } from "@/components/context-illustration";
+import { PageBackLink } from "@/components/page-back-link";
 import { CampusLocationManagementPanel } from "./campus-location-management-panel";
 import { CategoryManagementPanel } from "./category-management-panel";
 import styles from "./admin-reference-data.module.css";
@@ -46,7 +47,9 @@ export function AdminReferenceDataClient(): React.JSX.Element {
   }
 
   return (
-    <main className={styles.workspace}>
+    <div className={styles.workspace}>
+      <PageBackLink href="/admin">Back to administrator overview</PageBackLink>
+
       <header className={styles.workspaceHeader}>
         <h1>Manage reference data</h1>
         <p>
@@ -109,6 +112,6 @@ export function AdminReferenceDataClient(): React.JSX.Element {
           <CampusLocationManagementPanel />
         </section>
       ) : null}
-    </main>
+    </div>
   );
 }
