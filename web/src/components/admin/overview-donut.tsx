@@ -24,6 +24,10 @@ function buildGradient(segments: readonly OverviewDonutSegment[], total: number)
   return `conic-gradient(${stops.join(", ")})`;
 }
 
+function formatPercentage(value: number, total: number) {
+  return `${total === 0 ? 0 : Math.round((value / total) * 100)}%`;
+}
+
 export function OverviewDonut({
   title,
   total,
@@ -61,7 +65,10 @@ export function OverviewDonut({
                 aria-hidden="true"
               />
               <span>{segment.label}</span>
-              <strong>{segment.value}</strong>
+              <span className={styles.legendValue}>
+                <strong>{segment.value}</strong>
+                <small>{formatPercentage(segment.value, total)}</small>
+              </span>
             </li>
           ))}
         </ul>

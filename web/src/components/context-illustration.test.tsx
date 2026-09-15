@@ -22,11 +22,11 @@ import {
 afterEach(cleanup);
 
 it.each([
-  ["auth", "/illustrations/auth.webp"],
-  ["reports", "/illustrations/reports.webp"],
-  ["claims", "/illustrations/claims.webp"],
-  ["notifications", "/illustrations/notifications.webp"],
-  ["administration", "/illustrations/administration.webp"],
+  ["auth", "/illustrations/auth-campus-service.webp"],
+  ["reports", "/illustrations/reports-found-item.webp"],
+  ["claims", "/illustrations/claims-item-handover.webp"],
+  ["notifications", "/illustrations/notifications-campus-match.webp"],
+  ["administration", "/illustrations/administration-review.webp"],
 ] satisfies ReadonlyArray<readonly [IllustrationKind, string]>)
   ("renders the local %s visual as decorative content", (kind, source) => {
     const { container } = render(<ContextIllustration kind={kind} />);
