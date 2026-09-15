@@ -38,7 +38,8 @@ not presented as passed evidence.
 
 ## Automated baseline
 
-The security/data checkpoint passed 166 test files and 2916 tests, plus lint,
-TypeScript, production build, and an npm audit with zero vulnerabilities. The
-matching evaluation added two passing test files and six passing assertions;
-the final delivery verification records the consolidated total.
+The final delivery gate passed 168 test files and 2922 tests, plus lint,
+TypeScript, a Next.js 16.3.5 production build, and an npm audit with zero
+vulnerabilities. The independent matching evaluation passed six assertions
+across two files using 12 cases and 60 candidate comparisons. Manual rows remain
+`Not run` until a team member records browser or approved test-database evidence.
