@@ -124,11 +124,16 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ProfileSettingsClient access and loading", () => {
-  it("provides route metadata and a main landmark", () => {
+  it("provides route metadata, a main landmark, and dashboard return navigation", async () => {
     render(<ProfilePage />);
 
     expect(metadata.title).toBe("Profile settings");
     expect(screen.getByRole("main").id).toBe("main-content");
+    expect(
+      (await screen.findByRole("link", { name: "Back to dashboard" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/dashboard");
   });
 
   it("starts Profile and campus-location requests together", async () => {

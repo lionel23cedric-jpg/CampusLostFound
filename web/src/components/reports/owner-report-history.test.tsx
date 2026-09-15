@@ -126,11 +126,16 @@ describe("owner report history", () => {
 
   afterEach(cleanup);
 
-  it("renders the page landmark and metadata", () => {
+  it("renders the page landmark, metadata, and dashboard return navigation", async () => {
     const { container } = render(<OwnReportsPage />);
 
     expect(ownReportsMetadata.title).toBe("My reports");
     expect(container.querySelector("main#main-content")).toBeTruthy();
+    expect(
+      (await screen.findByRole("link", { name: "Back to dashboard" })).getAttribute(
+        "href",
+      ),
+    ).toBe("/dashboard");
   });
 
   it("shows a stable session loading state without report data", () => {

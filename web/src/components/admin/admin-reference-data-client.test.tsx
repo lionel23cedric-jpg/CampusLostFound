@@ -47,6 +47,12 @@ afterEach(cleanup);
 it("renders one labelled manual-activation tablist with stable relationships", () => {
   render(<AdminReferenceDataClient />);
 
+  expect(
+    screen
+      .getByRole("link", { name: "Back to administrator overview" })
+      .getAttribute("href"),
+  ).toBe("/admin");
+  expect(screen.queryByRole("main")).toBeNull();
   expect(screen.getByRole("heading", { name: "Manage reference data" })).toBeTruthy();
   expect(
     screen.getByText(
