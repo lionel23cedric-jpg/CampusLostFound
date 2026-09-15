@@ -14,7 +14,7 @@ web
 
 ## Product Purpose
 
-Campus Noticeboard gives the Massey campus community one reliable place to report, discover, and recover lost property. Success means users can find plausible matches quickly while ownership evidence and sensitive contact or location details remain protected.
+Campus Find gives the Massey campus community one reliable place to report, discover, and recover lost property. Success means users can find plausible matches quickly while ownership evidence and sensitive contact or location details remain protected.
 
 ## Positioning
 
@@ -36,7 +36,7 @@ The product combines campus-specific report data with privacy-aware public views
 
 ## Brand Commitments
 
-- Product name: Campus Noticeboard.
+- Product name: Campus Find.
 - Preserve the existing calm, practical campus interface and its established design tokens, components, and plain-English voice.
 - Avoid invented institutional claims, recovery statistics, testimonials, or endorsements.
 
@@ -44,7 +44,7 @@ The product combines campus-specific report data with privacy-aware public views
 
 - The repository contains implemented and automated-tested authentication, report, matching, Claim, notification, staff, and administrator workflows.
 - The supplied course project brief defines the required users, core workflows, database/privacy obligations, quality expectations, and the requirement for at least one clearly explained AI-related feature.
-- The required intelligent feature is the local, deterministic, explainable report matcher; no external AI API, approved production photography, testimonials, or performance benchmark is available and none should be fabricated.
+- The required intelligent feature is the local, deterministic, explainable report matcher. Its versioned synthetic evaluation, generated metrics, privacy boundaries, and limitations are recorded in [the AI matching evaluation](docs/ai-matching-evaluation.md). No external AI API is used.
 
 ## Product Principles
 
