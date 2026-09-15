@@ -34,3 +34,7 @@ The five contextual photographs in `web/public/illustrations` were generated wit
 ## Use in the Application
 
 The existing `ContextIllustration` component selects these assets by page context. New descriptive filenames prevent browsers and the Next.js image optimizer from reusing the previous photographs after deployment. This does not change authentication, reporting, claims, notifications, administrator workflows, routing, or database behaviour.
+
+## Pre-existing Home Hero
+
+`web/public/campus-find-hero.webp` is a metadata-free WebP conversion of the pre-existing `campus-find-hero.png` project asset. It is not included among the five OpenAI-generated contextual photographs documented above. The repository did not contain a verifiable record of the original image's creator or licence, so the team must confirm its provenance before publishing the application outside the course demonstration. On 15 September 2026, the image was converted with the project's existing Sharp dependency at 1536 by 1024 pixels and WebP quality 84; its composition was not replaced or regenerated.

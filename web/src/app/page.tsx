@@ -63,7 +63,7 @@ export default function Home() {
         <div className={styles.heroVisual}>
           <Image
             className={styles.heroImage}
-            src="/campus-find-hero.png"
+            src="/campus-find-hero.webp"
             alt="Found belongings on a campus bench"
             width={1536}
             height={1024}
@@ -88,7 +88,7 @@ export default function Home() {
       <section className={styles.notices} aria-labelledby="notices-title">
         <div className={styles.sectionHeading}>
           <h2 id="notices-title">Illustrative campus notices</h2>
-          <p>Examples only - live report browsing is coming in a separate feature.</p>
+          <p>These are examples. Signed-in members can browse live reports.</p>
         </div>
         <div className={styles.noticeGrid}>
           {sampleNotices.map((notice) => (
