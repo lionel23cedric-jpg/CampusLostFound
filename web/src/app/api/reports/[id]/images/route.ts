@@ -7,6 +7,11 @@ import {
 } from "@/lib/reports/image-errors";
 import { uploadReportImage } from "@/lib/reports/image-upload-service";
 import { readAndValidateReportImageFile } from "@/lib/reports/image-validation";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -58,6 +63,14 @@ export async function POST(request: Request, context: Context) {
   const contentType = request.headers.get("content-type")?.toLowerCase();
   if (!contentType?.startsWith("multipart/form-data;")) {
     return invalidRequest(415);
+  }
+
+  const limit = consumeRateLimit(
+    `member:image-upload:${user.id}`,
+    rateLimitPolicies.memberWrite,
+  );
+  if (!limit.allowed) {
+    return noStore(rateLimitedResponse(limit.retryAfterSeconds));
   }
 
   let formData: FormData;

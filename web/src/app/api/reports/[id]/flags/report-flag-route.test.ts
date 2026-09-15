@@ -291,7 +291,11 @@ describe("member report flag route", () => {
     const secret = "private body reader detail";
     const unreadable = {
       headers: new Headers({ "content-type": "application/json" }),
-      json: vi.fn().mockRejectedValue(new Error(secret)),
+      body: new ReadableStream<Uint8Array>({
+        pull() {
+          throw new Error(secret);
+        },
+      }),
     } as unknown as Request;
 
     const response = await route.POST(unreadable, context(reportId));

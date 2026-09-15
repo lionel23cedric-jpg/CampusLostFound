@@ -6,6 +6,16 @@ import {
 } from "@/lib/moderation/errors";
 import { submitReportFlag } from "@/lib/moderation/flag-service";
 import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
+import {
   isJsonRequest,
   moderationObjectIdSchema,
   submitReportFlagSchema,
@@ -44,15 +54,26 @@ export async function POST(request: Request, context: Context) {
     return noStore(invalidModerationResponse());
   }
 
+  const limit = consumeRateLimit(
+    `member:report-flag:${member.id}`,
+    rateLimitPolicies.memberWrite,
+  );
+  if (!limit.allowed) {
+    return noStore(rateLimitedResponse(limit.retryAfterSeconds));
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = await readJsonRequestBody(request);
   } catch (error) {
-    return noStore(
-      error instanceof SyntaxError
-        ? invalidModerationResponse()
-        : moderationErrorResponse(error),
-    );
+    if (error instanceof RequestBodyError) {
+      return noStore(
+        error.code === "BODY_TOO_LARGE"
+          ? requestBodyErrorResponse(error)
+          : invalidModerationResponse(),
+      );
+    }
+    return noStore(moderationErrorResponse(error));
   }
 
   const parsedBody = submitReportFlagSchema.safeParse(body);

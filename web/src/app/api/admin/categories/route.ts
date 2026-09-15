@@ -9,15 +9,20 @@ import {
   referenceDataManagementErrorResponse,
 } from "@/lib/admin/reference-data-errors";
 import {
-  InvalidReferenceDataBodyEncoding,
-  readReferenceDataRequestBody,
-  ReferenceDataBodyTooLarge,
-} from "@/lib/admin/reference-data-request-body";
-import {
   createAdminCategory,
   listAdminCategories,
 } from "@/lib/admin/category-service";
 import type { PublicUser } from "@/lib/auth/public-user";
+import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
 
 function noStore(response: Response) {
   response.headers.set("Cache-Control", "no-store");
@@ -70,28 +75,26 @@ export async function POST(request: Request) {
     return noStore(invalidReferenceDataResponse());
   }
 
-  let text: string;
-  try {
-    text = await readReferenceDataRequestBody(request);
-  } catch (error) {
-    return noStore(
-      error instanceof ReferenceDataBodyTooLarge ||
-        error instanceof InvalidReferenceDataBodyEncoding
-        ? invalidReferenceDataResponse()
-        : referenceDataManagementErrorResponse(error),
-    );
+  const limit = consumeRateLimit(
+    `admin:category-create:${administrator.id}`,
+    rateLimitPolicies.privilegedWrite,
+  );
+  if (!limit.allowed) {
+    return noStore(rateLimitedResponse(limit.retryAfterSeconds));
   }
-  if (text.trim() === "") return noStore(invalidReferenceDataResponse());
 
   let body: unknown;
   try {
-    body = JSON.parse(text);
+    body = await readJsonRequestBody(request);
   } catch (error) {
-    return noStore(
-      error instanceof SyntaxError
-        ? invalidReferenceDataResponse()
-        : referenceDataManagementErrorResponse(error),
-    );
+    if (error instanceof RequestBodyError) {
+      return noStore(
+        error.code === "BODY_TOO_LARGE"
+          ? requestBodyErrorResponse(error)
+          : invalidReferenceDataResponse(),
+      );
+    }
+    return noStore(referenceDataManagementErrorResponse(error));
   }
 
   const parsed = createAdminCategorySchema.safeParse(body);

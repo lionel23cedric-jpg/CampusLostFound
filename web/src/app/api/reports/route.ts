@@ -15,6 +15,16 @@ import {
 } from "@/lib/reports/errors";
 import { createReport } from "@/lib/reports/service";
 import { createReportSchema } from "@/lib/reports/validation";
+import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   let user: PublicUser;
@@ -62,13 +72,22 @@ export async function POST(request: Request) {
     return reportErrorResponse(error);
   }
 
+  const limit = consumeRateLimit(
+    `member:report-create:${user.id}`,
+    rateLimitPolicies.memberWrite,
+  );
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = await readJsonRequestBody(request);
   } catch (error) {
-    return error instanceof SyntaxError
-      ? invalidReportResponse()
-      : reportErrorResponse(error);
+    if (error instanceof RequestBodyError) {
+      return error.code === "BODY_TOO_LARGE"
+        ? requestBodyErrorResponse(error)
+        : invalidReportResponse();
+    }
+    return reportErrorResponse(error);
   }
 
   const parsed = createReportSchema.safeParse(body);
