@@ -10,7 +10,8 @@
     "test": "vitest run",
     "evaluate:matching": "vitest run src/lib/reports/matching-evaluation-fixture.test.ts src/lib/reports/matching-evaluation.test.ts --reporter=verbose",
     "db:bootstrap": "node --env-file=.env.local scripts/bootstrap-reference-data.mjs",
-    "db:audit-legacy-images": "node --env-file=.env.local scripts/audit-legacy-photo-urls.mjs"
+    "db:audit-legacy-images": "node --env-file=.env.local scripts/audit-legacy-photo-urls.mjs",
+    "db:set-role": "node --env-file=.env.local scripts/set-account-role.mjs"
   },
   "dependencies": {
     "mongoose": "^9.9.1",

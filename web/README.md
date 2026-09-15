@@ -42,6 +42,46 @@ once: existing records and administrator edits are preserved, while missing
 standard records are added. It never runs automatically during tests, builds,
 or application startup.
 
+## Staff and administrator setup
+
+Normal registration always creates a student account. For a fresh course
+database, create the required accounts through the registration page first,
+then promote only the accounts that need staff or administrator access.
+
+The role command is a dry run unless `--apply` is present. Check the email and
+proposed transition first:
+
+`npm run db:set-role -- --email staff@example.invalid --role staff`
+
+`npm run db:set-role -- --email admin@example.invalid --role administrator`
+
+When the dry-run output is correct, repeat the approved command with
+`--apply`:
+
+`npm run db:set-role -- --email staff@example.invalid --role staff --apply`
+
+`npm run db:set-role -- --email admin@example.invalid --role administrator --apply`
+
+The command accepts only an existing active account. It permits student to
+staff, student to administrator, and staff to administrator changes; it cannot
+demote an administrator or assign an arbitrary role. An applied change is
+transactional and revokes that account's existing sessions, so the user must
+sign in again.
+
+Recommended fresh-database order:
+
+1. Create `.env.local` and run `npm install`.
+2. Run `npm run db:bootstrap` to add missing standard reference data.
+3. Register the student, staff, and administrator accounts in the web UI.
+4. Run each `db:set-role` command without `--apply` and verify its output.
+5. Repeat only the approved staff and administrator commands with `--apply`.
+6. Sign in again with the promoted accounts and confirm their role-specific navigation.
+
+Both `db:bootstrap` and `db:set-role -- --apply` write to the database named by
+`MONGODB_URI`. Confirm that `.env.local` points to the intended course/test
+database before running either write command. Never put real account details or
+database credentials in source control.
+
 ## Legacy image reference audit
 
 To count old external image URLs and invalid references without changing data,

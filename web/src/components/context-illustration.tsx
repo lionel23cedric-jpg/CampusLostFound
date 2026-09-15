@@ -3,11 +3,11 @@ import Image from "next/image";
 import styles from "./context-illustration.module.css";
 
 const sources = {
-  auth: "/illustrations/auth.webp",
-  reports: "/illustrations/reports.webp",
-  claims: "/illustrations/claims.webp",
-  notifications: "/illustrations/notifications.webp",
-  administration: "/illustrations/administration.webp",
+  auth: "/illustrations/auth-campus-service.webp",
+  reports: "/illustrations/reports-found-item.webp",
+  claims: "/illustrations/claims-item-handover.webp",
+  notifications: "/illustrations/notifications-campus-match.webp",
+  administration: "/illustrations/administration-review.webp",
 } as const;
 
 export type IllustrationKind = keyof typeof sources;

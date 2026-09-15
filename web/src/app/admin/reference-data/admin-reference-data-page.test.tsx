@@ -34,6 +34,7 @@ it("composes the protected reference-data route", () => {
 
   expect(metadata.title).toBe("Manage reference data");
   expect(container.querySelector("main#main-content")).toBeTruthy();
+  expect(container.querySelectorAll("main")).toHaveLength(1);
   const boundary = screen.getByLabelText(
     "Administrator reference data management workspace",
   );

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { setSessionCookie } from "@/lib/auth/cookie";
 import {
   authErrorResponse,
@@ -54,4 +56,3 @@ export async function POST(request: Request) {
     return authErrorResponse(error);
   }
 }
-import { createHash } from "node:crypto";
