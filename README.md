@@ -12,4 +12,6 @@ and local, deterministic, explainable item matching.
 - [AI matching evaluation](docs/ai-matching-evaluation.md)
 - [System architecture](docs/architecture.md)
 - [Database ERD and privacy boundaries](docs/erd.md)
+- [Role-based user guide](docs/user-guide.md)
+- [Requirement and test matrix](docs/test-matrix.md)
 - [Project design](docs/superpowers/specs/2026-09-15-project-quality-polish-design.md)

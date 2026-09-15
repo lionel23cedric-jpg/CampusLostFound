@@ -66,4 +66,17 @@ Run these commands before creating a pull request:
 - `npm run build`
 - `npm audit`
 
-The project temporarily overrides vulnerable transitive versions of Sharp and PostCSS until patched versions are included in a stable Next.js release.
+The lockfile resolves patched versions of Next.js, Sharp, Vitest, js-yaml, and
+PostCSS. Narrow npm overrides keep vulnerable transitive versions out of the
+installed tree until their parent dependency ranges make those pins unnecessary.
+
+## Guides and evidence
+
+- The role-by-role setup and operation sequence is in
+  [`../docs/user-guide.md`](../docs/user-guide.md).
+- Requirement coverage and outstanding manual checks are in
+  [`../docs/test-matrix.md`](../docs/test-matrix.md).
+- The database relationships and privacy split are in
+  [`../docs/erd.md`](../docs/erd.md).
+- The local matching algorithm and generated metrics are in
+  [`../docs/ai-matching-evaluation.md`](../docs/ai-matching-evaluation.md).
