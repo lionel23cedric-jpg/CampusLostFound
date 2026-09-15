@@ -70,13 +70,57 @@ The latest production build was started at `http://localhost:3000` and checked i
 
 This is a focused home-page check, not evidence that every authenticated page has completed manual responsive testing.
 
+## Configured-database end-to-end verification (16 September 2026)
+
+A live browser acceptance run completed the main recovery workflow across two
+student accounts, a staff account, and an administrator account. The run used
+clearly labelled QA data and did not modify account roles, administrator
+reference data, or moderation decisions.
+
+- A student submitted the Found report `QA test: black AirPods headphones`
+  (`6aa949e12278a6e2d9eb6ebb`) with one WebP image.
+- The pre-submit image preview rendered correctly. The success view reported
+  one of one images uploaded, and the stored image loaded at 960 by 640 pixels
+  on member and staff report views.
+- Explainable matching returned three opposite-type reports. The highest result
+  was `airpods` at 62/100 with category, location, date, tag, and wording factors.
+- An intentionally incorrect Claim (`6aa94ad32278a6e2d9eb6ebe`) against an
+  existing demonstration report was assessed as zero of one answers matched and
+  rejected with a factual staff note.
+- Staff verified the QA Found report and recorded custody at
+  `QA storage shelf A-1`.
+- A second student submitted the correct ownership answer. Claim
+  `6aa94d902278a6e2d9eb6ec2` was assessed as one of one answers matched and
+  approved by staff.
+- Approval created `Claim approved` and `Recovery handover ready`
+  notifications. Marking them read changed the unread badge from two to one to
+  zero without an error.
+- The notification Claim link supplied a contextual `Back to notifications`
+  link, which returned to the notification centre correctly.
+- Staff completed the handover. The final Claim status was `Completed`; the
+  report was `Resolved`, `Verified`, and `Released`, with the handling view
+  becoming read-only.
+- The administrator overview reported 10 submitted reports, five Claims, and
+  15 accounts. All three doughnut charts displayed totals, legends, and matching
+  percentages without overlap in the checked narrow window.
+- Administrator category and campus-location panels loaded correctly. The
+  moderation queue displayed one pending concern and its safe report actions.
+  No reference record or moderation status was changed.
+- The checked administrator page produced no browser console errors.
+
+One pre-existing test category named `weqwe` remains in the configured database.
+It is a data-cleanliness issue rather than a source-code failure and was not
+removed during this read-only administrator check.
+
 ## Remaining manual checks
 
 The following items remain accurately marked `Not run` in `docs/test-matrix.md`:
 
 - complete responsive inspection of every role page at 320, 390, 768, and desktop widths;
 - keyboard-only and screen-reader-oriented accessibility acceptance;
-- a live report-to-match-to-Claim-to-handover flow across student, staff, and administrator accounts;
 - a complete authenticated visual review of every contextual image and chart.
 
-Running `db:bootstrap` or `db:set-role -- --apply` also remains a separately approved live-database action. No manual result or database mutation is claimed by this record.
+Running `db:bootstrap` or `db:set-role -- --apply` remains a separately approved
+live-database action. Neither setup command was run during this acceptance test;
+the only database changes were the clearly labelled QA report, Claims,
+notifications, staff handling states, and handover states recorded above.
