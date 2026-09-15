@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserAdminOverviewError,
@@ -247,6 +248,8 @@ export function AdminOverviewClient() {
           </button>
         </div>
       </header>
+
+      <ContextIllustration kind="administration" variant="banner" priority />
 
       {state.refreshFailed ? (
         <p className={styles.refreshAlert} role="alert">

@@ -1,5 +1,6 @@
 "use client";
 
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import { AdminModerationFlagQueue } from "./admin-moderation-flag-queue";
 import { AdminModerationReportList } from "./admin-moderation-report-list";
@@ -19,6 +20,8 @@ export function AdminModerationClient() {
           visible without changing their recovery records.
         </p>
       </header>
+
+      <ContextIllustration kind="administration" variant="banner" priority />
 
       <section className={styles.section} aria-labelledby="moderation-flags">
         <h2 id="moderation-flags">Flag queue</h2>

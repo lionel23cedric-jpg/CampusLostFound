@@ -15,15 +15,19 @@ export type IllustrationKind = keyof typeof sources;
 export function ContextIllustration({
   kind,
   priority = false,
+  variant = "standard",
   className,
 }: {
   kind: IllustrationKind;
   priority?: boolean;
+  variant?: "standard" | "banner";
   className?: string;
 }) {
   return (
     <figure
-      className={[styles.frame, className].filter(Boolean).join(" ")}
+      className={[styles.frame, styles[variant], className]
+        .filter(Boolean)
+        .join(" ")}
       aria-hidden="true"
     >
       <Image
@@ -32,7 +36,11 @@ export function ContextIllustration({
         width={960}
         height={640}
         priority={priority}
-        sizes="(max-width: 48rem) 100vw, 32rem"
+        sizes={
+          variant === "banner"
+            ? "(max-width: 76rem) 100vw, 76rem"
+            : "(max-width: 48rem) 100vw, 32rem"
+        }
       />
     </figure>
   );

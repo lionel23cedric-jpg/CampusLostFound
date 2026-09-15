@@ -2,6 +2,7 @@
 
 import { useRef, useState, type KeyboardEvent } from "react";
 
+import { ContextIllustration } from "@/components/context-illustration";
 import { CampusLocationManagementPanel } from "./campus-location-management-panel";
 import { CategoryManagementPanel } from "./category-management-panel";
 import styles from "./admin-reference-data.module.css";
@@ -53,6 +54,8 @@ export function AdminReferenceDataClient(): React.JSX.Element {
           historical report references remain available.
         </p>
       </header>
+
+      <ContextIllustration kind="administration" variant="banner" priority />
 
       <div className={styles.tabs} role="tablist" aria-label="Reference data resources">
         <button

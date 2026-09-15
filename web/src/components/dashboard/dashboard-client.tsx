@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 
 import styles from "./dashboard.module.css";
 
@@ -148,6 +149,8 @@ export function DashboardClient() {
         <h1>Welcome, {user.profile.displayName}</h1>
         <p>Review your account status and see what is coming next in Campus Find.</p>
       </section>
+
+      <ContextIllustration kind="notifications" variant="banner" priority />
 
       <section className={styles.account} aria-labelledby="account-heading">
         <h2 id="account-heading">Account summary</h2>

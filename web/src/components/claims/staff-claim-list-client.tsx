@@ -9,6 +9,7 @@ import {
   ClaimBrowserError,
   type ClaimStatus,
 } from "@/lib/claims/browser-client";
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import {
   getStaffClaims,
@@ -138,6 +139,8 @@ export function StaffClaimListClient() {
           staff and administrators.
         </p>
       </header>
+
+      <ContextIllustration kind="claims" variant="banner" priority />
 
       {parsed.ignoredInvalidValues ? (
         <p className={styles.queryNotice} role="status">

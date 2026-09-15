@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 import type { PublicUser } from "@/lib/auth/public-user";
 import {
   BrowserReportError,
@@ -260,6 +261,8 @@ function ActiveOwnerReportHistory({ role }: { role: PublicUser["role"] }) {
         <h1>Your report history</h1>
         <p>Review every lost or found item report submitted by this account.</p>
       </header>
+
+      <ContextIllustration kind="reports" variant="banner" priority />
 
       {parsed.ignoredInvalidValues ? (
         <div className={styles.queryNotice} role="alert">

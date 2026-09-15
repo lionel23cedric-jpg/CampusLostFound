@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import styles from "./notification-centre.module.css";
 import { useNotifications } from "./notification-provider";
@@ -41,6 +42,8 @@ export function NotificationCentre() {
           </button>
         ) : null}
       </header>
+
+      <ContextIllustration kind="notifications" variant="banner" priority />
 
       {notifications.status === "loading" || notifications.status === "idle" ? (
         <p className={styles.loading} role="status" aria-live="polite">

@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
+/* eslint-disable @next/next/no-img-element, jsx-a11y/alt-text */
 
 import type { ImgHTMLAttributes } from "react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("next/image", () => ({
-  default: ({ priority: _priority, ...props }: ImgHTMLAttributes<HTMLImageElement> & {
+  default: ({ priority, ...props }: ImgHTMLAttributes<HTMLImageElement> & {
     priority?: boolean;
-  }) => <img {...props} />,
+  }) => {
+    void priority;
+    return <img {...props} />;
+  },
 }));
 
 import {

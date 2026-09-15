@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { isInternalReportImagePath } from "@/lib/reports/photo-reference";
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import {
   StaffReportBrowserError,
@@ -144,6 +145,7 @@ export function StaffReportListClient() {
         <h1>Report handling</h1>
         <p>Verify reports and track where Found items are held for recovery.</p>
       </header>
+      <ContextIllustration kind="administration" variant="banner" priority />
       {parsed.ignoredInvalidValues ? (
         <p className={styles.notice} role="status">Some invalid report filters were ignored.</p>
       ) : null}

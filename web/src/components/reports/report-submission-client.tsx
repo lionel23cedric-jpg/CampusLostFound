@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserReportError,
@@ -345,6 +346,7 @@ function ActiveReportSubmission({
           evidence that authorised staff can use to confirm ownership.
         </p>
       </header>
+      <ContextIllustration kind="reports" variant="banner" priority />
       <ReportForm
         key={`${accountId}-${formKey}`}
         categories={referenceState.categories}

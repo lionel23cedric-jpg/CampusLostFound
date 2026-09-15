@@ -11,6 +11,7 @@ import {
   type ClaimPage,
   type ClaimStatus,
 } from "@/lib/claims/browser-client";
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import {
   claimListHref,
@@ -136,6 +137,8 @@ export function ClaimListClient() {
         <h1>My claims</h1>
         <p>Track the ownership claims you have submitted for found items.</p>
       </header>
+
+      <ContextIllustration kind="claims" variant="banner" priority />
 
       {parsed.ignoredInvalidValues ? (
         <p className={styles.queryNotice} role="status">
