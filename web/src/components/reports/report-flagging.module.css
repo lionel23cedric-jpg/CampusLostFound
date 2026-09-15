@@ -90,7 +90,8 @@
 
 .alert {
   margin-block-start: 1rem;
-  border-inline-start: 4px solid #a3422f;
+  border: 1px solid #c98b7d;
+  border-radius: 10px;
   background: #fff5f2;
   padding: 0.8rem 1rem;
 }

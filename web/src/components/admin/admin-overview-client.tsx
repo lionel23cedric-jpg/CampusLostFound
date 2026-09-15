@@ -13,6 +13,7 @@ import {
 } from "@/lib/admin/browser-client";
 import type { AdministratorOverview } from "@/lib/admin/overview-contract";
 
+import { OverviewDonut } from "./overview-donut";
 import styles from "./admin-overview.module.css";
 
 type OverviewState =
@@ -274,7 +275,17 @@ export function AdminOverviewClient() {
             <Link href="/admin/reference-data">Manage reference data</Link>
           </div>
         </div>
-        <MetricList entries={reportMetrics} values={data.reports} />
+        <div className={styles.sectionBody}>
+          <OverviewDonut
+            title="Report type"
+            total={data.reports.submittedTotal}
+            segments={[
+              { label: "Lost", value: data.reports.submittedLost, color: "#1f6a52" },
+              { label: "Found", value: data.reports.submittedFound, color: "#b85f3d" },
+            ]}
+          />
+          <MetricList entries={reportMetrics} values={data.reports} />
+        </div>
       </section>
 
       <section className={styles.metricSection} aria-labelledby="claim-overview">
@@ -282,7 +293,20 @@ export function AdminOverviewClient() {
           <h2 id="claim-overview">Ownership Claims</h2>
           <Link href="/staff/claims">Review ownership Claims</Link>
         </div>
-        <MetricList entries={claimMetrics} values={data.claims} />
+        <div className={styles.sectionBody}>
+          <OverviewDonut
+            title="Claim status"
+            total={data.claims.total}
+            segments={[
+              { label: "Pending", value: data.claims.pending, color: "#d3a12d" },
+              { label: "Approved", value: data.claims.approved, color: "#1f6a52" },
+              { label: "Rejected", value: data.claims.rejected, color: "#9b2c2c" },
+              { label: "Withdrawn", value: data.claims.withdrawn, color: "#7a5a8a" },
+              { label: "Completed", value: data.claims.completed, color: "#526b7b" },
+            ]}
+          />
+          <MetricList entries={claimMetrics} values={data.claims} />
+        </div>
       </section>
 
       <section className={styles.metricSection} aria-labelledby="account-overview">
@@ -293,7 +317,18 @@ export function AdminOverviewClient() {
           </div>
           <Link href="/admin/accounts">Manage accounts</Link>
         </div>
-        <MetricList entries={accountMetrics} values={data.accounts} />
+        <div className={styles.sectionBody}>
+          <OverviewDonut
+            title="Account status"
+            total={data.accounts.total}
+            segments={[
+              { label: "Active", value: data.accounts.active, color: "#1f6a52" },
+              { label: "Suspended", value: data.accounts.suspended, color: "#d3a12d" },
+              { label: "Deactivated", value: data.accounts.deactivated, color: "#526b7b" },
+            ]}
+          />
+          <MetricList entries={accountMetrics} values={data.accounts} />
+        </div>
       </section>
     </article>
   );
