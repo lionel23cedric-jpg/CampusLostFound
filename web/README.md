@@ -42,6 +42,22 @@ once: existing records and administrator edits are preserved, while missing
 standard records are added. It never runs automatically during tests, builds,
 or application startup.
 
+## Legacy image reference audit
+
+To count old external image URLs and invalid references without changing data,
+run:
+
+`npm run db:audit-legacy-images`
+
+The default is always a dry run and prints counts rather than full image URLs.
+After taking a database backup and obtaining separate approval, remove those
+references with:
+
+`npm run db:audit-legacy-images -- --apply`
+
+Apply mode keeps only protected `/api/report-images/<id>` references. It uses
+the report's current `updatedAt` value to avoid overwriting a concurrent edit.
+
 ## Quality and security checks
 
 Run these commands before creating a pull request:
