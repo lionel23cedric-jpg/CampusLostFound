@@ -10,4 +10,6 @@ and local, deterministic, explainable item matching.
 
 - [Web application setup](web/README.md)
 - [AI matching evaluation](docs/ai-matching-evaluation.md)
+- [System architecture](docs/architecture.md)
+- [Database ERD and privacy boundaries](docs/erd.md)
 - [Project design](docs/superpowers/specs/2026-09-15-project-quality-polish-design.md)
