@@ -30,6 +30,18 @@ Example environment variable:
 
 Never commit `.env.local`, passwords, connection strings, or other real credentials.
 
+## Reference data setup
+
+After configuring `.env.local`, initialise the standard report categories and
+campus locations with:
+
+`npm run db:bootstrap`
+
+This command writes to the configured database. It is safe to run more than
+once: existing records and administrator edits are preserved, while missing
+standard records are added. It never runs automatically during tests, builds,
+or application startup.
+
 ## Quality and security checks
 
 Run these commands before creating a pull request:

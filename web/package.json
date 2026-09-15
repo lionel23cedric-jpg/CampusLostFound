@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:bootstrap": "node --env-file=.env.local scripts/bootstrap-reference-data.mjs"
   },
   "dependencies": {
     "mongoose": "^9.9.1",
