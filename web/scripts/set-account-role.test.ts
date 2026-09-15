@@ -75,26 +75,37 @@ describe("role provisioning arguments", () => {
     });
   });
 
-  it.each([
-    [],
-    ["--email", "person@example.com"],
-    ["--email", "not-an-email", "--role", "staff"],
-    ["--email", "person@example.com", "--role", "student"],
-    ["--email", "person@example.com", "--role"],
-    ["--email", "person@example.com", "--role", "staff", "--unknown"],
-    [
-      "--email",
-      "one@example.com",
-      "--email",
-      "two@example.com",
-      "--role",
-      "staff",
-    ],
-    ["--email", "person@example.com", "--role", "staff", "--apply", "--apply"],
-  ])("rejects invalid arguments: %j", (argumentsList) => {
-    expect(() => parseRoleArguments(argumentsList)).toThrowError(
-      expect.objectContaining({ code: "INVALID_ARGUMENTS" }),
-    );
+  it("rejects incomplete, unsafe, duplicate, and unknown arguments", () => {
+    const invalidArgumentLists: string[][] = [
+      [],
+      ["--email", "person@example.com"],
+      ["--email", "not-an-email", "--role", "staff"],
+      ["--email", "person@example.com", "--role", "student"],
+      ["--email", "person@example.com", "--role"],
+      ["--email", "person@example.com", "--role", "staff", "--unknown"],
+      [
+        "--email",
+        "one@example.com",
+        "--email",
+        "two@example.com",
+        "--role",
+        "staff",
+      ],
+      [
+        "--email",
+        "person@example.com",
+        "--role",
+        "staff",
+        "--apply",
+        "--apply",
+      ],
+    ];
+
+    for (const argumentsList of invalidArgumentLists) {
+      expect(() => parseRoleArguments(argumentsList)).toThrowError(
+        expect.objectContaining({ code: "INVALID_ARGUMENTS" }),
+      );
+    }
   });
 });
 
