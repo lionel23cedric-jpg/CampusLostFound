@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import {
   BrowserAccountManagementError,
@@ -681,6 +682,8 @@ export function AdminAccountManagementClient() {
           </p>
         </div>
       </header>
+
+      <ContextIllustration kind="administration" variant="banner" priority />
 
       <form
         className={styles.filters}

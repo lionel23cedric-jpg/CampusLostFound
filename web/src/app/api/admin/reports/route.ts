@@ -18,6 +18,7 @@ function noStore(response: Response) {
 export async function GET(request: Request) {
   let administrator: PublicUser;
   try {
+    // Only an active server-authenticated administrator can reach report filters.
     administrator = await getCurrentModerationAdministrator();
   } catch (error) {
     return noStore(moderationErrorResponse(error));

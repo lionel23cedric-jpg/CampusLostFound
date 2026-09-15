@@ -11,7 +11,7 @@ vi.mock("@/lib/auth/current-user", () => ({ getCurrentUser: vi.fn() }));
 
 import { requireAccountAdministrator } from "@/lib/admin/account-access";
 import { AccountManagementError } from "@/lib/admin/account-errors";
-import { ACCOUNT_REQUEST_BODY_LIMIT } from "@/lib/admin/account-request-body";
+import { JSON_REQUEST_BODY_LIMIT } from "@/lib/request-body";
 import { updateManagedAccountStatus } from "@/lib/admin/account-status-service";
 import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -158,10 +158,16 @@ describe("administrator account status route", () => {
 
   it("rejects oversized and invalid UTF-8 bodies", async () => {
     const oversized = await PATCH(
-      request("x".repeat(ACCOUNT_REQUEST_BODY_LIMIT + 1)),
+      request("x".repeat(JSON_REQUEST_BODY_LIMIT + 1)),
       context(targetUserId),
     );
-    expect(oversized.status).toBe(400);
+    expect(oversized.status).toBe(413);
+    await expect(oversized.json()).resolves.toEqual({
+      error: {
+        code: "PAYLOAD_TOO_LARGE",
+        message: "Request body is too large",
+      },
+    });
 
     const invalidUtf8 = await PATCH(
       request(new Blob([new Uint8Array([0xff])])),

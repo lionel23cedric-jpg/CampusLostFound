@@ -36,6 +36,8 @@ export async function submitReportFlag(
       { _id: 1, reporterId: 1 },
     ).exec();
     if (!report) throw new ModerationError("REPORT_NOT_FOUND");
+    // Members use Claims for their own listings; the flag tool is for reporting
+    // another member's content to administrators.
     if (report.reporterId.toString() === member.id) {
       throw new ModerationError("REPORT_FLAG_FORBIDDEN");
     }
@@ -47,10 +49,12 @@ export async function submitReportFlag(
       details: input.details,
       status: "pending",
     });
+    // Creating a flag only enters the review queue. It does not hide the report.
     return toReportFlagReceipt(flag as unknown as ReportFlagRecord);
   } catch (error) {
     if (error instanceof ModerationError) throw error;
     if (isPendingReportFlagDuplicate(error)) {
+      // A partial unique index permits only one pending flag per member/report pair.
       throw new ModerationError("REPORT_FLAG_ALREADY_PENDING");
     }
     throw new ModerationError("REPORT_MODERATION_FAILED");

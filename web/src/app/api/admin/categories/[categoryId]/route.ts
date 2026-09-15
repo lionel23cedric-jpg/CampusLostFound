@@ -7,13 +7,18 @@ import {
   invalidReferenceDataResponse,
   referenceDataManagementErrorResponse,
 } from "@/lib/admin/reference-data-errors";
-import {
-  InvalidReferenceDataBodyEncoding,
-  readReferenceDataRequestBody,
-  ReferenceDataBodyTooLarge,
-} from "@/lib/admin/reference-data-request-body";
 import { updateAdminCategory } from "@/lib/admin/category-service";
 import type { PublicUser } from "@/lib/auth/public-user";
+import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
 
 type Context = { params: Promise<{ categoryId: string }> };
 
@@ -30,6 +35,8 @@ function isJsonContentType(request: Request) {
 export async function PATCH(request: Request, context: Context) {
   let administrator: PublicUser;
   try {
+    // The administrator identity is session-derived; the request can supply only
+    // the record ID, expected version, and permitted category changes.
     administrator = await getCurrentReferenceDataAdministrator();
   } catch (error) {
     return noStore(referenceDataManagementErrorResponse(error));
@@ -46,28 +53,26 @@ export async function PATCH(request: Request, context: Context) {
     return noStore(invalidReferenceDataResponse());
   }
 
-  let text: string;
-  try {
-    text = await readReferenceDataRequestBody(request);
-  } catch (error) {
-    return noStore(
-      error instanceof ReferenceDataBodyTooLarge ||
-        error instanceof InvalidReferenceDataBodyEncoding
-        ? invalidReferenceDataResponse()
-        : referenceDataManagementErrorResponse(error),
-    );
+  const limit = consumeRateLimit(
+    `admin:category-update:${administrator.id}`,
+    rateLimitPolicies.privilegedWrite,
+  );
+  if (!limit.allowed) {
+    return noStore(rateLimitedResponse(limit.retryAfterSeconds));
   }
-  if (text.trim() === "") return noStore(invalidReferenceDataResponse());
 
   let body: unknown;
   try {
-    body = JSON.parse(text);
+    body = await readJsonRequestBody(request);
   } catch (error) {
-    return noStore(
-      error instanceof SyntaxError
-        ? invalidReferenceDataResponse()
-        : referenceDataManagementErrorResponse(error),
-    );
+    if (error instanceof RequestBodyError) {
+      return noStore(
+        error.code === "BODY_TOO_LARGE"
+          ? requestBodyErrorResponse(error)
+          : invalidReferenceDataResponse(),
+      );
+    }
+    return noStore(referenceDataManagementErrorResponse(error));
   }
 
   const parsedBody = updateAdminCategorySchema.safeParse(body);

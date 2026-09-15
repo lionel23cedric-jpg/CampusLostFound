@@ -27,12 +27,14 @@ type CampusLocationFacet = {
 };
 
 export function escapeCampusLocationSearch(value: string) {
+  // Treat administrator search text as literal text, not executable regex syntax.
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function rethrowCampusLocationError(error: unknown): never {
   if (error instanceof ReferenceDataManagementError) throw error;
   if (isDuplicateKeyError(error)) {
+    // The public error explains the conflict without exposing database internals.
     throw new ReferenceDataManagementError("REFERENCE_DATA_DUPLICATE");
   }
   throw new ReferenceDataManagementError("REFERENCE_DATA_OPERATION_FAILED");
@@ -63,6 +65,7 @@ export async function listAdminCampusLocations(
     const pipeline: PipelineStage[] = [
       { $match: match },
       {
+        // The data page and total count share one filter and one aggregate result.
         $facet: {
           campusLocations: [
             { $sort: { campusName: 1, locationName: 1, _id: 1 } },
@@ -137,6 +140,7 @@ export async function updateAdminCampusLocation(
     const { updatedAt, ...changes } = input;
     const objectId = new Types.ObjectId(campusLocationId);
     const updated = await CampusLocationModel.findOneAndUpdate(
+      // The timestamp prevents one administrator from overwriting a newer edit.
       { _id: objectId, updatedAt: new Date(updatedAt) },
       { $set: changes },
       { new: true, runValidators: true },
@@ -145,6 +149,7 @@ export async function updateAdminCampusLocation(
       .exec();
 
     if (!updated) {
+      // Distinguish stale data (409) from a genuinely missing record (404).
       const exists = await CampusLocationModel.exists({ _id: objectId });
       throw new ReferenceDataManagementError(
         exists ? "REFERENCE_DATA_STATE_CONFLICT" : "REFERENCE_DATA_NOT_FOUND",

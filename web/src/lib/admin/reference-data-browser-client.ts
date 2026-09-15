@@ -114,6 +114,8 @@ async function safeFetch(input: RequestInfo | URL, init: RequestInit) {
   try {
     return await fetch(input, init);
   } catch (error) {
+    // Preserve cancellation as AbortError while translating network failures into
+    // the small, safe error vocabulary understood by the interface.
     const aborted = abortError(error, init.signal ?? undefined);
     if (aborted) throw aborted;
     throw genericError(0);
@@ -140,6 +142,8 @@ async function responseError(response: Response, signal?: AbortSignal) {
     response.status !== definition.status ||
     parsed.data.error.message !== definition.message
   ) {
+    // Do not display arbitrary server text; only documented code/status/message
+    // combinations are allowed through to the administrator interface.
     return genericError(response.status);
   }
 
@@ -161,6 +165,8 @@ async function request<T>(
   const parsed = schema.safeParse(
     await readJson(response, init.signal ?? undefined),
   );
+  // API responses are still untrusted input, so successful payloads are validated
+  // before components are allowed to render or store them.
   if (!parsed.success) throw genericError(response.status);
   return parsed.data;
 }

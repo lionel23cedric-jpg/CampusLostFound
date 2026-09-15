@@ -309,7 +309,11 @@ describe("administrator direct report moderation route", () => {
   it("redacts unknown body and service failures", async () => {
     const unreadable = {
       headers: new Headers({ "content-type": "application/json" }),
-      json: vi.fn().mockRejectedValue(new Error("PRIVATE-BODY")),
+      body: new ReadableStream<Uint8Array>({
+        pull() {
+          throw new Error("PRIVATE-BODY");
+        },
+      }),
     } as unknown as Request;
     let response = await route.PATCH(unreadable, context(reportId));
     let text = await response.text();

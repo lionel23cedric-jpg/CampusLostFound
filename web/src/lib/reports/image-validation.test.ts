@@ -1,32 +1,10 @@
+import sharp from "sharp";
 import { describe, expect, it, vi } from "vitest";
 
 import { REPORT_IMAGE_MAX_BYTES } from "./photo-reference";
 import { readAndValidateReportImageFile } from "./image-validation";
 
-const fixtures = [
-  ["image/jpeg", Uint8Array.from([0xff, 0xd8, 0xff, 0x01])],
-  [
-    "image/png",
-    Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  ],
-  [
-    "image/webp",
-    Uint8Array.from([
-      0x52,
-      0x49,
-      0x46,
-      0x46,
-      0xde,
-      0xad,
-      0xbe,
-      0xef,
-      0x57,
-      0x45,
-      0x42,
-      0x50,
-    ]),
-  ],
-] as const;
+type SupportedContentType = "image/jpeg" | "image/png" | "image/webp";
 
 function imageFile(bytes: Uint8Array, type: string) {
   const data = new ArrayBuffer(bytes.byteLength);
@@ -34,52 +12,111 @@ function imageFile(bytes: Uint8Array, type: string) {
   return new File([data], "PRIVATE-campus-location-image.bin", { type });
 }
 
+async function validImage(contentType: SupportedContentType) {
+  const pipeline = sharp({
+    create: {
+      width: 3,
+      height: 2,
+      channels: 3,
+      background: "#1f6a52",
+    },
+  });
+
+  switch (contentType) {
+    case "image/jpeg":
+      return pipeline.jpeg().toBuffer();
+    case "image/png":
+      return pipeline.png().toBuffer();
+    case "image/webp":
+      return pipeline.webp().toBuffer();
+  }
+}
+
+async function metadataImage(contentType: SupportedContentType) {
+  const pipeline = sharp({
+    create: {
+      width: 2,
+      height: 3,
+      channels: 3,
+      background: "#1f6a52",
+    },
+  }).withMetadata({
+    orientation: 6,
+    exif: { IFD0: { Copyright: "private campus detail" } },
+  });
+
+  switch (contentType) {
+    case "image/jpeg":
+      return pipeline.jpeg().toBuffer();
+    case "image/png":
+      return pipeline.png().toBuffer();
+    case "image/webp":
+      return pipeline.webp().toBuffer();
+  }
+}
+
 async function expectImageError(file: File, code: string, status: number) {
   const failure = await readAndValidateReportImageFile(file).catch(
     (error: unknown) => error,
   );
 
-  expect(failure).toMatchObject({
-    name: "ReportImageError",
-    code,
-    status,
-  });
+  expect(failure).toMatchObject({ name: "ReportImageError", code, status });
   expect(String(failure)).not.toMatch(
     /PRIVATE-campus-location-image|ff d8 ff|MongoServerError|database/i,
   );
 }
 
 describe("report image byte validation", () => {
-  it.each(fixtures)(
-    "accepts declared %s with its exact signature",
-    async (contentType, bytes) => {
+  it.each(["image/jpeg", "image/png", "image/webp"] as const)(
+    "accepts, decodes and re-encodes declared %s",
+    async (contentType) => {
+      const source = await validImage(contentType);
       const result = await readAndValidateReportImageFile(
-        imageFile(bytes, contentType),
+        imageFile(source, contentType),
       );
+      const metadata = await sharp(result.data).metadata();
 
-      expect(result).toEqual({
-        contentType,
-        byteLength: bytes.byteLength,
-        data: Buffer.from(bytes),
-      });
+      expect(result.contentType).toBe(contentType);
+      expect(result.byteLength).toBe(result.data.byteLength);
       expect(Buffer.isBuffer(result.data)).toBe(true);
+      expect(metadata.width).toBe(3);
+      expect(metadata.height).toBe(2);
+    },
+  );
+
+  it.each(["image/jpeg", "image/png", "image/webp"] as const)(
+    "removes metadata and applies orientation for %s",
+    async (contentType) => {
+      const source = await metadataImage(contentType);
+      expect((await sharp(source).metadata()).exif).toBeDefined();
+
+      const result = await readAndValidateReportImageFile(
+        imageFile(source, contentType),
+      );
+      const metadata = await sharp(result.data).metadata();
+
+      expect(metadata.orientation).toBeUndefined();
+      expect(metadata.exif).toBeUndefined();
+      expect(metadata.width).toBe(3);
+      expect(metadata.height).toBe(2);
     },
   );
 
   it("derives byteLength from one arrayBuffer read", async () => {
-    const bytes = fixtures[1][1];
+    const bytes = await validImage("image/png");
     const file = imageFile(bytes, "image/png");
     Object.defineProperty(file, "size", { value: 1 });
     const arrayBuffer = vi.spyOn(file, "arrayBuffer");
 
     const result = await readAndValidateReportImageFile(file);
 
-    expect(result.byteLength).toBe(bytes.byteLength);
+    expect(result.byteLength).toBe(result.data.byteLength);
     expect(arrayBuffer).toHaveBeenCalledTimes(1);
   });
 
   it("rejects an empty image", async () => {
-    await expectImageError(imageFile(new Uint8Array(), "image/jpeg"),
+    await expectImageError(
+      imageFile(new Uint8Array(), "image/jpeg"),
       "IMAGE_REQUIRED",
       400,
     );
@@ -94,7 +131,7 @@ describe("report image byte validation", () => {
   });
 
   it("checks the validated bytes even when File.size is inaccurate", async () => {
-    const file = imageFile(fixtures[0][1], "image/jpeg");
+    const file = imageFile(await validImage("image/jpeg"), "image/jpeg");
     Object.defineProperty(file, "size", { value: 1 });
     const arrayBuffer = vi
       .spyOn(file, "arrayBuffer")
@@ -106,48 +143,42 @@ describe("report image byte validation", () => {
 
   it("rejects an unsupported declared MIME type", async () => {
     await expectImageError(
-      imageFile(fixtures[0][1], "image/gif"),
+      imageFile(await validImage("image/jpeg"), "image/gif"),
       "IMAGE_TYPE_UNSUPPORTED",
       400,
     );
   });
 
   it.each([
-    ["image/png", fixtures[0][1]],
-    ["image/webp", fixtures[1][1]],
-    ["image/jpeg", fixtures[2][1]],
-  ] as const)("rejects %s when its signature is spoofed", async (type, bytes) => {
-    await expectImageError(imageFile(bytes, type), "IMAGE_CONTENT_INVALID", 400);
+    ["image/png", "image/jpeg"],
+    ["image/webp", "image/png"],
+    ["image/jpeg", "image/webp"],
+  ] as const)("rejects %s when its signature is spoofed", async (type, actual) => {
+    await expectImageError(
+      imageFile(await validImage(actual), type),
+      "IMAGE_CONTENT_INVALID",
+      400,
+    );
   });
 
   it.each([
-    ["image/jpeg", Uint8Array.from([0xff, 0xd8])],
+    ["image/jpeg", Uint8Array.from([0xff, 0xd8, 0xff])],
     [
       "image/png",
-      Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a]),
+      Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     ],
     [
       "image/webp",
       Uint8Array.from([
-        0x52,
-        0x49,
-        0x46,
-        0x46,
-        0x00,
-        0x00,
-        0x00,
-        0x00,
-        0x57,
-        0x45,
-        0x42,
+        0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50,
       ]),
     ],
-  ] as const)("rejects a truncated %s signature", async (type, bytes) => {
+  ] as const)("rejects truncated %s content", async (type, bytes) => {
     await expectImageError(imageFile(bytes, type), "IMAGE_CONTENT_INVALID", 400);
   });
 
   it("closes an arrayBuffer read failure without leaking details", async () => {
-    const file = imageFile(fixtures[0][1], "image/jpeg");
+    const file = imageFile(await validImage("image/jpeg"), "image/jpeg");
     const arrayBuffer = vi.spyOn(file, "arrayBuffer").mockRejectedValue(
       new Error(
         "PRIVATE-campus-location-image.bin FF D8 FF MongoServerError database stack",

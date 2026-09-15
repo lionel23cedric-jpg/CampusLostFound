@@ -1,11 +1,14 @@
 "use client";
 
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import { AdminModerationFlagQueue } from "./admin-moderation-flag-queue";
 import { AdminModerationReportList } from "./admin-moderation-report-list";
 import styles from "./admin-moderation.module.css";
 
 export function AdminModerationClient() {
+  // Moderation has two deliberate entry points: resolve a member-submitted flag,
+  // or directly manage report visibility when an administrator spots a problem.
   return (
     <article className={styles.workspace}>
       <header className={styles.header}>
@@ -17,6 +20,8 @@ export function AdminModerationClient() {
           visible without changing their recovery records.
         </p>
       </header>
+
+      <ContextIllustration kind="administration" variant="banner" priority />
 
       <section className={styles.section} aria-labelledby="moderation-flags">
         <h2 id="moderation-flags">Flag queue</h2>

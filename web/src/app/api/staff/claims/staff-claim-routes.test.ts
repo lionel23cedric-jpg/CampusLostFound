@@ -12,7 +12,7 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import type { PublicUser } from "@/lib/auth/public-user";
 import { ClaimError, type ClaimErrorCode } from "@/lib/claims/errors";
 import type { StaffClaimDetail, StaffClaimSummary } from "@/lib/claims/public-claim";
-import { BodyTooLarge } from "@/lib/claims/request-body";
+import { RequestBodyError } from "@/lib/request-body";
 import { completeClaim, decideClaim, getStaffClaim, listStaffClaims } from "@/lib/claims/staff-service";
 
 import { GET as detailGet } from "./[id]/route";
@@ -293,11 +293,11 @@ describe("staff claim routes", () => {
       context(claimId),
     ), completeClaim],
     ["decision with a size-shaped stream error", () => decisionPost(
-      failingBodyPost(new BodyTooLarge()),
+      failingBodyPost(new RequestBodyError("BODY_TOO_LARGE")),
       context(claimId),
     ), decideClaim],
     ["completion with a size-shaped stream error", () => completePost(
-      failingBodyPost(new BodyTooLarge()),
+      failingBodyPost(new RequestBodyError("BODY_TOO_LARGE")),
       context(claimId),
     ), completeClaim],
   ] as const)("hides %s body stream failures", async (_case, invoke, service) => {
@@ -343,7 +343,14 @@ describe("staff claim routes", () => {
       completeClaim,
     ],
   ] as const)("rejects an oversized %s body", async (_case, invoke, service) => {
-    await expectValidationError(await invoke());
+    const response = await invoke();
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: "PAYLOAD_TOO_LARGE",
+        message: "Request body is too large",
+      },
+    });
     expect(service).not.toHaveBeenCalled();
   });
 

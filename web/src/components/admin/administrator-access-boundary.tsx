@@ -8,6 +8,8 @@ import { PageBackLink } from "@/components/page-back-link";
 
 import styles from "./admin-overview.module.css";
 
+// This client boundary gives immediate navigation and accessibility feedback.
+// Every administrator API repeats the role check as the authoritative control.
 export function AdministratorAccessBoundary({
   children,
   workspaceLabel = "Administrator overview workspace",
@@ -36,6 +38,7 @@ export function AdministratorAccessBoundary({
 
   const hasAuthenticatedUser =
     session.status === "authenticated" && session.user !== null;
+  // Both conditions matter: a suspended administrator must not retain access.
   const hasAdministratorAccess =
     session.status === "authenticated" &&
     session.user !== null &&
@@ -87,6 +90,8 @@ export function AdministratorAccessBoundary({
   }, [router, session.status]);
 
   useEffect(() => {
+    // Move keyboard focus to the result of a retry so the state change is also
+    // announced to screen-reader users.
     if (retryPhase === "checking") {
       liveRegionRef.current?.focus();
       return;

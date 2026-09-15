@@ -2,6 +2,7 @@
 
 import { useRef, useState, type KeyboardEvent } from "react";
 
+import { ContextIllustration } from "@/components/context-illustration";
 import { CampusLocationManagementPanel } from "./campus-location-management-panel";
 import { CategoryManagementPanel } from "./category-management-panel";
 import styles from "./admin-reference-data.module.css";
@@ -10,6 +11,8 @@ type ReferenceDataTab = "categories" | "campusLocations";
 
 export function AdminReferenceDataClient(): React.JSX.Element {
   const [selectedTab, setSelectedTab] = useState<ReferenceDataTab>("categories");
+  // Mount the heavier campus panel only after its first visit, then keep it mounted
+  // so switching tabs does not discard the administrator's filters or form state.
   const [campusVisited, setCampusVisited] = useState(false);
   const categoryTabRef = useRef<HTMLButtonElement>(null);
   const campusTabRef = useRef<HTMLButtonElement>(null);
@@ -23,6 +26,7 @@ export function AdminReferenceDataClient(): React.JSX.Element {
     event: KeyboardEvent<HTMLButtonElement>,
     tab: ReferenceDataTab,
   ) {
+    // Implement the standard keyboard interaction expected from an ARIA tab list.
     const otherTab = tab === "categories" ? campusTabRef : categoryTabRef;
 
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
@@ -50,6 +54,8 @@ export function AdminReferenceDataClient(): React.JSX.Element {
           historical report references remain available.
         </p>
       </header>
+
+      <ContextIllustration kind="administration" variant="banner" priority />
 
       <div className={styles.tabs} role="tablist" aria-label="Reference data resources">
         <button

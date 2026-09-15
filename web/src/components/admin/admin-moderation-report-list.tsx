@@ -69,6 +69,7 @@ export function AdminModerationReportList() {
 
   const load = useCallback(
     async (target: BrowserAdminReportQuery) => {
+      // Cancellation plus the request ID prevents stale searches from updating UI.
       const current = ++requestId.current;
       listController.current?.abort();
       const controller = new AbortController();
@@ -158,6 +159,8 @@ export function AdminModerationReportList() {
     setActionError(null);
     setNotice(null);
     try {
+      // Direct hide/restore also carries the displayed report version, preventing
+      // one administrator from overwriting another administrator's newer action.
       await moderateBrowserReport(
         action.report.id,
         action.kind === "hide"

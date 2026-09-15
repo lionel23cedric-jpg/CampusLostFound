@@ -80,11 +80,13 @@ export const adminFlagListQuerySchema = z.strictObject({
 const decisionNote = optionalControlledText(500);
 
 export const reportFlagDecisionSchema = z.discriminatedUnion("decision", [
+  // Dismiss resolves only the concern, so only the flag version is required.
   z.strictObject({
     decision: z.literal("dismiss"),
     expectedFlagUpdatedAt: exactTimestamp,
     note: decisionNote,
   }),
+  // Hide changes both records and therefore requires both displayed versions.
   z.strictObject({
     decision: z.literal("hide_report"),
     expectedFlagUpdatedAt: exactTimestamp,
@@ -97,6 +99,7 @@ export const reportModerationSchema = z.discriminatedUnion(
   "moderationStatus",
   [
     z.strictObject({
+      // Direct moderation is also optimistic: stale screens receive HTTP 409.
       moderationStatus: z.literal("hidden"),
       reason: z.enum(DIRECT_REPORT_HIDE_REASONS),
       expectedUpdatedAt: exactTimestamp,

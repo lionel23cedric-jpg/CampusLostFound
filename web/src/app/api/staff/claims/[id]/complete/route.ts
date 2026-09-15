@@ -7,10 +7,15 @@ import {
   invalidClaimResponse,
 } from "@/lib/claims/errors";
 import {
-  BodyTooLarge,
-  InvalidBodyEncoding,
-  readClaimRequestBody,
-} from "@/lib/claims/request-body";
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
 import { completeClaim } from "@/lib/claims/staff-service";
 import {
   claimIdSchema,
@@ -38,23 +43,26 @@ export async function POST(request: Request, context: Context) {
   const parsedId = claimIdSchema.safeParse(rawId);
   if (!parsedId.success) return invalidClaimResponse();
 
-  let text: string;
-  try {
-    text = await readClaimRequestBody(request);
-  } catch (error) {
-    return error instanceof BodyTooLarge || error instanceof InvalidBodyEncoding
-      ? invalidClaimResponse()
-      : claimErrorResponse(error);
-  }
+  const limit = consumeRateLimit(
+    `staff:claim-complete:${user.id}`,
+    rateLimitPolicies.privilegedWrite,
+  );
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
 
   let body: unknown = {};
-  if (text.trim() !== "") {
-    try {
-      body = JSON.parse(text);
-    } catch (error) {
-      return error instanceof SyntaxError
-        ? invalidClaimResponse()
-        : claimErrorResponse(error);
+  try {
+    body = await readJsonRequestBody(request);
+  } catch (error) {
+    if (error instanceof RequestBodyError) {
+      if (error.code === "EMPTY_BODY") {
+        body = {};
+      } else {
+        return error.code === "BODY_TOO_LARGE"
+          ? requestBodyErrorResponse(error)
+          : invalidClaimResponse();
+      }
+    } else {
+      return claimErrorResponse(error);
     }
   }
   const parsed = emptyClaimBodySchema.safeParse(body);

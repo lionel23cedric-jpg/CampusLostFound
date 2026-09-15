@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/auth/service", () => ({
@@ -20,6 +21,11 @@ import {
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { AuthError } from "@/lib/auth/errors";
 import { loginUser, logoutUser, registerUser } from "@/lib/auth/service";
+import {
+  consumeRateLimit,
+  rateLimitPolicies,
+  resetRateLimitsForTests,
+} from "@/lib/rate-limit";
 
 import { POST as loginPost } from "./login/route";
 import { POST as logoutPost } from "./logout/route";
@@ -70,6 +76,7 @@ function expectNoSecrets(value: unknown) {
 
 describe("authentication routes", () => {
   beforeEach(() => {
+    resetRateLimitsForTests();
     vi.mocked(registerUser).mockReset();
     vi.mocked(loginUser).mockReset();
     vi.mocked(logoutUser).mockReset();
@@ -82,6 +89,48 @@ describe("authentication routes", () => {
     vi.mocked(setSessionCookie).mockResolvedValue(undefined);
     vi.mocked(clearSessionCookie).mockResolvedValue(undefined);
     vi.mocked(logoutUser).mockResolvedValue(undefined);
+  });
+
+  it("rate limits repeated registration attempts before calling the service", async () => {
+    for (let attempt = 0; attempt < rateLimitPolicies.register.limit; attempt += 1) {
+      consumeRateLimit("auth:register:unknown", rateLimitPolicies.register);
+    }
+
+    const response = await registerPost(
+      jsonRequest("http://localhost/api/auth/register", {
+        email: "student@example.com",
+        password: "a secure password",
+        displayName: "Student Name",
+      }),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toMatch(/^\d+$/);
+    expect(registerUser).not.toHaveBeenCalled();
+  });
+
+  it("rate limits login by address and a one-way email identifier", async () => {
+    const identity = createHash("sha256")
+      .update("student@example.com")
+      .digest("hex");
+    for (let attempt = 0; attempt < rateLimitPolicies.login.limit; attempt += 1) {
+      consumeRateLimit(
+        `auth:login:unknown:${identity}`,
+        rateLimitPolicies.login,
+      );
+    }
+
+    const response = await loginPost(
+      jsonRequest("http://localhost/api/auth/login", {
+        email: "student@example.com",
+        password: "a secure password",
+      }),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toMatch(/^\d+$/);
+    expect(loginUser).not.toHaveBeenCalled();
+    expect(await response.text()).not.toContain("student@example.com");
   });
 
   it("registers a student, sets the cookie and returns only safe user data", async () => {

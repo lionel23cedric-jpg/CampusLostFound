@@ -1,0 +1,146 @@
+[
+  {
+    "id": "lost-black-usbc-charger",
+    "source": { "id": "charger-source", "title": "Lost black USB-C laptop charger", "publicDescription": "Black laptop power adapter left near the library study desks", "categoryId": "electronics", "campusLocationId": "library", "occurredAt": "2026-08-20T10:00:00.000Z", "colors": ["black"], "tags": ["usb-c", "laptop", "charger"], "createdAt": "2026-08-20T12:00:00.000Z" },
+    "candidates": [
+      { "id": "charger-clear", "title": "Found black laptop charger", "publicDescription": "USB-C power adapter found beside the library desks", "categoryId": "electronics", "campusLocationId": "library", "occurredAt": "2026-08-20T15:00:00.000Z", "colors": ["black"], "tags": ["charger", "usb-c", "laptop"], "createdAt": "2026-08-20T16:00:00.000Z" },
+      { "id": "charger-hard", "title": "Notebook adapter handed in", "publicDescription": "Dark power supply found after study", "categoryId": "electronics", "campusLocationId": null, "occurredAt": "2026-08-22T09:00:00.000Z", "colors": ["black"], "tags": ["laptop"], "createdAt": "2026-08-22T10:00:00.000Z" },
+      { "id": "charger-category-negative", "title": "White phone cable", "publicDescription": "Old charging cable from another building", "categoryId": "electronics", "campusLocationId": "engineering", "occurredAt": "2026-07-20T10:00:00.000Z", "colors": ["white"], "tags": ["phone", "cable"], "createdAt": "2026-07-20T11:00:00.000Z" },
+      { "id": "charger-location-negative", "title": "Blue drink bottle", "publicDescription": "Bottle found at the library desks", "categoryId": "drinkware", "campusLocationId": "library", "occurredAt": "2026-08-20T12:00:00.000Z", "colors": ["blue"], "tags": ["bottle"], "createdAt": "2026-08-20T13:00:00.000Z" },
+      { "id": "charger-easy-negative", "title": "Red wool scarf", "publicDescription": "Clothing found by the sports field", "categoryId": "clothing", "campusLocationId": "sports-field", "occurredAt": "2026-09-10T10:00:00.000Z", "colors": ["red"], "tags": ["scarf"], "createdAt": "2026-09-10T11:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["charger-clear", "charger-hard"]
+  },
+  {
+    "id": "found-blue-water-bottle",
+    "source": { "id": "bottle-source", "title": "Found blue water bottle", "publicDescription": "Reusable bottle found near Student Central", "categoryId": "drinkware", "campusLocationId": "student-central", "occurredAt": "2026-08-21T08:00:00.000Z", "colors": ["blue"], "tags": ["bottle", "reusable"], "createdAt": "2026-08-21T09:00:00.000Z" },
+    "candidates": [
+      { "id": "bottle-clear", "title": "Lost blue reusable bottle", "publicDescription": "Water bottle missing from Student Central", "categoryId": "drinkware", "campusLocationId": "student-central", "occurredAt": "2026-08-21T07:00:00.000Z", "colors": ["blue"], "tags": ["water", "bottle", "reusable"], "createdAt": "2026-08-21T10:00:00.000Z" },
+      { "id": "bottle-hard", "title": "Missing navy flask", "publicDescription": "Drink container lost after class", "categoryId": "drinkware", "campusLocationId": null, "occurredAt": "2026-08-23T08:00:00.000Z", "colors": ["blue"], "tags": ["bottle"], "createdAt": "2026-08-23T09:00:00.000Z" },
+      { "id": "bottle-category-negative", "title": "Green metal flask", "publicDescription": "Bottle missing last month", "categoryId": "drinkware", "campusLocationId": "gym", "occurredAt": "2026-07-18T08:00:00.000Z", "colors": ["green"], "tags": ["flask"], "createdAt": "2026-07-18T09:00:00.000Z" },
+      { "id": "bottle-location-negative", "title": "Student identity card", "publicDescription": "Card lost at Student Central", "categoryId": "identification", "campusLocationId": "student-central", "occurredAt": "2026-08-21T08:00:00.000Z", "colors": ["white"], "tags": ["card"], "createdAt": "2026-08-21T11:00:00.000Z" },
+      { "id": "bottle-easy-negative", "title": "Black bicycle lock", "publicDescription": "Lock lost near the cycle racks", "categoryId": "other", "campusLocationId": "cycle-racks", "occurredAt": "2026-09-12T08:00:00.000Z", "colors": ["black"], "tags": ["lock"], "createdAt": "2026-09-12T09:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["bottle-clear", "bottle-hard"]
+  },
+  {
+    "id": "lost-student-id-card",
+    "source": { "id": "id-source", "title": "Lost student ID card", "publicDescription": "Massey identification card missing near campus reception", "categoryId": "identification", "campusLocationId": "reception", "occurredAt": "2026-08-22T13:00:00.000Z", "colors": ["white", "blue"], "tags": ["student", "id", "card"], "createdAt": "2026-08-22T14:00:00.000Z" },
+    "candidates": [
+      { "id": "id-clear", "title": "Found student identity card", "publicDescription": "Massey ID handed in at campus reception", "categoryId": "identification", "campusLocationId": "reception", "occurredAt": "2026-08-22T14:00:00.000Z", "colors": ["white", "blue"], "tags": ["student", "id", "card"], "createdAt": "2026-08-22T15:00:00.000Z" },
+      { "id": "id-hard", "title": "Campus card handed in", "publicDescription": "Identification found two days later", "categoryId": "identification", "campusLocationId": null, "occurredAt": "2026-08-24T13:00:00.000Z", "colors": ["blue"], "tags": ["card"], "createdAt": "2026-08-24T14:00:00.000Z" },
+      { "id": "id-category-negative", "title": "Driver licence", "publicDescription": "Licence found during the previous month", "categoryId": "identification", "campusLocationId": "car-park", "occurredAt": "2026-07-15T13:00:00.000Z", "colors": ["yellow"], "tags": ["licence"], "createdAt": "2026-07-15T14:00:00.000Z" },
+      { "id": "id-location-negative", "title": "Silver key", "publicDescription": "Key found at campus reception", "categoryId": "keys", "campusLocationId": "reception", "occurredAt": "2026-08-22T13:00:00.000Z", "colors": ["silver"], "tags": ["key"], "createdAt": "2026-08-22T16:00:00.000Z" },
+      { "id": "id-easy-negative", "title": "Green exercise book", "publicDescription": "Notebook found in a laboratory", "categoryId": "books", "campusLocationId": "laboratory", "occurredAt": "2026-09-14T13:00:00.000Z", "colors": ["green"], "tags": ["book"], "createdAt": "2026-09-14T14:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["id-clear", "id-hard"]
+  },
+  {
+    "id": "found-silver-keyring",
+    "source": { "id": "keys-source", "title": "Found silver keyring", "publicDescription": "Three keys found outside the science laboratory", "categoryId": "keys", "campusLocationId": "science-lab", "occurredAt": "2026-08-23T16:00:00.000Z", "colors": ["silver"], "tags": ["keys", "keyring"], "createdAt": "2026-08-23T17:00:00.000Z" },
+    "candidates": [
+      { "id": "keys-clear", "title": "Lost silver ring with three keys", "publicDescription": "Keyring missing beside the science laboratory", "categoryId": "keys", "campusLocationId": "science-lab", "occurredAt": "2026-08-23T15:00:00.000Z", "colors": ["silver"], "tags": ["keys", "keyring"], "createdAt": "2026-08-23T18:00:00.000Z" },
+      { "id": "keys-hard", "title": "Missing set of keys", "publicDescription": "Metal key ring not seen since class", "categoryId": "keys", "campusLocationId": null, "occurredAt": "2026-08-28T16:00:00.000Z", "colors": ["silver"], "tags": ["keyring"], "createdAt": "2026-08-28T17:00:00.000Z" },
+      { "id": "keys-category-negative", "title": "Single brass locker key", "publicDescription": "Old key lost by the gym", "categoryId": "keys", "campusLocationId": "gym", "occurredAt": "2026-07-10T16:00:00.000Z", "colors": ["gold"], "tags": ["locker"], "createdAt": "2026-07-10T17:00:00.000Z" },
+      { "id": "keys-location-negative", "title": "Black laboratory notebook", "publicDescription": "Book missing outside the science laboratory", "categoryId": "books", "campusLocationId": "science-lab", "occurredAt": "2026-08-23T16:00:00.000Z", "colors": ["black"], "tags": ["notebook"], "createdAt": "2026-08-23T19:00:00.000Z" },
+      { "id": "keys-easy-negative", "title": "Orange rain jacket", "publicDescription": "Jacket lost near the bus stop", "categoryId": "clothing", "campusLocationId": "bus-stop", "occurredAt": "2026-09-15T16:00:00.000Z", "colors": ["orange"], "tags": ["jacket"], "createdAt": "2026-09-15T17:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["keys-clear", "keys-hard"]
+  },
+  {
+    "id": "lost-grey-backpack",
+    "source": { "id": "backpack-source", "title": "Lost grey backpack", "publicDescription": "Medium school bag left near the lecture hall", "categoryId": "bags", "campusLocationId": "lecture-hall", "occurredAt": "2026-08-24T11:00:00.000Z", "colors": ["grey"], "tags": ["backpack", "schoolbag"], "createdAt": "2026-08-24T12:00:00.000Z" },
+    "candidates": [
+      { "id": "backpack-clear", "title": "Found grey school backpack", "publicDescription": "Medium bag found at the lecture hall", "categoryId": "bags", "campusLocationId": "lecture-hall", "occurredAt": "2026-08-24T11:30:00.000Z", "colors": ["grey"], "tags": ["backpack", "schoolbag"], "createdAt": "2026-08-24T13:00:00.000Z" },
+      { "id": "backpack-hard", "title": "School bag handed in", "publicDescription": "Grey backpack located after several days", "categoryId": "bags", "campusLocationId": null, "occurredAt": "2026-08-29T11:00:00.000Z", "colors": ["grey"], "tags": ["backpack"], "createdAt": "2026-08-29T12:00:00.000Z" },
+      { "id": "backpack-category-negative", "title": "Small red handbag", "publicDescription": "Bag reported during the previous month", "categoryId": "bags", "campusLocationId": "cafe", "occurredAt": "2026-07-12T11:00:00.000Z", "colors": ["red"], "tags": ["handbag"], "createdAt": "2026-07-12T12:00:00.000Z" },
+      { "id": "backpack-location-negative", "title": "White calculator", "publicDescription": "Calculator found in the lecture hall", "categoryId": "electronics", "campusLocationId": "lecture-hall", "occurredAt": "2026-08-24T11:00:00.000Z", "colors": ["white"], "tags": ["calculator"], "createdAt": "2026-08-24T14:00:00.000Z" },
+      { "id": "backpack-easy-negative", "title": "Purple umbrella", "publicDescription": "Umbrella found at another campus", "categoryId": "umbrellas", "campusLocationId": "wellington-library", "occurredAt": "2026-09-15T11:00:00.000Z", "colors": ["purple"], "tags": ["umbrella"], "createdAt": "2026-09-15T12:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["backpack-clear", "backpack-hard"]
+  },
+  {
+    "id": "found-wireless-earbuds",
+    "source": { "id": "earbuds-source", "title": "Found wireless earbuds", "publicDescription": "Small black earphones found beside the gym lockers", "categoryId": "electronics", "campusLocationId": "gym", "occurredAt": "2026-08-25T18:00:00.000Z", "colors": ["black"], "tags": ["earbuds", "wireless"], "createdAt": "2026-08-25T19:00:00.000Z" },
+    "candidates": [
+      { "id": "earbuds-clear", "title": "Lost black wireless earphones", "publicDescription": "Earbuds missing near the gym lockers", "categoryId": "electronics", "campusLocationId": "gym", "occurredAt": "2026-08-25T17:00:00.000Z", "colors": ["black"], "tags": ["earbuds", "wireless"], "createdAt": "2026-08-25T20:00:00.000Z" },
+      { "id": "earbuds-hard", "title": "Missing Bluetooth earphones", "publicDescription": "Black earbuds lost earlier in the week", "categoryId": "electronics", "campusLocationId": null, "occurredAt": "2026-08-30T18:00:00.000Z", "colors": ["black"], "tags": ["earbuds"], "createdAt": "2026-08-30T19:00:00.000Z" },
+      { "id": "earbuds-category-negative", "title": "Large white headphones", "publicDescription": "Headphones lost last month", "categoryId": "electronics", "campusLocationId": "library", "occurredAt": "2026-07-05T18:00:00.000Z", "colors": ["white"], "tags": ["headphones"], "createdAt": "2026-07-05T19:00:00.000Z" },
+      { "id": "earbuds-location-negative", "title": "Blue sports towel", "publicDescription": "Towel missing from the gym lockers", "categoryId": "clothing", "campusLocationId": "gym", "occurredAt": "2026-08-25T18:00:00.000Z", "colors": ["blue"], "tags": ["towel"], "createdAt": "2026-08-25T21:00:00.000Z" },
+      { "id": "earbuds-easy-negative", "title": "Brown leather wallet", "publicDescription": "Wallet found by campus reception", "categoryId": "wallets", "campusLocationId": "reception", "occurredAt": "2026-09-15T18:00:00.000Z", "colors": ["brown"], "tags": ["wallet"], "createdAt": "2026-09-15T19:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["earbuds-clear", "earbuds-hard"]
+  },
+  {
+    "id": "lost-red-umbrella",
+    "source": { "id": "umbrella-source", "title": "Lost red umbrella", "publicDescription": "Compact rain umbrella left near the bus stop", "categoryId": "umbrellas", "campusLocationId": "bus-stop", "occurredAt": "2026-08-26T07:00:00.000Z", "colors": ["red"], "tags": ["umbrella", "rain"], "createdAt": "2026-08-26T08:00:00.000Z" },
+    "candidates": [
+      { "id": "umbrella-clear", "title": "Found compact red umbrella", "publicDescription": "Rain umbrella picked up beside the bus stop", "categoryId": "umbrellas", "campusLocationId": "bus-stop", "occurredAt": "2026-08-26T08:00:00.000Z", "colors": ["red"], "tags": ["umbrella", "rain"], "createdAt": "2026-08-26T09:00:00.000Z" },
+      { "id": "umbrella-hard", "title": "Red rain shade handed in", "publicDescription": "Compact umbrella with no location shared", "categoryId": "umbrellas", "campusLocationId": null, "occurredAt": null, "colors": ["red"], "tags": ["umbrella"], "createdAt": "2026-08-27T09:00:00.000Z" },
+      { "id": "umbrella-category-negative", "title": "Long green golf umbrella", "publicDescription": "Umbrella found several weeks earlier", "categoryId": "umbrellas", "campusLocationId": "sports-field", "occurredAt": "2026-07-02T07:00:00.000Z", "colors": ["green"], "tags": ["golf"], "createdAt": "2026-07-02T08:00:00.000Z" },
+      { "id": "umbrella-location-negative", "title": "Black travel card", "publicDescription": "Card found at the bus stop", "categoryId": "identification", "campusLocationId": "bus-stop", "occurredAt": "2026-08-26T07:00:00.000Z", "colors": ["black"], "tags": ["card"], "createdAt": "2026-08-26T10:00:00.000Z" },
+      { "id": "umbrella-easy-negative", "title": "Silver laptop stand", "publicDescription": "Stand left in the engineering building", "categoryId": "electronics", "campusLocationId": "engineering", "occurredAt": "2026-09-15T07:00:00.000Z", "colors": ["silver"], "tags": ["laptop"], "createdAt": "2026-09-15T08:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["umbrella-clear", "umbrella-hard"]
+  },
+  {
+    "id": "found-calculus-textbook",
+    "source": { "id": "textbook-source", "title": "Found calculus textbook", "publicDescription": "Mathematics book found in the main library", "categoryId": "books", "campusLocationId": "main-library", "occurredAt": "2026-08-27T14:00:00.000Z", "colors": ["blue"], "tags": ["calculus", "textbook", "maths"], "createdAt": "2026-08-27T15:00:00.000Z" },
+    "candidates": [
+      { "id": "textbook-clear", "title": "Lost blue calculus text book", "publicDescription": "Mathematics textbook missing from the main library", "categoryId": "books", "campusLocationId": "main-library", "occurredAt": "2026-08-27T13:00:00.000Z", "colors": ["blue"], "tags": ["calculus", "textbook", "maths"], "createdAt": "2026-08-27T16:00:00.000Z" },
+      { "id": "textbook-hard", "title": "Missing mathematics course book", "publicDescription": "Blue calculus book with date hidden", "categoryId": "books", "campusLocationId": null, "occurredAt": null, "colors": ["blue"], "tags": ["calculus"], "createdAt": "2026-08-28T16:00:00.000Z" },
+      { "id": "textbook-category-negative", "title": "Chemistry laboratory manual", "publicDescription": "Old course book from last month", "categoryId": "books", "campusLocationId": "science-lab", "occurredAt": "2026-07-01T14:00:00.000Z", "colors": ["orange"], "tags": ["chemistry"], "createdAt": "2026-07-01T15:00:00.000Z" },
+      { "id": "textbook-location-negative", "title": "Grey reading glasses", "publicDescription": "Glasses missing in the main library", "categoryId": "eyewear", "campusLocationId": "main-library", "occurredAt": "2026-08-27T14:00:00.000Z", "colors": ["grey"], "tags": ["glasses"], "createdAt": "2026-08-27T17:00:00.000Z" },
+      { "id": "textbook-easy-negative", "title": "Yellow lunch box", "publicDescription": "Container found in Student Central", "categoryId": "other", "campusLocationId": "student-central", "occurredAt": "2026-09-15T14:00:00.000Z", "colors": ["yellow"], "tags": ["lunch"], "createdAt": "2026-09-15T15:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["textbook-clear", "textbook-hard"]
+  },
+  {
+    "id": "lost-prescription-glasses",
+    "source": { "id": "glasses-source", "title": "Lost prescription glasses", "publicDescription": "Black reading spectacles missing from the library", "categoryId": "eyewear", "campusLocationId": "library", "occurredAt": "2026-08-28T09:00:00.000Z", "colors": ["black"], "tags": ["glasses", "prescription", "reading"], "createdAt": "2026-08-28T10:00:00.000Z" },
+    "candidates": [
+      { "id": "glasses-clear", "title": "Found black prescription glasses", "publicDescription": "Reading spectacles found in the library", "categoryId": "eyewear", "campusLocationId": "library", "occurredAt": "2026-08-28T10:00:00.000Z", "colors": ["black"], "tags": ["glasses", "prescription", "reading"], "createdAt": "2026-08-28T11:00:00.000Z" },
+      { "id": "glasses-hard", "title": "Spectacles handed to reception", "publicDescription": "Dark reading glasses with public date omitted", "categoryId": "eyewear", "campusLocationId": null, "occurredAt": null, "colors": ["black"], "tags": ["reading"], "createdAt": "2026-08-29T11:00:00.000Z" },
+      { "id": "glasses-category-negative", "title": "Red sunglasses", "publicDescription": "Eyewear found in the previous month", "categoryId": "eyewear", "campusLocationId": "cafe", "occurredAt": "2026-07-04T09:00:00.000Z", "colors": ["red"], "tags": ["sunglasses"], "createdAt": "2026-07-04T10:00:00.000Z" },
+      { "id": "glasses-location-negative", "title": "White phone", "publicDescription": "Mobile found in the library", "categoryId": "electronics", "campusLocationId": "library", "occurredAt": "2026-08-28T09:00:00.000Z", "colors": ["white"], "tags": ["phone"], "createdAt": "2026-08-28T12:00:00.000Z" },
+      { "id": "glasses-easy-negative", "title": "Brown boot", "publicDescription": "Shoe found outside the gym", "categoryId": "clothing", "campusLocationId": "gym", "occurredAt": "2026-09-15T09:00:00.000Z", "colors": ["brown"], "tags": ["shoe"], "createdAt": "2026-09-15T10:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["glasses-clear", "glasses-hard"]
+  },
+  {
+    "id": "found-black-wallet",
+    "source": { "id": "wallet-source", "title": "Found black wallet", "publicDescription": "Small leather wallet found near campus reception", "categoryId": "wallets", "campusLocationId": "reception", "occurredAt": "2026-08-29T12:00:00.000Z", "colors": ["black"], "tags": ["wallet", "leather"], "createdAt": "2026-08-29T13:00:00.000Z" },
+    "candidates": [
+      { "id": "wallet-clear", "title": "Lost small black leather wallet", "publicDescription": "Wallet missing around campus reception", "categoryId": "wallets", "campusLocationId": "reception", "occurredAt": "2026-08-29T11:00:00.000Z", "colors": ["black"], "tags": ["wallet", "leather"], "createdAt": "2026-08-29T14:00:00.000Z" },
+      { "id": "wallet-hard", "title": "Missing dark card holder", "publicDescription": "Black leather wallet lost earlier", "categoryId": "wallets", "campusLocationId": null, "occurredAt": "2026-09-08T12:00:00.000Z", "colors": ["black"], "tags": ["wallet"], "createdAt": "2026-09-08T13:00:00.000Z" },
+      { "id": "wallet-category-negative", "title": "Large brown purse", "publicDescription": "Wallet lost in the previous month", "categoryId": "wallets", "campusLocationId": "student-central", "occurredAt": "2026-07-03T12:00:00.000Z", "colors": ["brown"], "tags": ["purse"], "createdAt": "2026-07-03T13:00:00.000Z" },
+      { "id": "wallet-location-negative", "title": "Green hoodie", "publicDescription": "Clothing lost at campus reception", "categoryId": "clothing", "campusLocationId": "reception", "occurredAt": "2026-08-29T12:00:00.000Z", "colors": ["green"], "tags": ["hoodie"], "createdAt": "2026-08-29T15:00:00.000Z" },
+      { "id": "wallet-easy-negative", "title": "Blue bicycle helmet", "publicDescription": "Helmet missing by the cycle racks", "categoryId": "sports", "campusLocationId": "cycle-racks", "occurredAt": "2026-09-15T12:00:00.000Z", "colors": ["blue"], "tags": ["helmet"], "createdAt": "2026-09-15T13:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["wallet-clear", "wallet-hard"]
+  },
+  {
+    "id": "lost-green-hoodie",
+    "source": { "id": "hoodie-source", "title": "Lost green hoodie", "publicDescription": "Dark green hooded sweatshirt left in Student Central", "categoryId": "clothing", "campusLocationId": "student-central", "occurredAt": "2026-08-30T15:00:00.000Z", "colors": ["green"], "tags": ["hoodie", "sweatshirt"], "createdAt": "2026-08-30T16:00:00.000Z" },
+    "candidates": [
+      { "id": "hoodie-clear", "title": "Found dark green hoodie", "publicDescription": "Hooded sweatshirt found at Student Central", "categoryId": "clothing", "campusLocationId": "student-central", "occurredAt": "2026-08-30T16:00:00.000Z", "colors": ["green"], "tags": ["hoodie", "sweatshirt"], "createdAt": "2026-08-30T17:00:00.000Z" },
+      { "id": "hoodie-hard", "title": "Green jumper handed in", "publicDescription": "Hooded top found after ten days", "categoryId": "clothing", "campusLocationId": null, "occurredAt": "2026-09-09T15:00:00.000Z", "colors": ["green"], "tags": ["hoodie"], "createdAt": "2026-09-09T16:00:00.000Z" },
+      { "id": "hoodie-category-negative", "title": "Blue formal jacket", "publicDescription": "Clothing reported last month", "categoryId": "clothing", "campusLocationId": "reception", "occurredAt": "2026-07-03T15:00:00.000Z", "colors": ["blue"], "tags": ["jacket"], "createdAt": "2026-07-03T16:00:00.000Z" },
+      { "id": "hoodie-location-negative", "title": "Red water bottle", "publicDescription": "Bottle found in Student Central", "categoryId": "drinkware", "campusLocationId": "student-central", "occurredAt": "2026-08-30T15:00:00.000Z", "colors": ["red"], "tags": ["bottle"], "createdAt": "2026-08-30T18:00:00.000Z" },
+      { "id": "hoodie-easy-negative", "title": "Silver keyring", "publicDescription": "Keys found near the science lab", "categoryId": "keys", "campusLocationId": "science-lab", "occurredAt": "2026-09-15T15:00:00.000Z", "colors": ["silver"], "tags": ["keys"], "createdAt": "2026-09-15T16:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["hoodie-clear", "hoodie-hard"]
+  },
+  {
+    "id": "found-bicycle-helmet",
+    "source": { "id": "helmet-source", "title": "Found blue bicycle helmet", "publicDescription": "Cycling helmet found beside the campus bike racks", "categoryId": "sports", "campusLocationId": "cycle-racks", "occurredAt": "2026-08-31T17:00:00.000Z", "colors": ["blue"], "tags": ["bicycle", "cycling", "helmet"], "createdAt": "2026-08-31T18:00:00.000Z" },
+    "candidates": [
+      { "id": "helmet-clear", "title": "Lost blue cycling helmet", "publicDescription": "Bicycle helmet missing from the campus bike racks", "categoryId": "sports", "campusLocationId": "cycle-racks", "occurredAt": "2026-08-31T16:00:00.000Z", "colors": ["blue"], "tags": ["bicycle", "cycling", "helmet"], "createdAt": "2026-08-31T19:00:00.000Z" },
+      { "id": "helmet-hard", "title": "Missing cycle safety helmet", "publicDescription": "Blue bicycle head protection lost two weeks earlier", "categoryId": "sports", "campusLocationId": null, "occurredAt": "2026-08-17T17:00:00.000Z", "colors": ["blue"], "tags": ["bicycle", "helmet"], "createdAt": "2026-08-31T20:00:00.000Z" },
+      { "id": "helmet-category-negative", "title": "White rugby head guard", "publicDescription": "Sports equipment from last month", "categoryId": "sports", "campusLocationId": "sports-field", "occurredAt": "2026-07-01T17:00:00.000Z", "colors": ["white"], "tags": ["rugby"], "createdAt": "2026-07-01T18:00:00.000Z" },
+      { "id": "helmet-location-negative", "title": "Black bicycle pump", "publicDescription": "Pump missing at the campus bike racks", "categoryId": "other", "campusLocationId": "cycle-racks", "occurredAt": "2026-08-31T17:00:00.000Z", "colors": ["black"], "tags": ["pump"], "createdAt": "2026-08-31T21:00:00.000Z" },
+      { "id": "helmet-easy-negative", "title": "Purple reading glasses", "publicDescription": "Glasses found in the library", "categoryId": "eyewear", "campusLocationId": "library", "occurredAt": "2026-09-15T17:00:00.000Z", "colors": ["purple"], "tags": ["glasses"], "createdAt": "2026-09-15T18:00:00.000Z" }
+    ],
+    "relevantCandidateIds": ["helmet-clear", "helmet-hard"]
+  }
+]

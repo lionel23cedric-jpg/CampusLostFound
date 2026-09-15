@@ -7,6 +7,8 @@ const INVALID_TEXT_PATTERN = /[\p{Cc}\p{Cf}\p{Cs}]/u;
 const SURROGATE_PATTERN = /\p{Cs}/u;
 const normalizeText = (value: string) =>
   value.normalize("NFKC").trim().replace(/\s+/gu, " ");
+// Shared Zod contracts normalize text and reject control characters consistently
+// in the browser and API instead of relying on loosely typed form values.
 const boundedText = (minimum: number, maximum: number) =>
   z
     .string()
@@ -54,6 +56,8 @@ export const createAdminCategorySchema = z.strictObject({
 
 export const updateAdminCategorySchema = z
   .strictObject({
+    // The editor must send the version it originally loaded. The service uses this
+    // timestamp to detect a stale edit rather than silently overwriting newer work.
     updatedAt: z.string().datetime({ offset: true }),
     name: boundedText(2, 80).optional(),
     description: descriptionInput.optional(),
@@ -73,6 +77,7 @@ export const createAdminCampusLocationSchema = z.strictObject({
 
 export const updateAdminCampusLocationSchema = z
   .strictObject({
+    // Optimistic concurrency uses the last observed timestamp for this record too.
     updatedAt: z.string().datetime({ offset: true }),
     campusName: boundedText(2, 80).optional(),
     locationName: boundedText(2, 120).optional(),

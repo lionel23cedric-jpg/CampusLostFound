@@ -198,7 +198,7 @@ describe("staff report routes", () => {
     ["oversized body", new Request("http://localhost", { method: "POST", headers: { "Content-Type": "application/json", "Content-Length": "20000" }, body: "{}" })],
   ])("rejects %s", async (_label, request) => {
     const response = await verifyReport(request, context());
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(_label === "oversized body" ? 413 : 400);
     expectNoStore(response);
     expect(verifyStaffReport).not.toHaveBeenCalled();
   });

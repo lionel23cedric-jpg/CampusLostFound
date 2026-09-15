@@ -44,6 +44,8 @@ import {
 } from "./validation";
 
 const adminReportProjection = {
+  // Explicit allow lists keep reporter identity and private verification fields out
+  // of administrator list responses unless a workflow genuinely needs them.
   _id: 1,
   reportType: 1,
   title: 1,
@@ -269,6 +271,8 @@ async function runModerationTransaction<T>(
     const administratorObjectId = new Types.ObjectId(administratorId);
 
     await activeSession.withTransaction(async () => {
+      // Recheck the actor inside the transaction in case access changed after the
+      // earlier route check but before the database decision began.
       await requireActiveAdministratorInTransaction(
         administratorObjectId,
         activeSession,
@@ -420,6 +424,8 @@ export async function resolveReportFlag(
       const reviewedAt = new Date();
 
       if (input.decision === "dismiss") {
+        // Dismissal closes the concern but intentionally leaves report visibility
+        // and all Claim/recovery state unchanged.
         const updatedFlag = await ReportFlagModel.findOneAndUpdate(
           {
             _id: flagObjectId,
@@ -478,6 +484,8 @@ export async function resolveReportFlag(
         updatedAt: new Date(input.expectedReportUpdatedAt),
         ...visibleReportState,
       };
+      // Hiding changes discovery visibility only; it does not delete the report or
+      // rewrite Claim and recovery history.
       const updatedReport = await ItemReportModel.findOneAndUpdate(
         hideReportFilter,
         { $set: { moderationStatus: "hidden" } },
@@ -527,6 +535,8 @@ export async function resolveReportFlag(
         session,
         flagObjectId,
       );
+      // Report change, related flag resolutions, and audit event commit together,
+      // preventing the history from describing a partially completed decision.
       await ReportModerationEventModel.create(
         [
           {
@@ -605,6 +615,8 @@ export async function moderateReport(
           session,
         );
       }
+      // Every direct visibility transition receives an immutable audit record with
+      // actor, reason, previous state, next state, optional note, and timestamp.
       await ReportModerationEventModel.create(
         [
           {

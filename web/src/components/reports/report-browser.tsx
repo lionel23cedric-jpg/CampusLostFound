@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuthSession } from "@/components/auth/auth-session-provider";
+import { ContextIllustration } from "@/components/context-illustration";
 import { PageBackLink } from "@/components/page-back-link";
 import {
   parseReportSearchParams,
@@ -439,6 +440,8 @@ function ActiveReportBrowser() {
         <h1>Find an item</h1>
         <p>Search privacy-safe lost and found reports shared by campus members.</p>
       </header>
+
+      <ContextIllustration kind="reports" variant="banner" priority />
 
       {parsedSearch.ignoredInvalidValues ? (
         <p className={styles.queryNotice} role="status">

@@ -2,6 +2,16 @@ import type { PublicUser } from "@/lib/auth/public-user";
 import { getCurrentModerationAdministrator } from "@/lib/moderation/access";
 import { resolveReportFlag } from "@/lib/moderation/admin-service";
 import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
+import {
   invalidModerationResponse,
   moderationErrorResponse,
 } from "@/lib/moderation/errors";
@@ -23,6 +33,8 @@ function noStore(response: Response) {
 export async function PATCH(request: Request, context: Context) {
   let administrator: PublicUser;
   try {
+    // The server session supplies the administrator; strict parsing limits the body
+    // to one documented decision shape and its concurrency timestamps.
     administrator = await getCurrentModerationAdministrator();
   } catch (error) {
     return noStore(moderationErrorResponse(error));
@@ -43,15 +55,26 @@ export async function PATCH(request: Request, context: Context) {
     return noStore(invalidModerationResponse());
   }
 
+  const limit = consumeRateLimit(
+    `admin:flag-decision:${administrator.id}`,
+    rateLimitPolicies.privilegedWrite,
+  );
+  if (!limit.allowed) {
+    return noStore(rateLimitedResponse(limit.retryAfterSeconds));
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = await readJsonRequestBody(request);
   } catch (error) {
-    return noStore(
-      error instanceof SyntaxError
-        ? invalidModerationResponse()
-        : moderationErrorResponse(error),
-    );
+    if (error instanceof RequestBodyError) {
+      return noStore(
+        error.code === "BODY_TOO_LARGE"
+          ? requestBodyErrorResponse(error)
+          : invalidModerationResponse(),
+      );
+    }
+    return noStore(moderationErrorResponse(error));
   }
 
   const parsedBody = reportFlagDecisionSchema.safeParse(body);

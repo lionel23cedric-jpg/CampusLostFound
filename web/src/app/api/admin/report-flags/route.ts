@@ -18,6 +18,7 @@ function noStore(response: Response) {
 export async function GET(request: Request) {
   let administrator: PublicUser;
   try {
+    // Authenticate before parsing filters and never cache this protected queue.
     administrator = await getCurrentModerationAdministrator();
   } catch (error) {
     return noStore(moderationErrorResponse(error));

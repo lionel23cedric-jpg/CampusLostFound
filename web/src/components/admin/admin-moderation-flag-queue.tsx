@@ -77,6 +77,8 @@ export function AdminModerationFlagQueue() {
 
   const load = useCallback(
     async (target: BrowserAdminFlagQuery) => {
+      // Abort older filters and accept only the latest request ID so a slow page
+      // response cannot replace the administrator's current queue.
       const current = ++requestId.current;
       listController.current?.abort();
       const controller = new AbortController();
@@ -145,6 +147,8 @@ export function AdminModerationFlagQueue() {
     setMutating(true);
     setNotice(null);
     try {
+      // Both displayed timestamps travel with the decision. The service rejects
+      // the action if either the flag or report changed after this screen loaded.
       await decideBrowserReportFlag(
         action.flag.id,
         action.kind === "dismiss"
@@ -182,6 +186,7 @@ export function AdminModerationFlagQueue() {
         code === "REPORT_FLAG_NOT_FOUND" ||
         code === "REPORT_NOT_FOUND"
       ) {
+        // A conflict is recoverable: reload authoritative state before deciding.
         setNotice("Moderation data changed. Reload before making another decision.");
       } else {
         setNotice("We could not complete that moderation decision. Try again.");

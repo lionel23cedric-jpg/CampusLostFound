@@ -7,16 +7,21 @@ import {
   accountManagementErrorResponse,
   invalidAccountManagementResponse,
 } from "@/lib/admin/account-errors";
-import {
-  AccountBodyTooLarge,
-  InvalidAccountBodyEncoding,
-  readAccountRequestBody,
-} from "@/lib/admin/account-request-body";
 import { updateManagedAccountStatus } from "@/lib/admin/account-status-service";
 import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { AuthError } from "@/lib/auth/errors";
 import type { PublicUser } from "@/lib/auth/public-user";
+import {
+  RequestBodyError,
+  readJsonRequestBody,
+  requestBodyErrorResponse,
+} from "@/lib/request-body";
+import {
+  consumeRateLimit,
+  rateLimitedResponse,
+  rateLimitPolicies,
+} from "@/lib/rate-limit";
 
 type Context = { params: Promise<{ userId: string }> };
 
@@ -56,28 +61,26 @@ export async function PATCH(request: Request, context: Context) {
     return noStore(invalidAccountManagementResponse());
   }
 
-  let text: string;
-  try {
-    text = await readAccountRequestBody(request);
-  } catch (error) {
-    return noStore(
-      error instanceof AccountBodyTooLarge ||
-        error instanceof InvalidAccountBodyEncoding
-        ? invalidAccountManagementResponse()
-        : accountManagementErrorResponse(error),
-    );
+  const limit = consumeRateLimit(
+    `admin:account-status:${administrator.id}`,
+    rateLimitPolicies.privilegedWrite,
+  );
+  if (!limit.allowed) {
+    return noStore(rateLimitedResponse(limit.retryAfterSeconds));
   }
-  if (text.trim() === "") return noStore(invalidAccountManagementResponse());
 
   let body: unknown;
   try {
-    body = JSON.parse(text);
+    body = await readJsonRequestBody(request);
   } catch (error) {
-    return noStore(
-      error instanceof SyntaxError
-        ? invalidAccountManagementResponse()
-        : accountManagementErrorResponse(error),
-    );
+    if (error instanceof RequestBodyError) {
+      return noStore(
+        error.code === "BODY_TOO_LARGE"
+          ? requestBodyErrorResponse(error)
+          : invalidAccountManagementResponse(),
+      );
+    }
+    return noStore(accountManagementErrorResponse(error));
   }
   const parsedBody = accountStatusInputSchema.safeParse(body);
   if (!parsedBody.success) return noStore(invalidAccountManagementResponse());

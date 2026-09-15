@@ -1,3 +1,5 @@
+import sharp from "sharp";
+
 import {
   REPORT_IMAGE_CONTENT_TYPES,
   REPORT_IMAGE_MAX_BYTES,
@@ -55,6 +57,27 @@ function invalidImage(
   return new ReportImageError(code, { image: [error.message] });
 }
 
+async function sanitiseImage(
+  data: Buffer,
+  contentType: ReportImageContentType,
+): Promise<Buffer> {
+  // Auto-orient from EXIF before re-encoding. Sharp omits input metadata unless
+  // withMetadata/keepMetadata is requested, so private GPS/device fields are removed.
+  const pipeline = sharp(data, {
+    failOn: "warning",
+    limitInputPixels: 20_000_000,
+  }).rotate();
+
+  switch (contentType) {
+    case "image/jpeg":
+      return pipeline.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+    case "image/png":
+      return pipeline.png({ compressionLevel: 9 }).toBuffer();
+    case "image/webp":
+      return pipeline.webp({ quality: 85 }).toBuffer();
+  }
+}
+
 export async function readAndValidateReportImageFile(
   file: File,
 ): Promise<ValidatedReportImage> {
@@ -85,5 +108,21 @@ export async function readAndValidateReportImageFile(
     throw invalidImage("IMAGE_CONTENT_INVALID");
   }
 
-  return { contentType, byteLength: data.length, data };
+  let sanitised: Buffer;
+  try {
+    sanitised = await sanitiseImage(data, contentType);
+  } catch {
+    throw invalidImage("IMAGE_CONTENT_INVALID");
+  }
+
+  if (sanitised.length === 0) throw invalidImage("IMAGE_CONTENT_INVALID");
+  if (sanitised.length > REPORT_IMAGE_MAX_BYTES) {
+    throw invalidImage("IMAGE_TOO_LARGE");
+  }
+
+  return {
+    contentType,
+    byteLength: sanitised.length,
+    data: sanitised,
+  };
 }

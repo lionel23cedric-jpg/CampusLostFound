@@ -270,7 +270,9 @@
 .inlineError,
 .itemError {
   margin: 0;
-  border-left: 4px solid var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line));
+  border-radius: 10px;
+  background: #fff5f2;
   color: var(--danger);
   line-height: 1.5;
   overflow-wrap: anywhere;

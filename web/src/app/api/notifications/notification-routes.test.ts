@@ -320,11 +320,12 @@ describe("notification routes", () => {
   ])("rejects a %s", async (_case, request) => {
     const response = await readPatch(request, context(notificationId));
 
+    const oversized = _case.includes("oversized");
     await expectError(
       response,
-      400,
-      "VALIDATION_ERROR",
-      "Invalid notification request",
+      oversized ? 413 : 400,
+      oversized ? "PAYLOAD_TOO_LARGE" : "VALIDATION_ERROR",
+      oversized ? "Request body is too large" : "Invalid notification request",
     );
     expect(markNotificationRead).not.toHaveBeenCalled();
   });
