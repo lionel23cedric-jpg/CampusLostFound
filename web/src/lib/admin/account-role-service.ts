@@ -83,7 +83,7 @@ export async function updateManagedAccountRole(
           updatedAt: new Date(input.expectedUpdatedAt),
         },
         { $set: { role: input.role } },
-        { new: true, runValidators: true, session: transaction! },
+        { returnDocument: "after", runValidators: true, session: transaction! },
       )
         .select({
           _id: 1,

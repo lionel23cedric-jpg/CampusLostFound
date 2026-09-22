@@ -186,7 +186,7 @@ async function updatedStaffReport(
   return ItemReportModel.findOneAndUpdate(
     filter,
     { $set: { staffHandling } },
-    { new: true, runValidators: true, projection: STAFF_REPORT_PROJECTION },
+    { returnDocument: "after", runValidators: true, projection: STAFF_REPORT_PROJECTION },
   )
     .select("+staffHandling")
     .lean<StaffReportRecord | null>()

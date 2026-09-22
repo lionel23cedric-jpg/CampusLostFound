@@ -140,7 +140,7 @@ export async function updateAdminCategory(
       // still holding the latest version of the category.
       { _id: objectId, updatedAt: new Date(updatedAt) },
       { $set: changes },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     )
       .lean<AdminCategoryRecord | null>()
       .exec();

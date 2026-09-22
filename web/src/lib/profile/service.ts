@@ -102,7 +102,7 @@ export async function updateOwnProfile(
           notificationSettings: input.notificationSettings,
         },
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     )
       .select(PROFILE_PROJECTION)
       .exec();

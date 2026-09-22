@@ -320,7 +320,7 @@ describe("administrator CampusLocation service", () => {
           isActive: false,
         },
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
     const filter = vi.mocked(CampusLocationModel.findOneAndUpdate).mock.calls[0][0] as
       unknown as { _id: { toString(): string } };

@@ -114,7 +114,7 @@ export async function updateManagedAccountStatus(
           updatedAt: new Date(input.expectedUpdatedAt),
         },
         { $set: { status: input.status } },
-        { new: true, runValidators: true, session: activeTransaction },
+        { returnDocument: "after", runValidators: true, session: activeTransaction },
       )
         .select({
           _id: 1,
