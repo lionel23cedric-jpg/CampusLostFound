@@ -37,6 +37,7 @@ const user = {
 
 const matches = {
   sourceReportId: reportId,
+  matchingMethod: "rule_fallback" as const,
   matches: [
     {
       report: {

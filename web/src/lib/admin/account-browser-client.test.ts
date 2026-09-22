@@ -5,6 +5,7 @@ import {
   BrowserAccountManagementError,
   listAdministratorAccounts,
   updateAdministratorAccountStatus,
+  updateAdministratorAccountRole,
 } from "./account-browser-client";
 
 const accountFixture = {
@@ -120,6 +121,26 @@ it("updates one account with the exact concurrency body", async () => {
       }),
       signal: controller.signal,
     },
+  );
+});
+
+it("promotes Staff with the exact role and concurrency body", async () => {
+  const updated = { ...accountFixture, role: "staff" as const };
+  const fetchMock = vi.fn().mockResolvedValue(Response.json({ account: updated }));
+  vi.stubGlobal("fetch", fetchMock);
+
+  await expect(updateAdministratorAccountRole(accountFixture.id, {
+    role: "staff",
+    expectedUpdatedAt: accountFixture.updatedAt,
+  })).resolves.toEqual(updated);
+  expect(fetchMock).toHaveBeenCalledWith(
+    `/api/admin/accounts/${accountFixture.id}/role`,
+    expect.objectContaining({
+      method: "PATCH",
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify({ role: "staff", expectedUpdatedAt: accountFixture.updatedAt }),
+    }),
   );
 });
 

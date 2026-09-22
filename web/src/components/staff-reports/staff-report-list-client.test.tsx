@@ -96,6 +96,8 @@ describe("staff report handling queue", () => {
     expect(screen.getByText("Custody: Not held")).toBeTruthy();
     const image = screen.getByRole("img", { name: "Found campus card" });
     expect(image.getAttribute("src")).toContain("/api/report-images/");
+    expect(image.getAttribute("style")).toContain("width: 100%");
+    expect(image.getAttribute("style")).toContain("height: auto");
     expect(document.body.textContent).not.toContain("example.test");
     expect(document.body.textContent).not.toMatch(/storageLocation|verifiedBy|updatedBy/);
   });

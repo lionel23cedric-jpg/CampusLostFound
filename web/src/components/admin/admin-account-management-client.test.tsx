@@ -27,6 +27,7 @@ vi.mock("@/lib/admin/account-browser-client", async () => {
     ...actual,
     listAdministratorAccounts: vi.fn(),
     updateAdministratorAccountStatus: vi.fn(),
+    updateAdministratorAccountRole: vi.fn(),
   };
 });
 
@@ -36,6 +37,7 @@ import {
   BrowserAccountManagementError,
   listAdministratorAccounts,
   updateAdministratorAccountStatus,
+  updateAdministratorAccountRole,
 } from "@/lib/admin/account-browser-client";
 import type {
   ManagedBrowserAccount,
@@ -89,6 +91,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(listAdministratorAccounts).mockReset();
   vi.mocked(updateAdministratorAccountStatus).mockReset();
+  vi.mocked(updateAdministratorAccountRole).mockReset();
   vi.mocked(useRouter).mockReturnValue({ replace } as never);
   vi.mocked(useAuthSession).mockReturnValue({
     status: "authenticated",
@@ -125,6 +128,58 @@ it("loads page one and renders public account cards", async () => {
   expect(container.textContent).not.toMatch(
     /passwordHash|tokenHash|emailVerifiedAt|notificationSettings|PRIVATE/i,
   );
+});
+
+it("lets an administrator add and remove Staff access with confirmation", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountRole).mockResolvedValue({
+    ...accounts[0], role: "staff", updatedAt: "2026-09-22T01:00:00.000Z",
+  });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+
+  await user.click(screen.getByRole("button", { name: "Add Staff access for Alex Student" }));
+  expect(screen.getByText(/Student to Staff/)).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Confirm staff promotion" }));
+  await waitFor(() => expect(updateAdministratorAccountRole).toHaveBeenCalledWith(
+    accounts[0].id,
+    { role: "staff", expectedUpdatedAt: accounts[0].updatedAt },
+    expect.any(AbortSignal),
+  ));
+  expect(await screen.findByRole("button", { name: "Remove Staff access for Alex Student" })).toBeTruthy();
+  expect(screen.getByText("Staff access added. Existing sessions were revoked.")).toBeTruthy();
+});
+
+it("does not offer Staff membership changes on deactivated accounts", async () => {
+  vi.mocked(listAdministratorAccounts).mockResolvedValue({
+    accounts: [{ ...accounts[0], status: "deactivated" }],
+    pagination: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+  });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Alex Student");
+  expect(screen.queryByRole("button", { name: /Staff access for Alex Student/ })).toBeNull();
+});
+
+it("removes Staff membership while retaining a suspended account", async () => {
+  const user = userEvent.setup();
+  vi.mocked(listAdministratorAccounts).mockResolvedValue(page);
+  vi.mocked(updateAdministratorAccountRole).mockResolvedValue({
+    ...accounts[1], role: "student", updatedAt: "2026-09-22T02:00:00.000Z",
+  });
+  render(<AdminAccountManagementClient />);
+  await screen.findByText("Taylor Staff");
+
+  await user.click(screen.getByRole("button", { name: "Remove Staff access for Taylor Staff" }));
+  expect(screen.getByText(/Staff to Student/)).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Confirm staff removal" }));
+  await waitFor(() => expect(updateAdministratorAccountRole).toHaveBeenCalledWith(
+    accounts[1].id,
+    { role: "student", expectedUpdatedAt: accounts[1].updatedAt },
+    expect.any(AbortSignal),
+  ));
+  expect(await screen.findByRole("button", { name: "Add Staff access for Taylor Staff" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Restore Taylor Staff" })).toBeTruthy();
 });
 
 it("keeps the account workspace semantic and usable at 320 pixels", async () => {

@@ -30,6 +30,7 @@ const reportId = "64b64c6f2f4d9f1a2b3c4d54";
 
 const reportMatches: ReportMatches = {
   sourceReportId: reportId,
+  matchingMethod: "rule_fallback",
   matches: [
     {
       report: {
@@ -138,6 +139,7 @@ describe("ReportMatchesPanel", () => {
     expect(screen.getByText("+25 / 25")).toBeTruthy();
     expect(screen.getByText("Found · Open")).toBeTruthy();
     expect(screen.getByText("Found beside the library desk.")).toBeTruthy();
+    expect(screen.getByText("Rule-based comparison (local AI model unavailable).")).toBeTruthy();
     expect(
       screen
         .getByRole("link", { name: "Review Black laptop charger" })
@@ -146,10 +148,22 @@ describe("ReportMatchesPanel", () => {
     expect(document.body.textContent).not.toContain("reporterId");
   });
 
+  it("identifies a result that used the local AI model", async () => {
+    const user = userEvent.setup();
+    vi.mocked(getReportMatches).mockResolvedValue({
+      ...reportMatches,
+      matchingMethod: "model_assisted",
+    });
+    render(<ReportMatchesPanel reportId={reportId} />);
+    await user.click(screen.getByRole("button", { name: "Find possible matches" }));
+    expect(await screen.findByText(/AI-assisted text comparison/i)).toBeTruthy();
+  });
+
   it("renders an empty result and permits a deliberate refresh", async () => {
     const user = userEvent.setup();
     vi.mocked(getReportMatches).mockResolvedValue({
       sourceReportId: reportId,
+      matchingMethod: "rule_fallback",
       matches: [],
     });
 

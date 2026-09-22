@@ -9,11 +9,13 @@ vi.mock("@/models/item-report", () => ({
 }));
 vi.mock("./public-report", () => ({ toMemberReport: vi.fn() }));
 vi.mock("./matching-score", () => ({ scoreReportMatch: vi.fn() }));
+vi.mock("./local-embedding", () => ({ embedPublicText: vi.fn() }));
 
 import { connectToDatabase } from "@/lib/db";
 import { ItemReportModel } from "@/models/item-report";
 
 import { MatchingError } from "./matching-errors";
+import { embedPublicText } from "./local-embedding";
 import { scoreReportMatch } from "./matching-score";
 import { findReportMatches } from "./matching-service";
 import { toMemberReport, type MemberReport } from "./public-report";
@@ -131,6 +133,7 @@ describe("report matching service", () => {
     candidateChain.sort.mockReturnValue(candidateChain);
     candidateChain.limit.mockReturnValue(candidateChain);
     vi.mocked(connectToDatabase).mockResolvedValue(undefined as never);
+    vi.mocked(embedPublicText).mockRejectedValue(new Error("Model unavailable in isolated tests"));
     vi.mocked(ItemReportModel.findOne).mockReturnValue(sourceChain as never);
     vi.mocked(ItemReportModel.find).mockReturnValue(candidateChain as never);
     vi.mocked(toMemberReport).mockImplementation((candidate) =>
@@ -312,10 +315,83 @@ describe("report matching service", () => {
 
     await expect(findReportMatches(user, reportId)).resolves.toEqual({
       sourceReportId: reportId,
+      matchingMethod: "rule_fallback",
       matches: [],
     });
     expect(toMemberReport).not.toHaveBeenCalled();
     expect(scoreReportMatch).not.toHaveBeenCalled();
+  });
+
+  it("uses only public wording for a bounded AI shortlist and reranks without changing structured points", async () => {
+    candidateExec.mockResolvedValue([
+      document("weaker"),
+      document("zz-better"),
+      ...Array.from({ length: 29 }, (_, index) => document(`other-${index}`)),
+    ]);
+    vi.mocked(scoreReportMatch).mockReturnValue({
+      score: 40,
+      factors: [
+        { key: "category", points: 25, maximum: 25, explanation: "Same category" },
+        { key: "location", points: 15, maximum: 15, explanation: "Same public campus location" },
+      ],
+    });
+    vi.mocked(embedPublicText).mockImplementation(async (text) =>
+      text.includes("Candidate zz-better")
+        ? new Float32Array([1, 0])
+        : text.includes("Candidate")
+          ? new Float32Array([0, 1])
+          : new Float32Array([1, 0]),
+    );
+
+    const result = await findReportMatches(user, reportId);
+
+    expect(result.matchingMethod).toBe("model_assisted");
+    expect(result.matches[0]).toMatchObject({
+      report: { id: "zz-better" },
+      score: 60,
+      factors: [
+        { key: "category", points: 25 },
+        { key: "location", points: 15 },
+        { key: "text", points: 20 },
+      ],
+    });
+    expect(result.matches.find((match) => match.report.id === "weaker")?.score).toBe(40);
+    expect(result.matches.find((match) => match.report.id === "weaker")?.factors.some((factor) => factor.key === "text")).toBe(false);
+    expect(embedPublicText).toHaveBeenCalledTimes(31);
+    expect(embedPublicText).toHaveBeenCalledWith("Black laptop charger. Lost near the library");
+    for (const [text] of vi.mocked(embedPublicText).mock.calls) {
+      expect(text).not.toContain("student@example.com");
+      expect(text).not.toContain("64b64c6f2f4d9f1a2b3c4d51");
+    }
+  });
+
+  it("does not use AI text points to admit a candidate below the rule threshold", async () => {
+    candidateExec.mockResolvedValue([document("eligible"), document("ineligible")]);
+    vi.mocked(scoreReportMatch).mockImplementation((_source, candidate) => ({
+      score: candidate.id === "eligible" ? 40 : 34,
+      factors: [{ key: "category", points: 25, maximum: 25, explanation: "Same category" }],
+    }));
+    vi.mocked(embedPublicText).mockResolvedValue(new Float32Array([1, 0]));
+
+    const result = await findReportMatches(user, reportId);
+
+    expect(result.matchingMethod).toBe("model_assisted");
+    expect(result.matches.map((match) => match.report.id)).toEqual(["eligible"]);
+    expect(embedPublicText).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back to the full rule result if model inference fails after shortlisting", async () => {
+    candidateExec.mockResolvedValue(Array.from({ length: 35 }, (_, index) => document(`candidate-${index}`)));
+    vi.mocked(embedPublicText)
+      .mockResolvedValueOnce(new Float32Array([1, 0]))
+      .mockRejectedValueOnce(new Error("Local model unavailable"));
+
+    const result = await findReportMatches(user, reportId);
+
+    expect(result.matchingMethod).toBe("rule_fallback");
+    expect(result.matches).toHaveLength(5);
+    expect(scoreReportMatch).toHaveBeenCalledTimes(35);
+    expect(result.matches.every((match) => match.score === 70)).toBe(true);
   });
 
   it("preserves a database connection failure for the route boundary", async () => {

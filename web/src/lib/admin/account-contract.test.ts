@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   accountListQuerySchema,
+  accountRoleInputSchema,
   accountStatusInputSchema,
   accountUserIdSchema,
   managedAccountPageSchema,
@@ -101,6 +102,14 @@ describe("administrator account contracts", () => {
     ).toBe(false);
     expect(accountUserIdSchema.safeParse(id).success).toBe(true);
     expect(accountUserIdSchema.safeParse(id.toUpperCase()).success).toBe(false);
+  });
+
+  it("accepts only student or staff role changes with a current timestamp", () => {
+    const request = { role: "staff", expectedUpdatedAt: updatedAt.toISOString() };
+    expect(accountRoleInputSchema.parse(request)).toEqual(request);
+    expect(accountRoleInputSchema.safeParse({ ...request, role: "administrator" }).success).toBe(false);
+    expect(accountRoleInputSchema.safeParse({ ...request, actorId: id }).success).toBe(false);
+    expect(accountRoleInputSchema.safeParse({ ...request, expectedUpdatedAt: "yesterday" }).success).toBe(false);
   });
 
   it("parses an exact aggregate page without private fields", () => {
