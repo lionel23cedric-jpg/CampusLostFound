@@ -138,6 +138,11 @@ function ActiveReportMatchesPanel({ reportId }: { reportId: string }) {
           <p className={styles.resultSummary} role="status" aria-live="polite">
             {matches.length} possible {matches.length === 1 ? "match" : "matches"} found.
           </p>
+          <p className={styles.resultSummary}>
+            {state.data.matchingMethod === "model_assisted"
+              ? "AI-assisted text comparison with category, location, date and other public details."
+              : "Rule-based comparison (local AI model unavailable)."}
+          </p>
           <ol className={styles.matchList}>
             {matches.map((match) => (
               <li key={match.report.id} className={styles.matchItem}>

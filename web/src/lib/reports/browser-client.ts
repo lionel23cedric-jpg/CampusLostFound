@@ -120,6 +120,7 @@ export type ReportMatch = {
 
 export type ReportMatches = {
   sourceReportId: string;
+  matchingMethod: "model_assisted" | "rule_fallback";
   matches: ReportMatch[];
 };
 
@@ -310,6 +311,7 @@ const reportMatchSchema = z
 const reportMatchesSchema = z
   .strictObject({
     sourceReportId: z.string().min(1),
+    matchingMethod: z.enum(["model_assisted", "rule_fallback"]),
     matches: z.array(reportMatchSchema).max(5),
   })
   .superRefine((data, context) => {
