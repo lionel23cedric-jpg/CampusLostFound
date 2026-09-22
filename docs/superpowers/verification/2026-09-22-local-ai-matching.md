@@ -27,11 +27,13 @@ response says `rule_fallback`.
 - The full 22 September test, lint, typecheck, build, and zero-vulnerability
   audit gate is recorded in `docs/test-matrix.md`.
 
-## Manual demonstration status
+## Manual demonstration
 
-Real local model inference ran via the evaluation command. A signed-in browser
-demonstration showing `model_assisted` on a live report was **not** run in this
-verification; it needs suitable disposable reports on the configured database.
-The model's first download requires internet and populates an ignored cache
-under `node_modules`. A fresh source ZIP or machine must run
+Real local model inference ran via the evaluation command and in a signed-in
+browser against a disposable open Lost report. **Find possible matches**
+returned one open Found report, visibly labelled the method as AI-assisted,
+and explained category (25/25), location (15/15), and semantic public wording
+(7/20) for a total of 47/100. Browser console inspection showed no matching
+errors. The model's first download requires internet and populates an ignored
+cache under `node_modules`. A fresh source ZIP or machine must run
 `npm run evaluate:matching:ai` before demonstrating model-assisted results.

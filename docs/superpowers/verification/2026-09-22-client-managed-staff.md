@@ -20,12 +20,15 @@ administrator. No public administrator promotion or account deletion was added.
 - Automated contract, model, service, route, browser-client, and component
   tests cover these paths without accessing Atlas.
 
-## Evidence and remaining manual check
+## Evidence
 
 The 22 September full suite, TypeScript, lint, and production build passed;
 the exact gate counts are recorded in `docs/test-matrix.md`. A live browser
-promotion/demotion against the configured shared database was **not** run:
-doing so would change real account privileges. For the course demonstration,
-use two disposable registered accounts, confirm the intended database and
-administrator identity, then promote one, verify it must sign in again and can
-open Staff pages, demote it, and confirm those pages become unavailable.
+test then used a disposable registered student account on the configured
+course database. An administrator promoted it to Staff, the page confirmed
+session revocation, and a fresh sign-in showed the Staff role plus working
+**Report handling** and **Claim reviews** pages. The administrator then demoted
+it to Student. A fresh sign-in showed Student, removed both Staff navigation
+links, and direct access to `/staff/reports` displayed the protected
+"Only active staff and administrator accounts" message. No report or Claim
+decision was made during this test.
