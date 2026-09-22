@@ -343,7 +343,7 @@ describe("claimant service", () => {
         moderationStatus: { $ne: "hidden" },
       },
       { $set: { status: "open" } },
-      expect.objectContaining({ new: true, session: transaction }),
+      expect.objectContaining({ returnDocument: "after", session: transaction }),
     );
     expect(verificationQuery.select).toHaveBeenCalledWith(
       "+verificationQuestions.expectedAnswer",
@@ -732,7 +732,7 @@ describe("claimant service", () => {
           withdrawnAt: expect.any(Date),
         },
       },
-      { new: true, session: transaction },
+      { returnDocument: "after", session: transaction },
     );
     expect(ItemReportModel.findById).toHaveBeenCalledWith(
       reportObjectId,
@@ -820,7 +820,7 @@ describe("claimant service", () => {
     expect(ItemReportModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: reportObjectId, status: "claim_pending" },
       { $set: { status: "open", resolvedAt: null } },
-      expect.objectContaining({ new: true, session: transaction }),
+      expect.objectContaining({ returnDocument: "after", session: transaction }),
     );
     expect(
       JSON.stringify(vi.mocked(ItemReportModel.findOneAndUpdate).mock.calls),
@@ -828,7 +828,7 @@ describe("claimant service", () => {
     expect(ClaimModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: claimId, claimantId: student.id, status: "approved" },
       expect.any(Object),
-      { new: true, session: transaction },
+      { returnDocument: "after", session: transaction },
     );
     expect(transaction.endSession).toHaveBeenCalledOnce();
   });

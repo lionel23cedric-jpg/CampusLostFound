@@ -164,7 +164,7 @@ describe("owned Profile service", () => {
           notificationSettings: input.notificationSettings,
         },
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
     expect(query.select).toHaveBeenCalledWith(PROFILE_PROJECTION);
   });

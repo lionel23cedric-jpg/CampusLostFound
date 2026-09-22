@@ -99,7 +99,7 @@ describe("client-managed Staff role service", () => {
     expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: expect.anything(), role: "student", status: "active", updatedAt: new Date(previous) },
       { $set: { role: "staff" } },
-      expect.objectContaining({ new: true, runValidators: true, session: transaction }),
+      expect.objectContaining({ returnDocument: "after", runValidators: true, session: transaction }),
     );
     expect(SessionModel.deleteMany).toHaveBeenCalledWith({ userId: expect.anything() }, { session: transaction });
     expect(AccountRoleChangeEventModel.create).toHaveBeenCalledWith([

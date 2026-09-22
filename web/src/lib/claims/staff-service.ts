@@ -296,7 +296,7 @@ export async function decideClaim(
         const report = await ItemReportModel.findOneAndUpdate(
           { _id: current.reportId, status: "open" },
           { $set: { status: "claim_pending", resolvedAt: null } },
-          { new: true, session: transaction },
+          { returnDocument: "after", session: transaction },
         ).exec();
         if (!report) throw new ClaimError("CLAIM_STATE_CONFLICT");
 
@@ -311,7 +311,7 @@ export async function decideClaim(
               reviewNote: input.reviewNote,
             },
           },
-          { new: true, session: transaction },
+          { returnDocument: "after", session: transaction },
         ).exec();
         if (!updated) throw new ClaimError("CLAIM_STATE_CONFLICT");
 
@@ -383,7 +383,7 @@ export async function decideClaim(
               reviewNote: input.reviewNote,
             },
           },
-          { new: true, session: transaction },
+          { returnDocument: "after", session: transaction },
         ).exec();
         if (!updated) throw new ClaimError("CLAIM_STATE_CONFLICT");
 
@@ -482,7 +482,7 @@ export async function completeClaim(user: PublicUser, claimId: string) {
       const report = await ItemReportModel.findOneAndUpdate(
         reportFilter,
         { $set: reportChanges },
-        { new: true, runValidators: true, session: transaction },
+        { returnDocument: "after", runValidators: true, session: transaction },
       ).exec();
       if (!report) throw new ClaimError("CLAIM_STATE_CONFLICT");
 
@@ -495,7 +495,7 @@ export async function completeClaim(user: PublicUser, claimId: string) {
             completedAt: now,
           },
         },
-        { new: true, session: transaction },
+        { returnDocument: "after", session: transaction },
       ).exec();
       if (!updated) throw new ClaimError("CLAIM_STATE_CONFLICT");
 

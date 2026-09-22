@@ -439,7 +439,7 @@ export async function resolveReportFlag(
             input.note,
           ),
           {
-            new: true,
+            returnDocument: "after",
             runValidators: true,
             session,
             projection: adminFlagSelect,
@@ -490,7 +490,7 @@ export async function resolveReportFlag(
         hideReportFilter,
         { $set: { moderationStatus: "hidden" } },
         {
-          new: true,
+          returnDocument: "after",
           runValidators: true,
           session,
           projection: adminReportSelect,
@@ -515,7 +515,7 @@ export async function resolveReportFlag(
           input.note,
         ),
         {
-          new: true,
+          returnDocument: "after",
           runValidators: true,
           session,
           projection: adminFlagSelect,
@@ -594,7 +594,7 @@ export async function moderateReport(
         transitionFilter,
         { $set: { moderationStatus: input.moderationStatus } },
         {
-          new: true,
+          returnDocument: "after",
           runValidators: true,
           session,
           projection: adminReportSelect,

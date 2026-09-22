@@ -293,7 +293,7 @@ describe("administrator Category service", () => {
           isActive: false,
         },
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
     const filter = vi.mocked(CategoryModel.findOneAndUpdate).mock.calls[0][0] as
       unknown as { _id: { toString(): string } };

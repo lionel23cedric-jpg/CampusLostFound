@@ -143,7 +143,7 @@ export async function updateAdminCampusLocation(
       // The timestamp prevents one administrator from overwriting a newer edit.
       { _id: objectId, updatedAt: new Date(updatedAt) },
       { $set: changes },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     )
       .lean<AdminCampusLocationRecord | null>()
       .exec();

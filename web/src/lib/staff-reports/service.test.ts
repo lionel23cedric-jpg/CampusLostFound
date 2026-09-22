@@ -317,7 +317,7 @@ describe("staff report verification", () => {
           },
         },
       },
-      { new: true, runValidators: true, projection },
+      { returnDocument: "after", runValidators: true, projection },
     );
     expect(updateChain.select).toHaveBeenCalledWith("+staffHandling");
     expect(toStaffReportDetail).toHaveBeenCalledWith(
@@ -443,7 +443,7 @@ describe("staff report storage", () => {
           },
         },
       },
-      { new: true, runValidators: true, projection },
+      { returnDocument: "after", runValidators: true, projection },
     );
   });
 
