@@ -145,7 +145,7 @@ export async function createClaim(
         },
         { $set: { status: "open" } },
         {
-          new: true,
+          returnDocument: "after",
           session: transaction,
           projection: CLAIM_REPORT_PROJECTION,
         },
@@ -345,7 +345,7 @@ export async function withdrawOwnClaim(
           { _id: current.reportId, status: "claim_pending" },
           { $set: { status: "open", resolvedAt: null } },
           {
-            new: true,
+            returnDocument: "after",
             session: transaction,
             projection: CLAIM_REPORT_PROJECTION,
           },
@@ -362,7 +362,7 @@ export async function withdrawOwnClaim(
             withdrawnAt: new Date(),
           },
         },
-        { new: true, session: transaction },
+        { returnDocument: "after", session: transaction },
       ).exec();
       if (!updated) throw new ClaimError("CLAIM_STATE_CONFLICT");
 

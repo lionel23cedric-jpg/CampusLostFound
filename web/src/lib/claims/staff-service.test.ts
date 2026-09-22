@@ -487,7 +487,7 @@ describe("staff claim service", () => {
     expect(ItemReportModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: pendingClaim.reportId, status: "open" },
       { $set: { status: "claim_pending", resolvedAt: null } },
-      { new: true, session: transaction },
+      { returnDocument: "after", session: transaction },
     );
     const selectedUpdate = vi.mocked(ClaimModel.findOneAndUpdate).mock
       .calls[0][1] as { $set: Record<string, unknown> };
@@ -862,7 +862,7 @@ describe("staff claim service", () => {
         staffHandling: { $exists: false },
       },
       { $set: { status: "resolved", resolvedAt: completionTime } },
-      { new: true, runValidators: true, session: transaction },
+      { returnDocument: "after", runValidators: true, session: transaction },
     ]);
     expect(ClaimModel.findOneAndUpdate).toHaveBeenCalledWith(
       { _id: claimId, status: "approved" },
@@ -873,7 +873,7 @@ describe("staff claim service", () => {
           completedAt: completionTime,
         },
       },
-      { new: true, session: transaction },
+      { returnDocument: "after", session: transaction },
     );
     expect(deliverNotifications).toHaveBeenCalledWith(
       [
@@ -932,7 +932,7 @@ describe("staff claim service", () => {
       "staffHandling.updatedBy": staff.id,
     });
     expect(reportUpdate[2]).toEqual({
-      new: true,
+      returnDocument: "after",
       runValidators: true,
       session: transaction,
     });

@@ -672,7 +672,7 @@ describe("administrator moderation decisions", () => {
         },
       },
       expect.objectContaining({
-        new: true,
+        returnDocument: "after",
         runValidators: true,
         session: transaction,
       }),
@@ -809,7 +809,7 @@ describe("administrator moderation decisions", () => {
       },
       { $set: { moderationStatus: "hidden" } },
       expect.objectContaining({
-        new: true,
+        returnDocument: "after",
         runValidators: true,
         session: transaction,
       }),

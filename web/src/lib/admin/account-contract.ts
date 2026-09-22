@@ -35,6 +35,11 @@ export const accountStatusInputSchema = z.strictObject({
   reason: z.enum(ACCOUNT_ADMINISTRATION_REASONS),
 });
 
+export const accountRoleInputSchema = z.strictObject({
+  role: z.enum(MANAGEABLE_ACCOUNT_ROLES),
+  expectedUpdatedAt: z.string().datetime({ offset: true }),
+});
+
 export const managedAccountSchema = z.strictObject({
   id: accountUserIdSchema,
   email: z.string().email(),
@@ -71,6 +76,7 @@ export const managedAccountPageSchema = z
 
 export type AccountListQuery = z.output<typeof accountListQuerySchema>;
 export type AccountStatusInput = z.infer<typeof accountStatusInputSchema>;
+export type AccountRoleInput = z.infer<typeof accountRoleInputSchema>;
 export type ManagedAccount = z.infer<typeof managedAccountSchema>;
 export type ManagedAccountPage = z.infer<typeof managedAccountPageSchema>;
 

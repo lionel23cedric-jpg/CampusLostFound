@@ -72,6 +72,10 @@ export type AccountBrowserStatusInput = {
   expectedUpdatedAt: string;
   reason: (typeof ACCOUNT_BROWSER_REASONS)[number];
 };
+export type AccountBrowserRoleInput = {
+  role: (typeof ACCOUNT_BROWSER_ROLES)[number];
+  expectedUpdatedAt: string;
+};
 export type ManagedBrowserAccount = z.infer<typeof managedBrowserAccountSchema>;
 export type ManagedBrowserAccountPage = z.infer<
   typeof managedBrowserAccountPageSchema

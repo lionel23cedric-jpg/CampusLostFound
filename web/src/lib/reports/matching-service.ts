@@ -5,16 +5,19 @@ import { connectToDatabase } from "@/lib/db";
 import { ItemReportModel, type ItemReport } from "@/models/item-report";
 
 import { MatchingError } from "./matching-errors";
+import { embedPublicText } from "./local-embedding";
 import {
   scoreReportMatch,
   type MatchFactor,
   type ScoringReport,
 } from "./matching-score";
 import { toMemberReport, type MemberReport } from "./public-report";
+import { replaceTextFactor, semanticTextPoints } from "./semantic-score";
 
 export const MATCH_CANDIDATE_LIMIT = 500;
 export const MATCH_RESULT_LIMIT = 5;
 export const MATCH_MINIMUM_SCORE = 35;
+export const MATCH_SEMANTIC_SHORTLIST_LIMIT = 30;
 
 export const MATCH_REPORT_PROJECTION = {
   _id: 1,
@@ -49,8 +52,23 @@ export type ReportMatch = {
 
 export type ReportMatches = {
   sourceReportId: string;
+  matchingMethod: "model_assisted" | "rule_fallback";
   matches: ReportMatch[];
 };
+
+function rankMatches(matches: ReportMatch[]): ReportMatch[] {
+  return [...matches]
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        right.report.createdAt.localeCompare(left.report.createdAt) ||
+        right.report.id.localeCompare(left.report.id),
+    );
+}
+
+function publicText(report: Pick<ScoringReport, "title" | "publicDescription">) {
+  return `${report.title}. ${report.publicDescription}`;
+}
 
 export function toSourceInput(report: MatchReportDocument): ScoringReport {
   return {
@@ -115,20 +133,39 @@ export async function findReportMatches(
     .exec();
 
   const sourceInput = toSourceInput(source);
-  const matches = candidates
+  const ruleMatches = candidates
     .map((document) => {
       const report = toMemberReport(document, user.id);
       const result = scoreReportMatch(sourceInput, toCandidateInput(report));
       return { report, score: result.score, factors: result.factors };
-    })
+    });
+
+  let matchingMethod: ReportMatches["matchingMethod"] = "rule_fallback";
+  let ranked = rankMatches(ruleMatches);
+  const eligible = ranked.filter((match) => match.score >= MATCH_MINIMUM_SCORE);
+  if (eligible.length > 0) {
+    try {
+      const shortlist = eligible.slice(0, MATCH_SEMANTIC_SHORTLIST_LIMIT);
+      const sourceVector = await embedPublicText(publicText(sourceInput));
+      const modelMatches: ReportMatch[] = [];
+      for (const match of shortlist) {
+        const vector = await embedPublicText(publicText(match.report));
+        const updated = replaceTextFactor(
+          { score: match.score, factors: match.factors },
+          semanticTextPoints(sourceVector, vector),
+        );
+        modelMatches.push({ report: match.report, ...updated });
+      }
+      ranked = rankMatches(modelMatches);
+      matchingMethod = "model_assisted";
+    } catch {
+      // Missing model files or inference failure must not interrupt safe rule matching.
+    }
+  }
+
+  const matches = ranked
     .filter((match) => match.score >= MATCH_MINIMUM_SCORE)
-    .sort(
-      (left, right) =>
-        right.score - left.score ||
-        right.report.createdAt.localeCompare(left.report.createdAt) ||
-        right.report.id.localeCompare(left.report.id),
-    )
     .slice(0, MATCH_RESULT_LIMIT);
 
-  return { sourceReportId: source._id.toString(), matches };
+  return { sourceReportId: source._id.toString(), matchingMethod, matches };
 }

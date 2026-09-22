@@ -201,7 +201,7 @@ describe("administrator account status service", () => {
       },
       { $set: { status: "suspended" } },
       expect.objectContaining({
-        new: true,
+        returnDocument: "after",
         runValidators: true,
         session,
       }),

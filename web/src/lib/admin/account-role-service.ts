@@ -2,7 +2,7 @@ import { Types, type ClientSession } from "mongoose";
 
 import type { PublicUser } from "@/lib/auth/public-user";
 import { connectToDatabase } from "@/lib/db";
-import { AccountAdministrationEventModel } from "@/models/account-administration-event";
+import { AccountRoleChangeEventModel } from "@/models/account-role-change-event";
 import { ProfileModel } from "@/models/profile";
 import { SessionModel } from "@/models/session";
 import { UserModel } from "@/models/user";
@@ -10,7 +10,7 @@ import { UserModel } from "@/models/user";
 import { requireAccountAdministrator } from "./account-access";
 import {
   toManagedAccount,
-  type AccountStatusInput,
+  type AccountRoleInput,
   type ManagedAccount,
   type ManagedAccountProfileRecord,
   type ManagedAccountUserRecord,
@@ -23,72 +23,41 @@ type CurrentAccountRecord = {
   updatedAt: Date;
 };
 
-export function accountTransitionIsAllowed(
-  previousStatus: string,
-  nextStatus: string,
-  reason: string,
-) {
-  if (previousStatus === "active" && nextStatus === "suspended") {
-    return [
-      "security_concern",
-      "policy_violation",
-      "administrative_review",
-    ].includes(reason);
-  }
-  if (previousStatus === "suspended" && nextStatus === "active") {
-    return reason === "account_restored";
-  }
-  return (
-    (previousStatus === "active" || previousStatus === "suspended") &&
-    nextStatus === "deactivated" &&
-    reason === "account_closed"
-  );
-}
-
-function rethrowSafeAccountError(error: unknown): never {
-  if (error instanceof AccountManagementError) throw error;
-  throw new AccountManagementError("ACCOUNT_OPERATION_FAILED");
-}
-
-export async function updateManagedAccountStatus(
+export async function updateManagedAccountRole(
   administrator: PublicUser,
   targetUserId: string,
-  input: AccountStatusInput,
+  input: AccountRoleInput,
 ): Promise<ManagedAccount> {
   requireAccountAdministrator(administrator);
   if (administrator.id === targetUserId) {
     throw new AccountManagementError("ACCOUNT_ACTION_FORBIDDEN");
   }
 
-  let result: ManagedAccount | undefined;
   let transaction: ClientSession | null = null;
+  let result: ManagedAccount | undefined;
   let failure: unknown;
-  let failed = false;
 
   try {
     const database = await connectToDatabase();
-    const activeTransaction = await database.startSession();
-    transaction = activeTransaction;
-    const actorObjectId = new Types.ObjectId(administrator.id);
-    const targetObjectId = new Types.ObjectId(targetUserId);
+    transaction = await database.startSession();
+    const actorId = new Types.ObjectId(administrator.id);
+    const targetId = new Types.ObjectId(targetUserId);
 
-    await activeTransaction.withTransaction(async () => {
+    await transaction.withTransaction(async () => {
       const actor = await UserModel.findOne({
-        _id: actorObjectId,
+        _id: actorId,
         role: "administrator",
         status: "active",
       })
         .select({ _id: 1 })
-        .session(activeTransaction)
+        .session(transaction!)
         .lean<{ _id: unknown } | null>()
         .exec();
-      if (!actor) {
-        throw new AccountManagementError("ADMINISTRATOR_REQUIRED");
-      }
+      if (!actor) throw new AccountManagementError("ADMINISTRATOR_REQUIRED");
 
-      const current = await UserModel.findById(targetObjectId)
+      const current = await UserModel.findById(targetId)
         .select({ _id: 1, role: 1, status: 1, updatedAt: 1 })
-        .session(activeTransaction)
+        .session(transaction!)
         .lean<CurrentAccountRecord | null>()
         .exec();
       if (!current) throw new AccountManagementError("ACCOUNT_NOT_FOUND");
@@ -99,22 +68,22 @@ export async function updateManagedAccountStatus(
         throw new AccountManagementError("ACCOUNT_NOT_FOUND");
       }
       if (
-        (current.status !== "active" && current.status !== "suspended") ||
-        current.updatedAt.toISOString() !== input.expectedUpdatedAt ||
-        !accountTransitionIsAllowed(current.status, input.status, input.reason)
+        current.status === "deactivated" ||
+        current.role === input.role ||
+        current.updatedAt.toISOString() !== input.expectedUpdatedAt
       ) {
         throw new AccountManagementError("ACCOUNT_STATE_CONFLICT");
       }
 
       const updated = await UserModel.findOneAndUpdate(
         {
-          _id: targetObjectId,
-          role: { $in: ["student", "staff"] },
+          _id: targetId,
+          role: current.role,
           status: current.status,
           updatedAt: new Date(input.expectedUpdatedAt),
         },
-        { $set: { status: input.status } },
-        { returnDocument: "after", runValidators: true, session: activeTransaction },
+        { $set: { role: input.role } },
+        { returnDocument: "after", runValidators: true, session: transaction! },
       )
         .select({
           _id: 1,
@@ -127,55 +96,43 @@ export async function updateManagedAccountStatus(
         })
         .lean<ManagedAccountUserRecord | null>()
         .exec();
-      if (!updated) {
-        throw new AccountManagementError("ACCOUNT_STATE_CONFLICT");
-      }
+      if (!updated) throw new AccountManagementError("ACCOUNT_STATE_CONFLICT");
 
-      await SessionModel.deleteMany(
-        { userId: targetObjectId },
-        { session: activeTransaction },
+      await SessionModel.deleteMany({ userId: targetId }, { session: transaction! });
+      await AccountRoleChangeEventModel.create(
+        [{
+          actorAdministratorId: actorId,
+          targetUserId: targetId,
+          previousRole: current.role,
+          newRole: input.role,
+        }],
+        { session: transaction! },
       );
-      await AccountAdministrationEventModel.create(
-        [
-          {
-            actorAdministratorId: actorObjectId,
-            targetUserId: targetObjectId,
-            previousStatus: current.status,
-            newStatus: input.status,
-            reason: input.reason,
-          },
-        ],
-        { session: activeTransaction },
-      );
-
       const profile = await ProfileModel.findOne(
-        { userId: targetObjectId },
+        { userId: targetId },
         { _id: 0, displayName: 1 },
       )
-        .session(activeTransaction)
+        .session(transaction!)
         .lean<ManagedAccountProfileRecord | null>()
         .exec();
       if (!profile) throw new Error("Managed account profile is incomplete");
-
       result = toManagedAccount(updated, profile);
     });
   } catch (error) {
     failure = error;
-    failed = true;
   }
 
   if (transaction) {
     try {
       await transaction.endSession();
     } catch (error) {
-      if (!failed) {
-        failure = error;
-        failed = true;
-      }
+      failure ??= error;
     }
   }
-
-  if (failed) rethrowSafeAccountError(failure);
+  if (failure) {
+    if (failure instanceof AccountManagementError) throw failure;
+    throw new AccountManagementError("ACCOUNT_OPERATION_FAILED");
+  }
   if (!result) throw new AccountManagementError("ACCOUNT_OPERATION_FAILED");
   return result;
 }

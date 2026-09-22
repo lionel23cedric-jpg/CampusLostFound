@@ -97,6 +97,7 @@ const memberReport = {
 
 const reportMatches = {
   sourceReportId: memberReport.id,
+  matchingMethod: "rule_fallback",
   matches: [
     {
       report: {
@@ -805,6 +806,10 @@ describe("report browser client", () => {
   });
 
   it.each([
+    [
+      "an unverified AI method label",
+      { ...reportMatches, matchingMethod: "model_assisted_without_inference" },
+    ],
     [
       "score below the backend threshold",
       {
