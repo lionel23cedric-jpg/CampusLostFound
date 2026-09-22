@@ -5,6 +5,7 @@ import {
   managedBrowserAccountResponseSchema,
   type AccountBrowserQuery,
   type AccountBrowserStatusInput,
+  type AccountBrowserRoleInput,
 } from "./account-browser-contract";
 
 const GENERIC_MESSAGE = "Account management is temporarily unavailable";
@@ -145,6 +146,33 @@ export async function updateAdministratorAccountStatus(
 ) {
   const response = await safeFetch(
     `/api/admin/accounts/${encodeURIComponent(userId)}/status`,
+    {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify(input),
+      signal,
+    },
+  );
+  if (!response.ok) throw await responseError(response, signal);
+  const parsed = managedBrowserAccountResponseSchema.safeParse(
+    await readJson(response, signal),
+  );
+  if (!parsed.success) throw unavailable(response.status);
+  return parsed.data.account;
+}
+
+export async function updateAdministratorAccountRole(
+  userId: string,
+  input: AccountBrowserRoleInput,
+  signal?: AbortSignal,
+) {
+  const response = await safeFetch(
+    `/api/admin/accounts/${encodeURIComponent(userId)}/role`,
     {
       method: "PATCH",
       headers: {

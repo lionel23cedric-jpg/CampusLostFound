@@ -10,6 +10,7 @@ import {
   BrowserAccountManagementError,
   listAdministratorAccounts,
   updateAdministratorAccountStatus,
+  updateAdministratorAccountRole,
 } from "@/lib/admin/account-browser-client";
 import {
   accountBrowserSearchSchema,
@@ -38,7 +39,8 @@ type FilterDraft = {
   status: "" | "active" | "suspended" | "deactivated";
 };
 
-type AccountAction = "suspend" | "restore" | "deactivate";
+type AccountAction = "suspend" | "restore" | "deactivate" | "promote" | "demote";
+type StatusAction = Exclude<AccountAction, "promote" | "demote">;
 type OpenAction = { accountId: string; action: AccountAction };
 type MutationStatus = "idle" | "pending" | "error";
 type MutationNotice = { message: string; kind: "status" | "alert" };
@@ -76,7 +78,7 @@ function formatDate(value: string | null) {
 
 function actionInput(
   account: ManagedBrowserAccount,
-  action: AccountAction,
+  action: StatusAction,
   suspensionReason: SuspensionReason,
 ): AccountBrowserStatusInput {
   if (action === "suspend") {
@@ -104,6 +106,8 @@ const actionLabels = {
   suspend: { verb: "Suspend", noun: "suspension" },
   restore: { verb: "Restore", noun: "restoration" },
   deactivate: { verb: "Deactivate", noun: "deactivation" },
+  promote: { verb: "Add Staff access for", noun: "staff promotion" },
+  demote: { verb: "Remove Staff access for", noun: "staff removal" },
 } as const;
 
 type AccountCardProps = {
@@ -201,6 +205,9 @@ function AccountCard({
           tabIndex={-1}
         >
           <div className={styles.actionButtons}>
+            {account.status !== "deactivated"
+              ? actionButton(account.role === "student" ? "promote" : "demote")
+              : null}
             {account.status === "active" ? (
               <>
                 {actionButton("suspend")}
@@ -229,6 +236,11 @@ function AccountCard({
                 {actionLabels[activeAction].verb} {account.displayName}?
               </h3>
               <p>
+                {activeAction === "promote" || activeAction === "demote" ? (
+                  <>
+                    Role: {titleCase(account.role)} to {activeAction === "promote" ? "Staff" : "Student"}.{" "}
+                  </>
+                ) : null}
                 This access change takes effect immediately. All current
                 sessions will be revoked.
               </p>
@@ -267,13 +279,17 @@ function AccountCard({
                   disabled={isMutating}
                   aria-label={
                     isMutating
-                      ? "Changing account status"
+                      ? activeAction === "promote" || activeAction === "demote"
+                        ? "Changing Staff access"
+                        : "Changing account status"
                       : `Confirm ${actionLabels[activeAction].noun}`
                   }
                   onClick={onConfirm}
                 >
                   {isMutating
-                    ? "Changing status"
+                    ? activeAction === "promote" || activeAction === "demote"
+                      ? "Changing Staff access"
+                      : "Changing status"
                     : `Confirm ${actionLabels[activeAction].noun}`}
                 </button>
                 <button
@@ -476,11 +492,20 @@ export function AdminAccountManagementClient() {
     setMutationNotice(null);
 
     try {
-      const updated = await updateAdministratorAccountStatus(
-        account.id,
-        actionInput(account, action, suspensionReason),
-        nextController.signal,
-      );
+      const updated = action === "promote" || action === "demote"
+        ? await updateAdministratorAccountRole(
+            account.id,
+            {
+              role: action === "promote" ? "staff" : "student",
+              expectedUpdatedAt: account.updatedAt,
+            },
+            nextController.signal,
+          )
+        : await updateAdministratorAccountStatus(
+            account.id,
+            actionInput(account, action, suspensionReason),
+            nextController.signal,
+          );
       if (updated.id !== account.id) {
         throw new Error("Account response target mismatch");
       }
@@ -515,7 +540,11 @@ export function AdminAccountManagementClient() {
             ? "Account suspended. Existing sessions were revoked."
             : action === "restore"
               ? "Account restored. Existing sessions were revoked."
-              : "Account deactivated. Existing sessions were revoked.",
+              : action === "deactivate"
+                ? "Account deactivated. Existing sessions were revoked."
+                : action === "promote"
+                  ? "Staff access added. Existing sessions were revoked."
+                  : "Staff access removed. Existing sessions were revoked.",
       });
       focusActionRegion(account.id);
     } catch (error) {
@@ -677,8 +706,8 @@ export function AdminAccountManagementClient() {
           <PageBackLink href="/admin">Back to administrator overview</PageBackLink>
           <h1 id="account-management-title">Manage accounts</h1>
           <p>
-            Find student and staff accounts, review their current access state
-            and move through the directory without exposing restricted data.
+            Find registered users, assign or remove Staff access, and manage
+            account availability without exposing restricted data.
           </p>
         </div>
       </header>
