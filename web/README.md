@@ -45,20 +45,19 @@ or application startup.
 ## Staff and administrator setup
 
 Normal registration always creates a student account. For a fresh course
-database, create the required accounts through the registration page first,
-then promote only the accounts that need staff or administrator access.
+database, register the initial administrator, then use the setup command below
+to grant that account administrator access. After signing in, that administrator
+can use **Manage accounts** to add or remove Staff access for registered
+students. Staff role changes revoke the affected user's sessions, so they must
+sign in again. The interface cannot grant administrator access.
 
 The role command is a dry run unless `--apply` is present. Check the email and
 proposed transition first:
-
-`npm run db:set-role -- --email staff@example.invalid --role staff`
 
 `npm run db:set-role -- --email admin@example.invalid --role administrator`
 
 When the dry-run output is correct, repeat the approved command with
 `--apply`:
-
-`npm run db:set-role -- --email staff@example.invalid --role staff --apply`
 
 `npm run db:set-role -- --email admin@example.invalid --role administrator --apply`
 
@@ -68,14 +67,18 @@ demote an administrator or assign an arbitrary role. An applied change is
 transactional and revokes that account's existing sessions, so the user must
 sign in again.
 
+This command remains available for initial setup or recovery. Routine Staff
+membership changes belong in the administrator's **Manage accounts** page;
+ordinary registration cannot request a privileged role.
+
 Recommended fresh-database order:
 
 1. Create `.env.local` and run `npm install`.
 2. Run `npm run db:bootstrap` to add missing standard reference data.
-3. Register the student, staff, and administrator accounts in the web UI.
-4. Run each `db:set-role` command without `--apply` and verify its output.
-5. Repeat only the approved staff and administrator commands with `--apply`.
-6. Sign in again with the promoted accounts and confirm their role-specific navigation.
+3. Register the initial administrator and other accounts in the web UI.
+4. Dry-run and then apply the administrator setup command after verifying its output.
+5. Sign in as administrator and configure Staff membership in **Manage accounts**.
+6. Have users sign in again and confirm their role-specific navigation.
 
 Both `db:bootstrap` and `db:set-role -- --apply` write to the database named by
 `MONGODB_URI`. Confirm that `.env.local` points to the intended course/test
@@ -97,6 +100,20 @@ references with:
 
 Apply mode keeps only protected `/api/report-images/<id>` references. It uses
 the report's current `updatedAt` value to avoid overwriting a concurrent edit.
+
+## Local AI matching setup
+
+The existing rules first select open, visible opposite-type reports with a
+score of at least 35. A quantized MiniLM model then compares only their public
+title and description, replacing at most the existing 20 text points and
+reranking up to 30 rule-qualified candidates. If model loading or inference
+fails, the original rule ranking remains available and the page says so.
+
+Run `npm run evaluate:matching:ai` once during setup to download and cache the
+model and reproduce the synthetic comparison. The first run needs internet
+access; later inference runs locally. The model is not bundled into Git or the
+source ZIP. Do not use private verification answers or contact information as
+model input. A suggested match never approves a Claim.
 
 ## Quality and security checks
 

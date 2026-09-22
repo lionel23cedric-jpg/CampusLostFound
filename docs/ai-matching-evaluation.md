@@ -2,12 +2,13 @@
 
 ## Purpose and AI-enhanced classification
 
-Campus Find uses a local intelligent ranking function to suggest plausible pairs
-of lost and found reports. It is an AI-enhanced feature in the broad course
-sense: it combines several signals, normalises natural-language terms, applies
-domain synonyms, scores every candidate, and explains why a result was shown.
-It is a deterministic heuristic, not a trained machine-learning model and not a
-generative-AI service.
+Campus Find uses a transparent rule-based matcher plus an actual pretrained
+sentence-embedding model, `Xenova/all-MiniLM-L6-v2` at revision
+`751bff37182d3f1213fa05d7196b954e230abad9`, running locally with
+Transformers.js 4.3.0. The model compares public Lost and Found report wording;
+it is not a chatbot or an external generative-AI service. If the model is not
+available, the original deterministic matcher still works and the interface
+labels that result as a rule fallback.
 
 The feature supports a person's decision; it does not approve ownership or
 complete a recovery automatically. A user must inspect a suggestion and use the
@@ -39,12 +40,21 @@ points.
 | Date | 15 | Same day: 15; within 3 days: 12; within 7: 8; within 14: 4 |
 | Colours | 15 | Jaccard overlap after case and Unicode normalisation |
 | Tags | 10 | Jaccard overlap after case and Unicode normalisation |
-| Text | 20 | Cosine similarity of term frequencies after stop-word and synonym handling |
+| Text | 20 | Baseline: cosine similarity of term frequencies; model-assisted: cosine similarity of mean-pooled, normalised MiniLM embeddings |
 
 Positive factors are returned with short explanations such as `Same category`
 or `Dates are within 3 days`. Candidates below 35 points are not shown. The five
 highest remaining candidates are returned in score order with deterministic
 tie-breaking.
+
+The rule score is the admission gate: a candidate below 35 cannot become a
+suggestion merely because the model likes its wording. Of the rule-qualified
+candidates, at most 30 are sent to the local model. Its score replaces only the
+existing 20 text points, after which the candidates are reranked and checked
+against 35 again. Category, location, date, colours, and tags retain their
+original fixed weights. No embedding or private evidence is returned to the
+browser. Model failures restore the original ranking over all queried
+candidates, not a partial AI list.
 
 ## Independent labelled dataset
 
@@ -84,6 +94,17 @@ September 2026.
 | Match | 24 | 0 |
 | No match | 5 | 31 |
 
+The local pretrained model was also run against the same 12 synthetic cases
+and 60 labelled comparisons on 22 September 2026, after the conservative
+rule-qualified gate was applied. It produced 24 true positives, 5 false
+positives, 0 false negatives, and 31 true negatives: precision 0.828, recall
+1.000, F1 0.906, accuracy 0.917, and top-match accuracy 1.000. These are the
+same aggregate metrics as the rule baseline, **not evidence that AI improves
+accuracy**. The model can change individual text scores and candidate order,
+but this small fixture does not demonstrate an aggregate gain. An earlier
+ungated trial produced 19 false positives, so allowing model similarity to
+admit rule-rejected candidates was rejected.
+
 All 12 source reports placed a labelled relevant candidate first. All 24
 labelled matches crossed the threshold. Five distractors also crossed it, which
 is consistent with a recommendation feature designed to ask a person to review
@@ -104,8 +125,8 @@ rare categories, or reports with several hidden fields.
 
 ## Privacy and ethics
 
-- Matching runs locally in application code; report text is not sent to an
-  external AI provider.
+- After the one-time model-file download, inference runs locally in the
+  application process; report text is not sent to an external AI provider.
 - Only public report fields are used.
 - Explanations contain bounded factor descriptions rather than private input.
 - The algorithm does not infer identity or decide ownership.
@@ -120,6 +141,11 @@ rare categories, or reports with several hidden fields.
 - Exact category and location identifiers receive substantial weight.
 - Photos are displayed to users but are not analysed by the matcher.
 - The score is not learned from outcomes and does not adapt automatically.
+- The model is English-focused; the synthetic fixture is too small to validate
+  real-world accuracy, multilingual wording, or fairness. The 30-candidate
+  shortlist may omit a relevant low-rule-score report.
+- The first model download needs network access. If it is unavailable or local
+  inference fails, matching continues using only the baseline rules.
 - A future study could use consented, anonymised labels and compare thresholds,
   but that is outside the current course-project scope.
 
@@ -129,8 +155,13 @@ From the `web` directory, run:
 
 ```powershell
 npm run evaluate:matching
+npm run evaluate:matching:ai
 ```
 
-The command validates the fixture contract, calculates the confusion matrix and
-ranking result, prints the exact metrics, and enforces the recorded course-level
-quality floors.
+The first command verifies the deterministic baseline. The second downloads
+and caches the quantized model if needed, runs real local inference on the same
+synthetic fixture, and prints its measured confusion matrix and metrics. The
+model files stay outside Git and are not included in the source ZIP. The model
+is published under the [Apache 2.0 licence](https://huggingface.co/Xenova/all-MiniLM-L6-v2);
+see the [Transformers.js pipeline documentation](https://huggingface.co/docs/transformers.js/pipelines)
+for the feature-extraction API.

@@ -20,6 +20,7 @@ not presented as passed evidence.
 | OWNER-01 | View own report history and previews | Student | `owner-history-service.test.ts`, `owner-report-history.test.tsx` | Open My reports and change filters | Only the signed-in owner's history is shown | Automated pass |
 | MATCH-01 | Explainable opposite-type ranking | Student | `matching-score.test.ts`, `matching-service.test.ts`, `matching-routes.test.ts` | Select Find possible matches | Up to five results at score 35+, with safe factors | Automated + browser success-path pass |
 | MATCH-02 | Independent AI-feature evaluation | Project team | `matching-evaluation-fixture.test.ts`, `matching-evaluation.test.ts` | Run `npm run evaluate:matching` | 12 cases/60 comparisons and committed metrics reproduce | Automated pass |
+| MATCH-03 | Local pretrained model and safe fallback | Student | `semantic-score.test.ts`, `local-embedding.test.ts`, `matching-service.test.ts`, `report-matches-panel.test.tsx` | Run `npm run evaluate:matching:ai`, request matches, then simulate model failure | Model uses public wording only; rule gate and fallback remain; method label is visible | Automated and local model evaluation pass; browser not run |
 | CLAIM-01 | Submit ownership Claim with questions | Student | `claimant-service.test.ts`, `claim-submission-client.test.tsx`, `claimant-routes.test.ts` | Claim another user's open report | Pending Claim stores protected evidence | Automated + browser success-path pass |
 | CLAIM-02 | Track and withdraw own Claim | Student | `claim-list-client.test.tsx`, `claim-detail-client.test.tsx` | Open My claims and withdraw a pending Claim | State and timeline update safely | Automated pass |
 | STAFF-01 | Verify reports and record Found-item storage | Staff/admin | `staff-report-routes.test.ts`, `staff-report-detail-client.test.tsx`, `staff-reports/service.test.ts` | Verify a Found report and save storage | Handling state changes with stale-update protection | Automated + browser success-path pass |
@@ -27,6 +28,7 @@ not presented as passed evidence.
 | NOTE-01 | Create/list/read notifications | Active account | `delivery.test.ts`, `notifications/service.test.ts`, `notification-provider.test.tsx`, `notification-centre.test.tsx` | Open Notifications and mark one read | Card updates and unread count decreases once | Automated + browser success-path pass |
 | ADMIN-01 | Overview totals and three doughnut charts | Administrator | `overview-service.test.ts`, `overview-contract.test.ts`, `admin-overview-client.test.tsx`, `overview-donut.test.tsx` | Compare cards, charts, and known sample data | Report/Claim/account totals remain internally consistent | Automated + browser success-path pass |
 | ADMIN-02 | Manage account status safely | Administrator | `account-status-service.test.ts`, `admin-account-status-route.test.ts`, `admin-account-management-client.test.tsx` | Suspend and restore a test user | Valid transition is audited; self-target is blocked | Automated pass |
+| ADMIN-05 | Configure Staff membership | Administrator | `account-role-service.test.ts`, `admin-account-role-route.test.ts`, `admin-account-management-client.test.tsx` | Promote a registered test student, sign in again, then demote | Role change is audited, sessions are revoked, and administrator promotion is unavailable | Automated pass; browser not run |
 | ADMIN-03 | Manage categories and campus locations | Administrator | `category-service.test.ts`, `campus-location-service.test.ts`, management panel tests | Create, edit, deactivate, and restore records | Duplicates/stale writes are rejected; history remains | Automated pass |
 | ADMIN-04 | Review flags and moderate reports | Administrator | `flag-service.test.ts`, `admin-service.test.ts`, moderation route/client tests | Submit a member flag, dismiss or hide, then restore | Queue and visibility update with audit event | Automated pass |
 | HTTP-01 | Limit JSON request bodies | All APIs | `request-body.test.ts` and grouped route tests | Submit over 16 KiB JSON | HTTP 413 with no body echo | Automated pass |
@@ -41,10 +43,14 @@ not presented as passed evidence.
 
 ## Automated baseline
 
-The final delivery gate passed 169 test files and 2940 tests, plus lint,
-TypeScript, a Next.js 16.3.5 production build, and an npm audit with zero
-vulnerabilities. The independent matching evaluation passed six assertions
-across two files using 12 cases and 60 candidate comparisons. `MANUAL-01` was
-completed against the configured database on 16 September 2026. The remaining
-manual rows stay `Not run` until a team member records the wider responsive,
-accessibility, and all-page visual evidence.
+The 16 September delivery gate passed 169 test files and 2940 tests. The
+22 September supervisor-feedback gate adds Staff membership and local-model
+matching: **174 test files / 2973 tests**, lint, TypeScript, and the Next.js
+16.3.5 production build all passed. The [Staff verification](superpowers/verification/2026-09-22-client-managed-staff.md)
+and [AI verification](superpowers/verification/2026-09-22-local-ai-matching.md)
+record what was and was not demonstrated. `npm audit` reports zero known
+vulnerabilities. Baseline and real local-model evaluation both use 12 synthetic
+cases and 60 comparisons. `MANUAL-01` was completed against the configured
+database on 16 September 2026. Live Staff-role changes and a browser AI-label
+demonstration have **not** been run against the shared database; wider
+responsive, accessibility, and all-page visual checks also remain open.

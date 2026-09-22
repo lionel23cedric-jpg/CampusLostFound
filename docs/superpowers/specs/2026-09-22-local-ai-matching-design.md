@@ -8,7 +8,7 @@ Add a demonstrable pretrained-model inference step to the existing explainable l
 
 - Use the Apache-2.0-licensed `Xenova/all-MiniLM-L6-v2` English sentence-embedding model with a quantized ONNX variant through Transformers.js in the Node.js server runtime. Its normalized embeddings compare the public title and public description of a source report and candidate reports.
 - Keep category (25), location (15), date (15), colours (15), and tags (10) unchanged. The 20-point text factor uses model cosine similarity when inference succeeds, replacing rather than adding to the current lexical text points. Scores therefore remain out of 100.
-- Run the existing rule scorer first to form a shortlist of at most 30 reports from the existing candidate query, then model-score only that shortlist. The existing maximum of five returned matches and deterministic tie-break order remain.
+- Run the existing rule scorer first and retain the 35-point admission gate. Form a shortlist of at most 30 rule-qualified reports, then model-score only that shortlist. The model cannot promote a rule-rejected report. The existing maximum of five returned matches and deterministic tie-break order remain.
 - On model load or inference failure, use the existing lexical text factor and mark the result as a fallback. The UI and documentation must never label a fallback result as model-assisted.
 
 ## Model loading and privacy

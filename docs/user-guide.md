@@ -110,9 +110,11 @@ Use an active administrator account.
 1. Open **Admin overview**. Explain the Reports, Claims and recovery, and Accounts
    totals. Each section includes a doughnut chart and exact numeric legend.
 2. Select **Refresh overview** to reload all three statistic groups.
-3. Open **Manage accounts**, search for a member, and use the allowed suspend,
-   restore, or deactivate transition with an appropriate reason. Administrators
-   cannot target their own account.
+3. Open **Manage accounts** and search for a member. Add Staff access to a
+   registered student or remove it from a Staff account. The affected user must
+   sign in again. You can also suspend, restore, or deactivate a member with an
+   appropriate reason. Administrators cannot target their own account or grant
+   administrator access through this page.
 4. Open **Manage reference data**. Create or edit categories and campus
    locations; deactivate records instead of deleting them so old reports retain
    their references.
@@ -141,18 +143,24 @@ Use an active administrator account.
 2. Open the owner's report and select **Find possible matches**.
 3. Explain that the maximum score is 100: category 25, location 15, date 15,
    colours 15, tags 10, and text similarity 20.
-4. Explain that only candidates scoring at least 35 are shown, up to five.
+4. Explain that the rules first admit candidates scoring at least 35, up to
+   five are shown, and the local AI model can rerank up to 30 admitted
+   candidates by public wording. Point out the AI-assisted or rule-fallback
+   label; neither label means ownership has been proven.
 5. Point to the factor explanations. Confirm that private answers, reporter
    identity, contact information, serial number, and exact private location are
    not used.
 6. Reproduce the independent synthetic evaluation in PowerShell:
 
 ```powershell
-Set-Location 'D:\Massey\CampusLostFound\web'
+Set-Location 'D:\Massey\CampusLostFound-project-quality-polish\web'
 npm run evaluate:matching
+npm run evaluate:matching:ai
 ```
 
-The committed result is documented in `docs/ai-matching-evaluation.md`.
+The second command downloads the model on first use; inference is local after
+that. The measured comparison and limitations are in
+`docs/ai-matching-evaluation.md`.
 
 ## Common errors and recovery
 
@@ -164,7 +172,7 @@ The committed result is documented in `docs/ai-matching-evaluation.md`.
 | An image preview is blank | Stale server/client bundle or invalid local file | Restart the development server, reselect the file, and check terminal/network errors |
 | HTTP 429 / too many requests | Basic abuse limit reached | Wait for the displayed/retry interval; do not repeatedly submit |
 | Update says the record changed | Optimistic concurrency prevented a stale write | Use the page's Refresh action, review the latest state, then retry |
-| Staff/admin links are absent | Account has the wrong role or is inactive | Sign in with the authorised role; do not change role through the public UI |
+| Staff/admin links are absent | Account has the wrong role or is inactive | Sign in with the authorised role; an administrator can configure Staff access in Manage accounts |
 | Notification cannot be marked read | Session expired or server/database request failed | Sign in again, use **Retry**, and check the server terminal |
 
 ## Privacy and security notes
