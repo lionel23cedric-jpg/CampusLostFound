@@ -207,6 +207,8 @@ export async function listAdministratorCategories(
   query: ReferenceDataListQuery,
   signal?: AbortSignal,
 ): Promise<AdminCategoryPage> {
+  // List calls are read-only and carry search/status/page in the query string.
+  // The response schema prevents malformed rows from reaching the UI.
   return request(
     listUrl("/api/admin/categories", query),
     readOptions(signal),
@@ -218,6 +220,7 @@ export async function createAdministratorCategory(
   input: CreateAdminCategoryInput,
   signal?: AbortSignal,
 ): Promise<AdminCategory> {
+  // Create uses POST and returns the canonical record produced by the server.
   const result = await request(
     "/api/admin/categories",
     writeOptions("POST", input, signal),
@@ -231,6 +234,8 @@ export async function updateAdministratorCategory(
   input: UpdateAdminCategoryInput,
   signal?: AbortSignal,
 ): Promise<AdminCategory> {
+  // Update uses PATCH; the input includes updatedAt so the service can reject a
+  // stale editor instead of silently overwriting another administrator's edit.
   const result = await request(
     `/api/admin/categories/${encodeURIComponent(categoryId)}`,
     writeOptions("PATCH", input, signal),
@@ -243,6 +248,7 @@ export async function listAdministratorCampusLocations(
   query: ReferenceDataListQuery,
   signal?: AbortSignal,
 ): Promise<AdminCampusLocationPage> {
+  // Campus locations use the same strict list contract as categories.
   return request(
     listUrl("/api/admin/campus-locations", query),
     readOptions(signal),
@@ -254,6 +260,7 @@ export async function createAdministratorCampusLocation(
   input: CreateAdminCampusLocationInput,
   signal?: AbortSignal,
 ): Promise<AdminCampusLocation> {
+  // The server returns the new active location after validation and persistence.
   const result = await request(
     "/api/admin/campus-locations",
     writeOptions("POST", input, signal),
@@ -267,6 +274,7 @@ export async function updateAdministratorCampusLocation(
   input: UpdateAdminCampusLocationInput,
   signal?: AbortSignal,
 ): Promise<AdminCampusLocation> {
+  // The timestamp in this PATCH protects historical references from stale edits.
   const result = await request(
     `/api/admin/campus-locations/${encodeURIComponent(campusLocationId)}`,
     writeOptions("PATCH", input, signal),

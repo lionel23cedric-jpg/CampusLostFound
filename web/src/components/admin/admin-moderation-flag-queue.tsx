@@ -58,6 +58,8 @@ function codeOf(error: unknown) {
 }
 
 export function AdminModerationFlagQueue() {
+  // This client component owns filters, pagination, and the confirmation dialog
+  // for the administrator's pending flag decisions.
   const router = useRouter();
   const { refreshSession } = useAuthSession();
   const [query, setQuery] = useState<BrowserAdminFlagQuery>({
@@ -132,12 +134,15 @@ export function AdminModerationFlagQueue() {
   }, [action]);
 
   function updateQuery(next: Partial<BrowserAdminFlagQuery>) {
+    // Changing either filter starts at page one and closes any open decision.
     setNotice(null);
     setAction(null);
     setQuery((value) => ({ ...value, ...next, page: next.page ?? 1 }));
   }
 
   async function confirmAction(event: FormEvent<HTMLFormElement>) {
+    // Dismiss and Hide report share one confirmation form but use different
+    // server decisions; the service keeps recovery data unchanged.
     event.preventDefault();
     if (!action || mutating) return;
     mutationController.current?.abort();
@@ -199,6 +204,7 @@ export function AdminModerationFlagQueue() {
   return (
     <div className={styles.panelBody}>
       <div className={styles.filters}>
+        {/* These selects update the query and trigger a protected GET request. */}
         <label>
           Flag status
           <select
@@ -279,6 +285,8 @@ export function AdminModerationFlagQueue() {
                 ) : null}
                 {item.status === "pending" ? (
                   <>
+                    {/* Dismiss closes only the concern; Hide report also changes
+                        member visibility and therefore requires stronger review. */}
                     <button type="button" onClick={() => { setNote(""); setAction({ kind: "dismiss", flag: item }); }}>Dismiss concern</button>
                     <button type="button" onClick={() => { setNote(""); setAction({ kind: "hide", flag: item }); }}>Hide report</button>
                   </>
@@ -298,6 +306,8 @@ export function AdminModerationFlagQueue() {
       ) : null}
 
       {action ? (
+        /* The dialog makes the irreversible moderation choice explicit and
+           collects an optional internal note for the audit trail. */
         <form className={styles.confirmation} onSubmit={(event) => void confirmAction(event)}>
           <h3 ref={actionHeading} tabIndex={-1}>
             {action.kind === "dismiss" ? "Dismiss this concern?" : "Hide this report?"}

@@ -91,6 +91,8 @@ async function responseError(response: Response) {
 export async function getAdministratorOverview(
   signal?: AbortSignal,
 ): Promise<AdministratorOverview> {
+  // This is the browser-to-API boundary for the overview page. It sends no
+  // client-provided role and validates the complete snapshot before rendering.
   let response: Response;
 
   try {

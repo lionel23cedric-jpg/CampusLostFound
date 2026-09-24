@@ -19,6 +19,8 @@ export function AdminReferenceDataClient(): React.JSX.Element {
   const campusTabRef = useRef<HTMLButtonElement>(null);
 
   function activate(tab: ReferenceDataTab) {
+    // Selecting a tab changes only which panel is visible; the panels keep
+    // their own filters and editor state for a smoother administrator workflow.
     setSelectedTab(tab);
     if (tab === "campusLocations") setCampusVisited(true);
   }
@@ -61,6 +63,7 @@ export function AdminReferenceDataClient(): React.JSX.Element {
       <ContextIllustration kind="administration" variant="banner" priority />
 
       <div className={styles.tabs} role="tablist" aria-label="Reference data resources">
+        {/* These buttons are the UI entry points for the two editable resources. */}
         <button
           ref={categoryTabRef}
           className={styles.tab}

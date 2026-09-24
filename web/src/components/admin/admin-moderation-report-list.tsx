@@ -50,6 +50,8 @@ function codeOf(error: unknown) {
 }
 
 export function AdminModerationReportList() {
+  // This list is the direct visibility-control workflow: search reports, inspect
+  // safe public fields, then confirm Hide or Restore without deleting history.
   const router = useRouter();
   const { refreshSession } = useAuthSession();
   const [query, setQuery] = useState<BrowserAdminReportQuery>({ page: 1 });
@@ -119,6 +121,7 @@ export function AdminModerationReportList() {
   }, [action]);
 
   function updateQuery(next: Partial<BrowserAdminReportQuery>) {
+    // Any search or status change resets pagination and closes a pending action.
     setNotice(null);
     setAction(null);
     setQuery((value) => ({ ...value, ...next, page: next.page ?? 1 }));
@@ -138,6 +141,7 @@ export function AdminModerationReportList() {
   }
 
   function openAction(next: ReportAction) {
+    // Opening an action always clears the previous reason, note, and error.
     setAction(next);
     setHideReason("");
     setNote("");
@@ -145,6 +149,8 @@ export function AdminModerationReportList() {
   }
 
   async function confirmAction(event: FormEvent<HTMLFormElement>) {
+    // The displayed updatedAt is sent with the mutation so stale administrator
+    // tabs receive a conflict instead of overwriting newer moderation work.
     event.preventDefault();
     if (!action || mutating) return;
     if (action.kind === "hide" && !hideReason) {
@@ -207,6 +213,7 @@ export function AdminModerationReportList() {
   return (
     <div className={styles.panelBody}>
       <form className={styles.searchFilters} onSubmit={search}>
+        {/* Search is applied on submit; the status selects update the same query. */}
         <label>
           Search reports
           <input value={draftSearch} maxLength={80} onChange={(event) => setDraftSearch(event.target.value)} />
@@ -262,6 +269,8 @@ export function AdminModerationReportList() {
               {item.tags.length > 0 ? <p className={styles.tags}>Tags: {item.tags.join(", ")}</p> : null}
               <div className={styles.cardActions}>
                 {item.moderationStatus === "visible" ? <Link href={`/reports/${encodeURIComponent(item.id)}`}>View safe report</Link> : null}
+                {/* The button label follows current visibility, so the next action
+                    is always the valid opposite transition. */}
                 <button type="button" onClick={() => openAction({ kind: item.moderationStatus === "visible" ? "hide" : "restore", report: item })}>
                   {item.moderationStatus === "visible" ? "Hide report" : "Restore report"}
                 </button>
@@ -280,6 +289,7 @@ export function AdminModerationReportList() {
       ) : null}
 
       {action ? (
+        /* Hide requires a reason; Restore only needs the confirmation and note. */
         <form className={styles.confirmation} onSubmit={(event) => void confirmAction(event)}>
           <h3 ref={actionHeading} tabIndex={-1}>{action.kind === "hide" ? "Hide this report?" : "Restore this report?"}</h3>
           <p>{action.kind === "hide" ? "Members will no longer discover this report. Recovery and Claim records remain unchanged." : "Members will be able to discover this report again."}</p>

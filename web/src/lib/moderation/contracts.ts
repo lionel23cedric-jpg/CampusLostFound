@@ -30,6 +30,8 @@ const identifierSchema = z.custom<Identifier>(
 const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/);
 const dateTimeSchema = z.string().datetime({ offset: true });
 
+// These server-side schemas shape only safe public report fields for moderation;
+// private ownership answers and other verification evidence stay out of the queue.
 export const reportFlagReceiptSchema = z.strictObject({
   id: objectIdSchema,
   reportId: objectIdSchema,

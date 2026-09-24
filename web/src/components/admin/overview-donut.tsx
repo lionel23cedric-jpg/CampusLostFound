@@ -8,6 +8,8 @@ export type OverviewDonutSegment = {
   color: string;
 };
 
+// Convert each segment's share of the total into a conic-gradient stop. The
+// zero-total branch deliberately renders a neutral full circle instead of NaN.
 function buildGradient(segments: readonly OverviewDonutSegment[], total: number) {
   if (total === 0) {
     return "conic-gradient(var(--line) 0deg 360deg)";
@@ -24,6 +26,7 @@ function buildGradient(segments: readonly OverviewDonutSegment[], total: number)
   return `conic-gradient(${stops.join(", ")})`;
 }
 
+// Percentages are presentation-only; the raw count remains visible beside them.
 function formatPercentage(value: number, total: number) {
   return `${total === 0 ? 0 : Math.round((value / total) * 100)}%`;
 }
@@ -37,12 +40,16 @@ export function OverviewDonut({
   total: number;
   segments: readonly OverviewDonutSegment[];
 }) {
+  // The chart is CSS-only, so it has no extra charting dependency and remains
+  // accessible through a text aria-label and a legend with exact values.
   const description = `${title}: ${segments
     .map((segment) => `${segment.label} ${segment.value}`)
     .join(", ")}. Total ${total}.`;
 
   return (
     <figure className={styles.chartFigure}>
+      {/* The background is the visual pie/donut; the legend below is the
+          authoritative text representation for screen readers and users. */}
       <div
         className={styles.donutChart}
         role="img"

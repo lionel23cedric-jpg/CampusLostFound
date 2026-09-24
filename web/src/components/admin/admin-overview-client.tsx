@@ -27,6 +27,8 @@ type OverviewState =
   | { status: "error" }
   | { status: "accessChanged" };
 
+// These labels define the business meaning shown beside each administrator
+// number. Keep the wording aligned with the server aggregation definitions.
 const reportMetrics = [
   [
     "submittedLost",
@@ -84,6 +86,8 @@ function MetricList<T extends Record<string, number>>({
   entries: MetricEntries<T>;
   values: T;
 }) {
+  // The same small renderer keeps report, Claim, and account cards visually
+  // consistent while the data contract remains strongly typed.
   return (
     <dl className={styles.metricGrid}>
       {entries.map(([key, label, description]) => (
@@ -98,6 +102,8 @@ function MetricList<T extends Record<string, number>>({
 }
 
 export function AdminOverviewClient() {
+  // This client component owns loading, refresh, and access-loss states for the
+  // administrator snapshot; all totals still come from the protected API.
   const router = useRouter();
   const { refreshSession } = useAuthSession();
   const [state, setState] = useState<OverviewState>({ status: "loading" });
@@ -201,6 +207,7 @@ export function AdminOverviewClient() {
       <section className={styles.statePanel} aria-labelledby="overview-error">
         <h1 id="overview-error">Administrator overview unavailable</h1>
         <p>We could not load the current system totals. Try again.</p>
+        {/* This retry button starts a fresh initial request after a load failure. */}
         <button type="button" onClick={() => void loadOverview("initial")}>
           Retry overview
         </button>
@@ -239,6 +246,7 @@ export function AdminOverviewClient() {
           <p>
             Updated <time dateTime={data.generatedAt}>{generatedAtFormatter.format(new Date(data.generatedAt))}</time>
           </p>
+          {/* Refresh keeps the current snapshot visible while a newer one loads. */}
           <button
             type="button"
             disabled={state.isRefreshing}
@@ -276,6 +284,7 @@ export function AdminOverviewClient() {
           </div>
         </div>
         <div className={styles.sectionBody}>
+          {/* The report donut visualises the Lost/Found split; MetricList keeps exact totals readable. */}
           <OverviewDonut
             title="Report type"
             total={data.reports.submittedTotal}
@@ -294,6 +303,7 @@ export function AdminOverviewClient() {
           <Link href="/staff/claims">Review ownership Claims</Link>
         </div>
         <div className={styles.sectionBody}>
+          {/* Claim statuses are shown as proportions of the complete Claim total. */}
           <OverviewDonut
             title="Claim status"
             total={data.claims.total}
@@ -318,6 +328,7 @@ export function AdminOverviewClient() {
           <Link href="/admin/accounts">Manage accounts</Link>
         </div>
         <div className={styles.sectionBody}>
+          {/* Account statuses describe current access availability, not user activity. */}
           <OverviewDonut
             title="Account status"
             total={data.accounts.total}

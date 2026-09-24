@@ -3,6 +3,9 @@ import { z } from "zod";
 export const ADMIN_REFERENCE_DATA_PAGE_SIZE = 20;
 export const REFERENCE_DATA_STATUSES = ["all", "active", "inactive"] as const;
 
+// These shared contracts are imported by both browser and server code, so the
+// same length, status, ID, and pagination rules apply at both boundaries.
+
 const INVALID_TEXT_PATTERN = /[\p{Cc}\p{Cf}\p{Cs}]/u;
 const SURROGATE_PATTERN = /\p{Cs}/u;
 const normalizeText = (value: string) =>

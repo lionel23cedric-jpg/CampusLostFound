@@ -188,6 +188,8 @@ export async function listAdminReports(
   administrator: PublicUser,
   query: AdminReportListQuery,
 ): Promise<AdminReportPage> {
+  // Build the administrator's searchable report list from safe public fields;
+  // hidden reports remain available here for moderation but not member discovery.
   requireModerationAdministrator(administrator);
 
   try {
@@ -217,6 +219,8 @@ export async function listAdminReportFlags(
   administrator: PublicUser,
   query: AdminFlagListQuery,
 ): Promise<AdminReportFlagPage> {
+  // Flag listing joins each concern to its current report summary so the UI can
+  // explain and act on one moderation card at a time.
   requireModerationAdministrator(administrator);
 
   try {
@@ -259,6 +263,8 @@ async function runModerationTransaction<T>(
     session: ClientSession,
   ) => Promise<T>,
 ): Promise<T> {
+  // All visibility/flag decisions share one transaction wrapper so report state,
+  // related flags, and the audit event commit or fail together.
   let result: T | undefined;
   let session: ClientSession | null = null;
   let failure: unknown;
@@ -393,6 +399,8 @@ export async function resolveReportFlag(
   flagId: string,
   input: ReportFlagDecisionInput,
 ): Promise<AdminReportFlagDecisionResult> {
+  // A pending flag can be dismissed or used to hide its report. Both paths check
+  // the flag timestamp before changing state and write an administrator audit row.
   requireModerationAdministrator(administrator);
 
   return runModerationTransaction(
@@ -566,6 +574,8 @@ export async function moderateReport(
   reportId: string,
   input: ReportModerationInput,
 ): Promise<AdminReportSummary> {
+  // Direct moderation is the report-list equivalent of the flag decision path.
+  // It changes visibility only; Claims and recovery history are preserved.
   requireModerationAdministrator(administrator);
 
   return runModerationTransaction(

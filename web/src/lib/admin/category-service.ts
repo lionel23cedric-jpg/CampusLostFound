@@ -44,6 +44,7 @@ export async function listAdminCategories(
   administrator: PublicUser,
   query: ReferenceDataListQuery,
 ): Promise<AdminCategoryPage> {
+  // Build one filtered, paginated aggregate so rows and total count cannot drift.
   requireReferenceDataAdministrator(administrator);
 
   try {
@@ -109,6 +110,7 @@ export async function createAdminCategory(
   administrator: PublicUser,
   input: CreateAdminCategoryInput,
 ): Promise<AdminCategory> {
+  // New categories start active so they can be selected by future report forms.
   requireReferenceDataAdministrator(administrator);
 
   try {
@@ -129,6 +131,8 @@ export async function updateAdminCategory(
   categoryId: string,
   input: UpdateAdminCategoryInput,
 ): Promise<AdminCategory> {
+  // Edits are conditional on updatedAt; this gives the UI a safe 409 conflict
+  // instead of allowing a stale administrator tab to overwrite newer data.
   requireReferenceDataAdministrator(administrator);
 
   try {

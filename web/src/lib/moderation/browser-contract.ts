@@ -25,6 +25,9 @@ export const DIRECT_HIDE_REASON_VALUES = [
   "administrative_review",
 ] as const;
 
+// The browser contract deliberately uses a small fixed vocabulary for filters,
+// actions, and reasons so arbitrary server text cannot become UI behaviour.
+
 const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/);
 const timestampSchema = z.string().datetime({ offset: true });
 const paginationSchema = z

@@ -181,6 +181,8 @@ export function buildAdministratorOverview(
   claims: ClaimOverviewCounts,
   accounts: AccountOverviewCounts,
 ): AdministratorOverview {
+  // This builder derives totals once and then applies the same schema used by
+  // the browser. A mismatch is rejected before it can reach the UI or donut.
   // Derived totals are calculated on the server, then the complete object is
   // validated once more before it crosses the API boundary.
   return administratorOverviewSchema.parse({

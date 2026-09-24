@@ -131,6 +131,8 @@ const accountPipeline: PipelineStage[] = [
 ];
 
 export function requireAdministrator(user: PublicUser) {
+  // Every service call re-checks the server-derived role and status, even when
+  // the request already passed through an administrator page.
   if (user.status !== "active" || user.role !== "administrator") {
     throw new AdminOverviewError("ADMINISTRATOR_REQUIRED");
   }
@@ -139,6 +141,8 @@ export function requireAdministrator(user: PublicUser) {
 export async function getAdministratorOverview(
   user: PublicUser,
 ): Promise<AdministratorOverview> {
+  // The service is the single source of truth for the three dashboard sections:
+  // reports, Claims, and accounts. It never trusts totals sent by the client.
   requireAdministrator(user);
   await connectToDatabase();
 

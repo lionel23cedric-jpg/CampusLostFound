@@ -46,10 +46,14 @@ export function ReferenceDataFilters({
   onSearch(): void;
   onReset(): void;
 }): React.JSX.Element {
+  // Search and status are kept as one reusable control so categories and campus
+  // locations expose the same filtering behaviour and accessible labels.
   const resourceId = resourceLabel.replaceAll(" ", "-");
   const copy = resourceCopy(resourceLabel);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    // Prevent a full page navigation; the parent turns the current draft into a
+    // validated API query and resets pagination to the first page.
     event.preventDefault();
     if (!isBusy) onSearch();
   }
@@ -89,6 +93,7 @@ export function ReferenceDataFilters({
       </div>
 
       <div className={styles.buttonRow}>
+        {/* Submit applies the draft search; Reset returns to the unfiltered list. */}
         <button type="submit" disabled={isBusy}>
           Search {resourceLabel}
         </button>
@@ -115,6 +120,8 @@ export function ReferenceDataPagination({
   isBusy: boolean;
   onPageChange(page: number): void;
 }): React.JSX.Element {
+  // Pagination buttons only request valid pages and are disabled during a list
+  // request so repeated clicks cannot create competing loads.
   const hasPages = totalPages >= 1;
   const previousPage = page - 1;
   const nextPage = page + 1;

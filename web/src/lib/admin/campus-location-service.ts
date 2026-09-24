@@ -44,6 +44,7 @@ export async function listAdminCampusLocations(
   administrator: PublicUser,
   query: ReferenceDataListQuery,
 ): Promise<AdminCampusLocationPage> {
+  // The aggregate returns both the current page and its filtered total count.
   requireReferenceDataAdministrator(administrator);
 
   try {
@@ -110,6 +111,7 @@ export async function createAdminCampusLocation(
   administrator: PublicUser,
   input: CreateAdminCampusLocationInput,
 ): Promise<AdminCampusLocation> {
+  // A newly created campus location is active for future report selections.
   requireReferenceDataAdministrator(administrator);
 
   try {
@@ -133,6 +135,7 @@ export async function updateAdminCampusLocation(
   campusLocationId: string,
   input: UpdateAdminCampusLocationInput,
 ): Promise<AdminCampusLocation> {
+  // Conditional updates protect the shared reference list from stale edits.
   requireReferenceDataAdministrator(administrator);
 
   try {

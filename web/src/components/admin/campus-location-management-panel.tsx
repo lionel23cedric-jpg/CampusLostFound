@@ -126,6 +126,8 @@ function editorFrom(record: AdminCampusLocation): CampusLocationEditor {
 }
 
 export function CampusLocationManagementPanel(): React.JSX.Element {
+  // This panel provides the same CRUD workflow as categories, with campus and
+  // location names kept together so report forms can use one stable reference.
   const router = useRouter();
   const { refreshSession } = useAuthSession();
   const [state, setState] = useState<CampusLocationListState>({ status: "loading" });
@@ -316,6 +318,8 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
   }
 
   async function createCampusLocation(event: FormEvent<HTMLFormElement>) {
+    // The Create campus location button reaches this handler after client-side
+    // validation; the protected API validates the same fields again.
     event.preventDefault();
     if (mutationPending.current) return;
 
@@ -391,6 +395,7 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
   }
 
   function openEditor(record: AdminCampusLocation, trigger: HTMLButtonElement) {
+    // Store the trigger so closing the inline editor returns keyboard focus to it.
     if (mutationPending.current) return;
     editTriggerRef.current = trigger;
     setEditor(editorFrom(record));
@@ -400,6 +405,7 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
   }
 
   function closeEditor() {
+    // Cancel editing clears only the local draft; it is not a database mutation.
     if (mutationPending.current) return;
     const trigger = editTriggerRef.current;
     setEditor(null);
@@ -673,6 +679,7 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
           <h3 id="create-campus-location-heading">Create campus location</h3>
           <p>Use recognisable campus and location names that members can distinguish.</p>
         </div>
+        {/* The form submit is the single UI path for creating a location. */}
         <form
           className={styles.formGrid}
           aria-label="Create campus location"
@@ -857,6 +864,8 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
                           </span>
                         </div>
                         {!isEditing ? (
+                          /* Edit opens the local editor; Save campus location is
+                             the action that sends the PATCH request. */
                           <button
                             type="button"
                             disabled={writeBusy}
@@ -1036,6 +1045,8 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
                           ) : null}
 
                           <div className={styles.editorActions}>
+                            {/* Save sends the current names and description together
+                                with the original updatedAt for conflict detection. */}
                             <button
                               type="submit"
                               disabled={writeBusy || editor.conflict}
@@ -1043,6 +1054,8 @@ export function CampusLocationManagementPanel(): React.JSX.Element {
                               {writeBusy ? "Saving campus location" : `Save campus location ${locationLabel}`}
                             </button>
                             {!confirmingStateChange ? (
+                              /* Deactivate/Restore is confirmed separately because
+                                 existing historical report references must remain. */
                               <button
                                 type="button"
                                 disabled={writeBusy || editor.conflict}

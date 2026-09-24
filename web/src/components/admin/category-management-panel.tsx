@@ -114,6 +114,8 @@ function editorFrom(record: AdminCategory): CategoryEditor {
 }
 
 export function CategoryManagementPanel(): React.JSX.Element {
+  // This panel owns the complete category workflow: list, search, create,
+  // edit, and active/inactive changes. The browser client remains the API layer.
   const router = useRouter();
   const { refreshSession } = useAuthSession();
   const [state, setState] = useState<CategoryListState>({ status: "loading" });
@@ -303,6 +305,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
   }
 
   async function createCategory(event: FormEvent<HTMLFormElement>) {
+    // The Create category button reaches this handler. Client validation gives
+    // immediate feedback, while the API repeats validation on the server.
     event.preventDefault();
     if (mutationPending.current) return;
 
@@ -373,6 +377,7 @@ export function CategoryManagementPanel(): React.JSX.Element {
   }
 
   function openEditor(record: AdminCategory, trigger: HTMLButtonElement) {
+    // Remember the clicked Edit button so focus can return after the editor closes.
     if (mutationPending.current) return;
     editTriggerRef.current = trigger;
     setEditor(editorFrom(record));
@@ -382,6 +387,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
   }
 
   function closeEditor() {
+    // Closing is deliberately separate from saving: it discards only local draft
+    // state and never changes the database.
     if (mutationPending.current) return;
     const trigger = editTriggerRef.current;
     setEditor(null);
@@ -647,6 +654,7 @@ export function CategoryManagementPanel(): React.JSX.Element {
           <h3 id="create-category-heading">Create category</h3>
           <p>Use a short, distinct name that members can recognise.</p>
         </div>
+        {/* The form's submit event is the single path for creating a category. */}
         <form
           className={styles.formGrid}
           aria-label="Create category"
@@ -803,6 +811,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
                           </span>
                         </div>
                         {!isEditing ? (
+                          /* Opens the inline editor; no network request is made
+                             until the administrator presses Save category. */
                           <button
                             type="button"
                             disabled={writeBusy}
@@ -950,6 +960,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
                           ) : null}
 
                           <div className={styles.editorActions}>
+                            {/* Save submits the edited name/description and the
+                                original updatedAt used for stale-write protection. */}
                             <button
                               type="submit"
                               disabled={writeBusy || editor.conflict}
@@ -957,6 +969,8 @@ export function CategoryManagementPanel(): React.JSX.Element {
                               {writeBusy ? "Saving category" : `Save category ${label}`}
                             </button>
                             {!confirmingStateChange ? (
+                              /* Deactivate/Restore is a separate confirmed action
+                                 because it changes future report choices. */
                               <button
                                 type="button"
                                 disabled={writeBusy || editor.conflict}

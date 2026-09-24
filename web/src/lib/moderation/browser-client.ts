@@ -173,6 +173,8 @@ export async function submitBrowserReportFlag(
   input: SubmitBrowserReportFlagInput,
   signal?: AbortSignal,
 ) {
+  // Member-facing flag submission is kept here so the report UI never builds
+  // URLs or error parsing rules by itself.
   const response = await safeFetch(
     `/api/reports/${encodeURIComponent(reportId)}/flags`,
     requestInit("POST", signal, input),
@@ -186,6 +188,7 @@ export async function listBrowserAdminReportFlags(
   query: BrowserAdminFlagQuery,
   signal?: AbortSignal,
 ) {
+  // The queue GET carries only validated filters and is never browser-cached.
   const search = new URLSearchParams();
   if (query.status !== undefined) search.set("status", query.status);
   if (query.reason !== undefined) search.set("reason", query.reason);
@@ -201,6 +204,7 @@ export async function listBrowserAdminReports(
   query: BrowserAdminReportQuery,
   signal?: AbortSignal,
 ) {
+  // The report list uses the same strict response contract as the flag queue.
   const search = new URLSearchParams();
   if (query.q !== undefined) search.set("q", query.q);
   if (query.reportType !== undefined) search.set("reportType", query.reportType);
@@ -223,6 +227,7 @@ export async function decideBrowserReportFlag(
   input: BrowserReportFlagDecisionInput,
   signal?: AbortSignal,
 ) {
+  // PATCH sends either dismiss or hide_report plus optimistic concurrency stamps.
   const response = await safeFetch(
     `/api/admin/report-flags/${encodeURIComponent(flagId)}`,
     requestInit("PATCH", signal, input),
@@ -239,6 +244,8 @@ export async function moderateBrowserReport(
   input: BrowserReportModerationInput,
   signal?: AbortSignal,
 ) {
+  // Direct Hide/Restore is a separate PATCH from flag decisions, but uses the
+  // same safe error vocabulary and updatedAt conflict protection.
   const response = await safeFetch(
     `/api/admin/reports/${encodeURIComponent(reportId)}/moderation`,
     requestInit("PATCH", signal, input),
