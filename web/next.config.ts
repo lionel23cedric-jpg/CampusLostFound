@@ -1,13 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The text model is server-only. Keep one shared API trace group so Vercel
-  // can reuse the dependency bundle instead of splitting AI routes apart.
+  // The text model is server-only. Keep the production Smart Search bundle
+  // isolated so Vercel Hobby does not count every API route as new.
   outputFileTracingIncludes: {
-    // Keep the local model/runtime in the same trace group for every API
-    // route. Vercel can then share the dependency bundle on Hobby (12
-    // function limit) instead of splitting the four AI routes apart.
-    "/api/**/*": [
+    "/api/reports": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
       "./node_modules/onnxruntime-node/package.json",
       "./node_modules/onnxruntime-node/dist/**/*",
