@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { duplicateScanResponseSchema } from "@/lib/ai/contracts";
+
 import {
   REPORT_IMAGE_LIMIT,
   reportPhotoReferenceSchema,
@@ -153,6 +155,11 @@ export const adminReportFlagDecisionResponseSchema = z.strictObject({
 export const adminReportResponseSchema = z.strictObject({
   report: adminReportSchema,
 });
+
+export const browserDuplicateScanResponseSchema = duplicateScanResponseSchema;
+export type BrowserDuplicatePair = z.infer<
+  typeof browserDuplicateScanResponseSchema
+>["pairs"][number];
 
 export type BrowserReportFlagReason =
   (typeof REPORT_FLAG_REASON_VALUES)[number];

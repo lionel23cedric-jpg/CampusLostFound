@@ -5,6 +5,7 @@ import {
   adminReportFlagPageSchema,
   adminReportPageSchema,
   adminReportResponseSchema,
+  browserDuplicateScanResponseSchema,
   reportFlagReceiptResponseSchema,
 } from "./browser-contract";
 
@@ -161,6 +162,22 @@ describe("moderation browser contracts", () => {
     expect(
       adminReportResponseSchema.safeParse({
         report: { ...report, status: "resolved", resolvedAt: null },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts only the bounded duplicate scan contract", () => {
+    const duplicate = {
+      leftReport: { id: "e".repeat(24), reportType: "lost", title: report.title, occurredAt: timestamp },
+      rightReport: { id: "f".repeat(24), reportType: "lost", title: report.title, occurredAt: timestamp },
+      similarity: 0.94,
+      reasons: ["Same category", "AI semantic text similarity in public report wording"],
+      method: "model_assisted",
+    };
+    expect(browserDuplicateScanResponseSchema.safeParse({ pairs: [duplicate] }).success).toBe(true);
+    expect(
+      browserDuplicateScanResponseSchema.safeParse({
+        pairs: [{ ...duplicate, reporterId: "PRIVATE" }],
       }).success,
     ).toBe(false);
   });

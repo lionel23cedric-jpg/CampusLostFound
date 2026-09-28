@@ -6,6 +6,7 @@ import {
   listBrowserAdminReportFlags,
   listBrowserAdminReports,
   moderateBrowserReport,
+  scanBrowserDuplicateReports,
   submitBrowserReportFlag,
 } from "./browser-client";
 
@@ -159,6 +160,28 @@ describe("moderation browser client requests", () => {
       reason: "administrative_review",
       expectedUpdatedAt: report.updatedAt,
       note: "Pending review",
+    });
+  });
+
+  it("requests and validates the administrator duplicate scan", async () => {
+    const pair = {
+      leftReport: { id: "e".repeat(24), reportType: "lost", title: report.title, occurredAt: timestamp },
+      rightReport: { id: "f".repeat(24), reportType: "lost", title: report.title, occurredAt: timestamp },
+      similarity: 0.91,
+      reasons: ["Same category"],
+      method: "model_assisted",
+    } as const;
+    const controller = new AbortController();
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ pairs: [pair] }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(scanBrowserDuplicateReports(controller.signal)).resolves.toEqual({ pairs: [pair] });
+    expect(fetchMock).toHaveBeenCalledWith("/api/admin/ai/duplicates", {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
     });
   });
 });

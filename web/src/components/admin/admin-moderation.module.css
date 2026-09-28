@@ -50,6 +50,38 @@
 
 .section h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); }
 
+.sectionHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sectionHeading > div { display: grid; gap: 0.5rem; }
+.sectionHeading p { margin: 0; color: var(--ink-soft); line-height: 1.55; }
+.sectionHeading button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--campus-green);
+  border-radius: 9px;
+  background: var(--campus-green);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  padding: 0.7rem 1rem;
+}
+.sectionHeading button:disabled { cursor: wait; opacity: 0.65; }
+.sectionHeading button:focus-visible { outline: 3px solid var(--campus-green-dark); outline-offset: 3px; }
+.duplicateResults { display: grid; gap: 1rem; }
+.duplicateResults > h3 { margin: 0; color: var(--ink); font-family: Georgia, "Times New Roman", serif; font-size: 1.35rem; }
+.duplicateTitles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.duplicateTitles > div { display: grid; gap: 0.35rem; border-inline-start: 3px solid var(--campus-green); padding-inline-start: 0.75rem; }
+.duplicateTitles span { color: var(--ink-soft); font-size: 0.78rem; font-weight: 750; text-transform: uppercase; }
+.duplicateTitles a { color: var(--campus-green-dark); font-family: Georgia, "Times New Roman", serif; font-size: 1.15rem; font-weight: 750; }
+.duplicateTitles time { color: var(--ink-soft); font-size: 0.86rem; }
+.reasons { display: grid; margin: 0; padding-inline-start: 1.25rem; gap: 0.3rem; color: var(--ink-soft); }
+
 .panelBody { display: grid; min-width: 0; gap: 1rem; }
 .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 0.8rem; }
 .filters label,
@@ -106,6 +138,12 @@
 .fieldError { margin: 0; color: #8a2f22; font-weight: 700; }
 .tags { margin: 0; color: var(--ink-soft); font-size: 0.9rem; }
 .panelBody :focus-visible { outline: 3px solid var(--campus-green-dark); outline-offset: 3px; }
+
+@media (max-width: 40rem) {
+  .sectionHeading { align-items: stretch; flex-direction: column; }
+  .sectionHeading button { width: 100%; }
+  .duplicateTitles { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 20rem) {
   .workspace { width: min(100% - 1rem, 76rem); }

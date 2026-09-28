@@ -5,6 +5,7 @@ import {
   adminReportFlagPageSchema,
   adminReportPageSchema,
   adminReportResponseSchema,
+  browserDuplicateScanResponseSchema,
   reportFlagReceiptResponseSchema,
   type BrowserAdminFlagQuery,
   type BrowserAdminReportQuery,
@@ -220,6 +221,14 @@ export async function listBrowserAdminReports(
     requestInit("GET", signal),
   );
   return parseResponse(response, adminReportPageSchema, signal);
+}
+
+export async function scanBrowserDuplicateReports(signal?: AbortSignal) {
+  const response = await safeFetch(
+    "/api/admin/ai/duplicates",
+    requestInit("GET", signal),
+  );
+  return parseResponse(response, browserDuplicateScanResponseSchema, signal);
 }
 
 export async function decideBrowserReportFlag(
