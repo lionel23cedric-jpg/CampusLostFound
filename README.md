@@ -3,13 +3,15 @@
 159.333 Computer Science Project
 
 A full-stack campus lost-and-found web application for students, staff, and
-administrators, with privacy-aware reports, Claims, notifications, moderation,
-and local, deterministic, explainable item matching.
+administrators. It combines privacy-aware reports, claims, notifications and
+moderation with five bounded, locally executed AI-assisted features. Every
+suggestion remains reviewable and has a deterministic fallback.
 
 ## Project documentation
 
 - [Web application setup](web/README.md)
 - [AI matching evaluation](docs/ai-matching-evaluation.md)
+- [AI feature suite, privacy boundaries, and fallbacks](docs/ai-feature-suite.md)
 - [System architecture](docs/architecture.md)
 - [Database ERD and privacy boundaries](docs/erd.md)
 - [Role-based user guide](docs/user-guide.md)

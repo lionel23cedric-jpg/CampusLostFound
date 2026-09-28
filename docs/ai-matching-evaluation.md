@@ -10,6 +10,9 @@ it is not a chatbot or an external generative-AI service. If the model is not
 available, the original deterministic matcher still works and the interface
 labels that result as a rule fallback.
 
+This evaluation covers item matching only. The other four bounded AI-assisted
+functions are documented in [AI Feature Suite](ai-feature-suite.md).
+
 The feature supports a person's decision; it does not approve ownership or
 complete a recovery automatically. A user must inspect a suggestion and use the
 separate Claim workflow, where private verification evidence is checked.
@@ -139,7 +142,9 @@ rare categories, or reports with several hidden fields.
   evidence for repeatability rather than a claim of production accuracy.
 - The synonym list is short and English-focused.
 - Exact category and location identifiers receive substantial weight.
-- Photos are displayed to users but are not analysed by the matcher.
+- Photos are not analysed by this matching algorithm. The separate, optional
+  image-category assistant analyses only the first image selected by a member
+  after an explicit click.
 - The score is not learned from outcomes and does not adapt automatically.
 - The model is English-focused; the synthetic fixture is too small to validate
   real-world accuracy, multilingual wording, or fairness. The 30-candidate

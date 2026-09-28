@@ -29,7 +29,8 @@ The product combines campus-specific report data with privacy-aware public views
 ## Capabilities and Constraints
 
 - Existing stack: Next.js App Router, TypeScript, React, MongoDB Atlas through Mongoose, Zod, CSS Modules, Vitest, and ESLint.
-- Delivered workflows include revocable-session authentication, profile settings, report submission with uploaded-image preview, privacy-safe report browsing and owner history, explainable rule-based matching with optional local pretrained AI reranking, ownership Claims and handover, in-app notifications, staff report handling, and administrator overview, account, reference-data, Staff-membership, and report moderation.
+- Delivered workflows include revocable-session authentication, profile settings, report submission with uploaded-image preview, privacy-safe report browsing and owner history, ownership Claims and handover, in-app notifications, staff report handling, and administrator overview, account, reference-data, staff-membership, and report moderation.
+- The bounded AI-assisted suite covers explainable Lost/Found matching, natural-language report search, description and controlled-tag suggestions, optional photo category suggestions, and administrator-confirmed duplicate detection. It uses local pretrained models, visibly labelled fallbacks, and explicit human confirmation rather than autonomous decisions.
 - Public/member report responses must never expose passwords, session tokens, reporter identifiers, private verification details, serial numbers, exact private locations, or other restricted evidence.
 - Real credentials remain only in ignored local environment files and must never be committed.
 - Future work is limited to assessed refinements and deployment/reporting evidence; new product subsystems require an explicit course requirement.
@@ -44,7 +45,8 @@ The product combines campus-specific report data with privacy-aware public views
 
 - The repository contains implemented and automated-tested authentication, report, matching, Claim, notification, staff, and administrator workflows.
 - The supplied course project brief defines the required users, core workflows, database/privacy obligations, quality expectations, and the requirement for at least one clearly explained AI-related feature.
-- The required intelligent feature combines the existing deterministic matcher with a local pretrained MiniLM text model. Its synthetic baseline/model comparison, privacy boundaries, fallback, and limitations are recorded in [the AI matching evaluation](docs/ai-matching-evaluation.md). No external AI API is used.
+- The required intelligent feature combines the existing deterministic matcher with a local pretrained MiniLM text model. Its synthetic baseline/model comparison is recorded in [the AI matching evaluation](docs/ai-matching-evaluation.md).
+- Four additional course-aligned AI-assisted functions reuse the same privacy and human-review rules. Their inputs, models, limits, fallbacks, and confirmation steps are recorded in [the AI feature suite](docs/ai-feature-suite.md). No paid or hosted inference API is used.
 
 ## Product Principles
 
