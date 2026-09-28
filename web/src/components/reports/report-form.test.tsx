@@ -17,6 +17,7 @@ vi.mock("@/lib/reports/browser-client", async () => {
   >("@/lib/reports/browser-client");
   return {
     ...actual,
+    getImageCategorySuggestion: vi.fn(),
     getReportAssistantSuggestion: vi.fn(),
     submitReport: vi.fn(),
   };
@@ -24,6 +25,7 @@ vi.mock("@/lib/reports/browser-client", async () => {
 
 import {
   BrowserReportError,
+  getImageCategorySuggestion,
   getReportAssistantSuggestion,
   submitReport,
   type CreatedReport,
@@ -142,6 +144,83 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ReportForm", () => {
+  it("applies an image category only after the member confirms it", async () => {
+    vi.mocked(getImageCategorySuggestion).mockResolvedValue({
+      method: "model_assisted",
+      suggestions: [
+        {
+          categoryId,
+          categoryName: "Electronics",
+          confidence: 0.91,
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    renderForm();
+    const file = new File([Uint8Array.from([0xff, 0xd8, 0xff])], "item.jpg", {
+      type: "image/jpeg",
+    });
+
+    fireEvent.change(screen.getByLabelText("Report images (optional)"), {
+      target: { files: [file] },
+    });
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("");
+
+    await user.click(
+      screen.getByRole("button", { name: "Suggest category from first photo" }),
+    );
+
+    expect(getImageCategorySuggestion).toHaveBeenCalledWith(
+      file,
+      expect.any(AbortSignal),
+    );
+    expect(await screen.findByText("AI-assisted category suggestions")).toBeTruthy();
+    expect(screen.getByText("91%")).toBeTruthy();
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe("");
+
+    await user.click(
+      screen.getByRole("button", { name: "Use this category" }),
+    );
+
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe(
+      categoryId,
+    );
+    expect(screen.queryByText("AI-assisted category suggestions")).toBeNull();
+    expect(screen.getByText("1 of 5 images selected")).toBeTruthy();
+  });
+
+  it("keeps the selected image and category unchanged after analysis fails", async () => {
+    vi.mocked(getImageCategorySuggestion).mockRejectedValue(
+      new Error("private model detail"),
+    );
+    const user = userEvent.setup();
+    renderForm();
+    const file = new File([Uint8Array.from([0xff, 0xd8, 0xff])], "item.jpg", {
+      type: "image/jpeg",
+    });
+    fireEvent.change(screen.getByLabelText("Category"), {
+      target: { value: categoryId },
+    });
+    fireEvent.change(screen.getByLabelText("Report images (optional)"), {
+      target: { files: [file] },
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: "Suggest category from first photo" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "We could not analyse this photo. The selected image is unchanged.",
+      ),
+    ).toBeTruthy();
+    expect(document.body.textContent).not.toContain("private model detail");
+    expect((screen.getByLabelText("Category") as HTMLSelectElement).value).toBe(
+      categoryId,
+    );
+    expect(screen.getByText("1 of 5 images selected")).toBeTruthy();
+  });
+
   it("requires public context and applies a reviewed assistant suggestion only after confirmation", async () => {
     vi.mocked(getReportAssistantSuggestion).mockResolvedValue({
       method: "model_assisted",

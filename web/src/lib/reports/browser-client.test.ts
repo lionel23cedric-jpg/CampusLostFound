@@ -4,6 +4,7 @@ import type { CreateReportInput } from "./validation";
 
 import {
   BrowserReportError,
+  getImageCategorySuggestion,
   getReportById,
   getReportCampusLocations,
   getReportCategories,
@@ -178,6 +179,74 @@ afterEach(() => {
 });
 
 describe("report browser client", () => {
+  it("uploads one local image for a strictly parsed category suggestion", async () => {
+    const suggestion = {
+      method: "model_assisted",
+      suggestions: [
+        {
+          categoryId: category.id,
+          categoryName: category.name,
+          confidence: 0.91,
+        },
+      ],
+    } as const;
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(suggestion));
+    vi.stubGlobal("fetch", fetchMock);
+    const file = new File([Uint8Array.from([0xff, 0xd8, 0xff])], "item.jpg", {
+      type: "image/jpeg",
+    });
+    const controller = new AbortController();
+
+    await expect(
+      getImageCategorySuggestion(file, controller.signal),
+    ).resolves.toEqual(suggestion);
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(path).toBe("/api/ai/image-category");
+    expect(init).toMatchObject({
+      method: "POST",
+      signal: controller.signal,
+      credentials: "same-origin",
+    });
+    expect(init.headers).toBeUndefined();
+    expect(init.body).toBeInstanceOf(FormData);
+    expect([...(init.body as FormData).keys()]).toEqual(["image"]);
+    expect((init.body as FormData).get("image")).toBe(file);
+  });
+
+  it("rejects image category responses with unapproved fields", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          method: "model_assisted",
+          suggestions: [
+            {
+              categoryId: category.id,
+              categoryName: category.name,
+              confidence: 0.91,
+              privateModelOutput: "not exposed",
+            },
+          ],
+        }),
+      ),
+    );
+
+    await expect(
+      getImageCategorySuggestion(
+        new File([Uint8Array.from([0xff])], "item.jpg", {
+          type: "image/jpeg",
+        }),
+      ),
+    ).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REQUEST_FAILED",
+        status: 200,
+      }),
+    );
+  });
+
   it("requests and strictly parses a public report assistant suggestion", async () => {
     const suggestion = {
       method: "model_assisted",

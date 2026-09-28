@@ -23,6 +23,8 @@ type ReportImagePickerProps = {
   errors: string[];
   onChange: (images: PendingReportImage[]) => void;
   onErrorsChange: (errors: string[]) => void;
+  onSuggestCategory?: (file: File) => void;
+  suggestingCategory?: boolean;
 };
 
 function validateFiles(files: File[], currentCount: number): string[] {
@@ -109,6 +111,8 @@ export function ReportImagePicker({
   errors,
   onChange,
   onErrorsChange,
+  onSuggestCategory,
+  suggestingCategory = false,
 }: ReportImagePickerProps) {
   const helpId = `${id}-help`;
   const errorId = `${id}-error`;
@@ -146,7 +150,9 @@ export function ReportImagePicker({
         />
         <p className={styles.help} id={helpId}>
           Choose up to five JPEG, PNG or WebP images. Each image may be up to 3
-          MB. Files stay on this device until the report is created.
+          MB. Images stay on this device until the report is created unless you
+          choose category analysis; then the first image is analysed in memory
+          and is not saved by the suggestion service.
         </p>
         {errors.length > 0 && (
           <p className={styles.fieldError} id={errorId} role="alert">
@@ -158,6 +164,18 @@ export function ReportImagePicker({
       <p className={styles.selectionStatus} aria-live="polite">
         {images.length} of {REPORT_IMAGE_LIMIT} images selected
       </p>
+      {images.length > 0 && onSuggestCategory ? (
+        <button
+          className={styles.secondaryButton}
+          type="button"
+          disabled={disabled || suggestingCategory}
+          onClick={() => onSuggestCategory(images[0].file)}
+        >
+          {suggestingCategory
+            ? "Analysing photo..."
+            : "Suggest category from first photo"}
+        </button>
+      ) : null}
       {images.length > 0 && (
         <ul className={styles.previewList} aria-label="Selected report images">
           {images.map((image, index) => (

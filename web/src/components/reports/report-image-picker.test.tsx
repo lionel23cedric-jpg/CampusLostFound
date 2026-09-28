@@ -14,7 +14,15 @@ function imageFile(name: string, type = "image/jpeg", size = 4) {
   return new File([new Uint8Array(size)], name, { type });
 }
 
-function Harness({ disabled = false }: { disabled?: boolean }) {
+function Harness({
+  disabled = false,
+  onSuggestCategory,
+  suggestingCategory = false,
+}: {
+  disabled?: boolean;
+  onSuggestCategory?: (file: File) => void;
+  suggestingCategory?: boolean;
+}) {
   const [images, setImages] = useState<PendingReportImage[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -26,6 +34,8 @@ function Harness({ disabled = false }: { disabled?: boolean }) {
       errors={errors}
       onChange={setImages}
       onErrorsChange={setErrors}
+      onSuggestCategory={onSuggestCategory}
+      suggestingCategory={suggestingCategory}
     />
   );
 }
@@ -82,6 +92,37 @@ describe("ReportImagePicker", () => {
     expect(document.body.textContent).not.toContain("private-one.jpg");
     expect(createObjectURL).toHaveBeenCalledTimes(3);
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("sends only the first selected image for an explicit category request", async () => {
+    const onSuggestCategory = vi.fn();
+    const user = userEvent.setup();
+    render(<Harness onSuggestCategory={onSuggestCategory} />);
+    const first = imageFile("first.jpg");
+    const second = imageFile("second.png", "image/png");
+
+    fireEvent.change(screen.getByLabelText("Report images (optional)"), {
+      target: { files: [first, second] },
+    });
+
+    expect(onSuggestCategory).not.toHaveBeenCalled();
+    await user.click(
+      screen.getByRole("button", { name: "Suggest category from first photo" }),
+    );
+    expect(onSuggestCategory).toHaveBeenCalledOnce();
+    expect(onSuggestCategory).toHaveBeenCalledWith(first);
+  });
+
+  it("disables and relabels category analysis while it is pending", () => {
+    render(
+      <Harness onSuggestCategory={vi.fn()} suggestingCategory />,
+    );
+    fireEvent.change(screen.getByLabelText("Report images (optional)"), {
+      target: { files: [imageFile("first.jpg")] },
+    });
+
+    const button = screen.getByRole("button", { name: "Analysing photo..." });
+    expect(button.hasAttribute("disabled")).toBe(true);
   });
 
   it.each([

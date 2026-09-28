@@ -10,6 +10,7 @@ import {
 
 import {
   BrowserReportError,
+  getImageCategorySuggestion,
   getReportAssistantSuggestion,
   submitReport,
   type CreatedReport,
@@ -22,7 +23,10 @@ import {
   type ReportFormErrors,
   type ReportFormValues,
 } from "@/lib/reports/form-validation";
-import type { ReportAssistantResponse } from "@/lib/ai/contracts";
+import type {
+  ImageCategoryResponse,
+  ReportAssistantResponse,
+} from "@/lib/ai/contracts";
 
 import {
   ReportImagePicker,
@@ -57,6 +61,12 @@ type AssistantState =
   | { status: "loading" }
   | { status: "ready"; suggestion: ReportAssistantResponse }
   | { status: "error" };
+
+type ImageCategoryState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; result: ImageCategoryResponse }
+  | { status: "error"; file: File };
 
 const SERVER_FIELD_TARGETS = new Set([
   "title",
@@ -129,6 +139,8 @@ export function ReportForm({
   const [assistantState, setAssistantState] = useState<AssistantState>({
     status: "idle",
   });
+  const [imageCategoryState, setImageCategoryState] =
+    useState<ImageCategoryState>({ status: "idle" });
   const [focusRequest, setFocusRequest] = useState<FocusRequest>();
   const summaryRef = useRef<HTMLDivElement>(null);
   const submitLock = useRef(false);
@@ -137,6 +149,7 @@ export function ReportForm({
   const nextQuestionId = useRef(1);
   const mappedServerGroups = useRef<Record<string, string>>({});
   const assistantRequest = useRef<AbortController | undefined>(undefined);
+  const imageCategoryRequest = useRef<AbortController | undefined>(undefined);
 
   const inputId = (path: string) => `${idPrefix}-${path.replaceAll(".", "-")}`;
   const errorId = (path: string) => `${inputId(path)}-error`;
@@ -191,7 +204,13 @@ export function ReportForm({
     return () => window.clearTimeout(timer);
   }, [focusRequest]);
 
-  useEffect(() => () => assistantRequest.current?.abort(), []);
+  useEffect(
+    () => () => {
+      assistantRequest.current?.abort();
+      imageCategoryRequest.current?.abort();
+    },
+    [],
+  );
 
   function clearErrorsFor(...paths: string[]) {
     const mappedTargets = Object.entries(mappedServerGroups.current)
@@ -288,6 +307,39 @@ export function ReportForm({
     }));
     clearErrorsFor("publicDescription", "tags");
     setAssistantState({ status: "idle" });
+  }
+
+  async function requestImageCategorySuggestion(file: File) {
+    imageCategoryRequest.current?.abort();
+    const controller = new AbortController();
+    imageCategoryRequest.current = controller;
+    setImageCategoryState({ status: "loading" });
+    try {
+      const result = await getImageCategorySuggestion(file, controller.signal);
+      if (!controller.signal.aborted) {
+        setImageCategoryState({ status: "ready", result });
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (
+        error instanceof BrowserReportError &&
+        error.code === "AUTHENTICATION_REQUIRED"
+      ) {
+        setImageCategoryState({ status: "idle" });
+        onAuthenticationRequired();
+        return;
+      }
+      if (
+        error instanceof BrowserReportError &&
+        (error.code === "ACCOUNT_UNAVAILABLE" ||
+          error.code === "ACTIVE_ACCOUNT_REQUIRED")
+      ) {
+        setImageCategoryState({ status: "idle" });
+        onPermissionLost();
+        return;
+      }
+      setImageCategoryState({ status: "error", file });
+    }
   }
 
   function updateFeature(id: string, value: string) {
@@ -803,12 +855,91 @@ export function ReportForm({
           images={images}
           disabled={isPending}
           errors={imageErrors}
-          onChange={setImages}
+          onChange={(nextImages) => {
+            imageCategoryRequest.current?.abort();
+            setImageCategoryState({ status: "idle" });
+            setImages(nextImages);
+          }}
           onErrorsChange={(nextErrors) => {
             setImageErrors(nextErrors);
             if (nextErrors.length === 0) clearErrorsFor("images");
           }}
+          onSuggestCategory={(file) =>
+            void requestImageCategorySuggestion(file)
+          }
+          suggestingCategory={imageCategoryState.status === "loading"}
         />
+
+        {imageCategoryState.status === "error" ? (
+          <div className={styles.assistantError} role="alert">
+            <p>We could not analyse this photo. The selected image is unchanged.</p>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={() =>
+                void requestImageCategorySuggestion(imageCategoryState.file)
+              }
+            >
+              Try category suggestion again
+            </button>
+          </div>
+        ) : null}
+
+        {imageCategoryState.status === "ready" ? (
+          <section
+            className={styles.assistantPanel}
+            aria-label="Photo category suggestion"
+          >
+            <h3>
+              {imageCategoryState.result.method === "model_assisted"
+                ? "AI-assisted category suggestions"
+                : "Fallback category suggestions"}
+            </h3>
+            {imageCategoryState.result.suggestions.length > 0 ? (
+              <ul className={styles.categorySuggestions}>
+                {imageCategoryState.result.suggestions.map((suggestion) => (
+                  <li key={suggestion.categoryId}>
+                    <span>
+                      <strong>{suggestion.categoryName}</strong>{" "}
+                      {Math.round(suggestion.confidence * 100)}%
+                    </span>
+                    <button
+                      className={styles.assistantButton}
+                      type="button"
+                      onClick={() => {
+                        updateValue("categoryId", suggestion.categoryId);
+                        setImageCategoryState({ status: "idle" });
+                      }}
+                    >
+                      Use this category
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No reliable category suggestion is available for this photo.</p>
+            )}
+            <div className={styles.suggestionButtons}>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => setImageCategoryState({ status: "idle" })}
+              >
+                Keep my category
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => {
+                  const file = images[0]?.file;
+                  if (file) void requestImageCategorySuggestion(file);
+                }}
+              >
+                Try category suggestion again
+              </button>
+            </div>
+          </section>
+        ) : null}
       </fieldset>
 
       <fieldset className={styles.section} disabled={isPending}>

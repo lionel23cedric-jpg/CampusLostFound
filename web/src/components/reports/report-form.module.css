@@ -394,6 +394,36 @@
   opacity: 0.6;
 }
 
+.categorySuggestions {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.categorySuggestions li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.65rem;
+}
+
+.categorySuggestions span {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 32rem) {
+  .categorySuggestions li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 .errorSummary {
   margin-bottom: 1.5rem;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));

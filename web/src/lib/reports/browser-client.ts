@@ -2,8 +2,10 @@ import { z } from "zod";
 
 import {
   aiMethodSchema,
+  imageCategoryResponseSchema,
   reportAssistantResponseSchema,
   type AiMethod,
+  type ImageCategoryResponse,
   type ReportAssistantRequest,
   type ReportAssistantResponse,
 } from "@/lib/ai/contracts";
@@ -550,6 +552,20 @@ export async function getReportAssistantSuggestion(
     signal,
   });
   return parseResponse(response, reportAssistantResponseSchema);
+}
+
+export async function getImageCategorySuggestion(
+  image: File,
+  signal?: AbortSignal,
+): Promise<ImageCategoryResponse> {
+  const body = new FormData();
+  body.append("image", image);
+  const response = await fetchSameOrigin("/api/ai/image-category", {
+    method: "POST",
+    body,
+    signal,
+  });
+  return parseResponse(response, imageCategoryResponseSchema);
 }
 
 export async function uploadReportImage(
