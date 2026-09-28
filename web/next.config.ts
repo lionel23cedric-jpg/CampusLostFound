@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Transformers.js resolves its Node backend dynamically. Keep the package
-  // external and trace only the Linux x64 runtime needed by Vercel Functions.
-  serverExternalPackages: ["onnxruntime-node"],
   // The text model is server-only. Trace it into only the four API routes
   // that perform embedding work instead of inflating every function bundle.
   outputFileTracingIncludes: {

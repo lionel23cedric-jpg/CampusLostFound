@@ -3,7 +3,6 @@ import nextConfig from "./next.config";
 
 describe("Next.js text model tracing", () => {
   it("includes the pinned local model only for text-AI routes", () => {
-    expect(nextConfig.serverExternalPackages).toEqual(["onnxruntime-node"]);
     const includes = nextConfig.outputFileTracingIncludes;
     const routeAssets = [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
