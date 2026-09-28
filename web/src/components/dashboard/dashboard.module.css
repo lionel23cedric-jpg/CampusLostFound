@@ -188,15 +188,10 @@
   flex-direction: column;
   min-height: 17rem;
   border: 1px solid var(--line);
-  border-top: 5px solid var(--campus-green);
   border-radius: 16px;
   background: var(--paper-light);
   padding: 1.5rem;
   box-shadow: 0 12px 30px rgb(23 55 47 / 8%);
-}
-
-.staffActionGrid article:nth-child(2) {
-  border-top-color: var(--warm-accent);
 }
 
 .staffActionGrid h3 {

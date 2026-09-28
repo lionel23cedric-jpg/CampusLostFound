@@ -126,12 +126,25 @@ it("keeps compact account navigation within narrow screens", () => {
   expect(compactCss).toMatch(
     /\.inner,\s*\.navigation\s*\{[^}]*gap:\s*0\.25rem/,
   );
-  expect(compactCss).toMatch(/\.navigation\s*\{[^}]*flex-wrap:\s*wrap/);
+  expect(compactCss).toMatch(/\.navigation\s*\{[^}]*flex-wrap:\s*nowrap/);
   expect(compactCss).toMatch(/\.navigation\s*\{[^}]*min-width:\s*0/);
   expect(compactCss).toMatch(
     /\.navigation :global\(\.primary-action\),\s*\.navLink,\s*\.signOut,\s*\.retry\s*\{[^}]*min-width:\s*44px[^}]*padding-inline:\s*0\.25rem/,
   );
   expect(compactCss).not.toMatch(/\.(?:navLink|signOut)\s*\{[^}]*display:\s*none/);
+});
+
+it("keeps the complete brand and a single scrollable mobile navigation row", () => {
+  const css = readFileSync(resolve("src/components/site-header.module.css"), "utf8");
+  const mobileStart = css.indexOf("@media (max-width: 38rem)");
+  const mobileEnd = css.indexOf("@media (max-width: 80rem)", mobileStart);
+  const mobileCss = css.slice(mobileStart, mobileEnd);
+
+  expect(mobileCss).toMatch(/\.inner\s*\{[^}]*display:\s*grid/);
+  expect(mobileCss).toMatch(
+    /\.navigation\s*\{[^}]*flex-wrap:\s*nowrap[^}]*overflow-x:\s*auto/,
+  );
+  expect(css).not.toMatch(/\.brand\s*>\s*span:last-child\s*\{[^}]*display:\s*none/);
 });
 
 it("keeps notification navigation and its badge visible and touch accessible", () => {

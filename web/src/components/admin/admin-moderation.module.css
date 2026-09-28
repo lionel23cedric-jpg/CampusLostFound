@@ -76,7 +76,7 @@
 .duplicateResults { display: grid; gap: 1rem; }
 .duplicateResults > h3 { margin: 0; color: var(--ink); font-family: Georgia, "Times New Roman", serif; font-size: 1.35rem; }
 .duplicateTitles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-.duplicateTitles > div { display: grid; gap: 0.35rem; border-inline-start: 3px solid var(--campus-green); padding-inline-start: 0.75rem; }
+.duplicateTitles > div { display: grid; gap: 0.35rem; border: 1px solid var(--line); border-radius: 10px; background: white; padding: 0.75rem; }
 .duplicateTitles span { color: var(--ink-soft); font-size: 0.78rem; font-weight: 750; text-transform: uppercase; }
 .duplicateTitles a { color: var(--campus-green-dark); font-family: Georgia, "Times New Roman", serif; font-size: 1.15rem; font-weight: 750; }
 .duplicateTitles time { color: var(--ink-soft); font-size: 0.86rem; }

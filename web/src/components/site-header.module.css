@@ -155,14 +155,27 @@
 
 @media (max-width: 38rem) {
   .inner {
+    display: grid;
     min-height: 4rem;
     width: min(100% - 1rem, 72rem);
     gap: 0.5rem;
+    padding-block: 0.5rem;
+  }
+
+  .brand {
+    justify-self: start;
   }
 
   .navigation {
+    width: 100%;
     min-width: 0;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     gap: 0.5rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-block-end: 0.2rem;
+    scrollbar-width: thin;
   }
 
   .navigation :global(.primary-action) {
@@ -180,12 +193,6 @@
   }
 }
 
-@media (max-width: 28rem) {
-  .brand > span:last-child {
-    display: none;
-  }
-}
-
 @media (max-width: 24rem) {
   .inner,
   .navigation {
@@ -193,7 +200,7 @@
   }
 
   .navigation {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     min-width: 0;
   }
 
