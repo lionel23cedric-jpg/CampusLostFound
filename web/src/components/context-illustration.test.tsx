@@ -27,6 +27,10 @@ it.each([
   ["claims", "/illustrations/claims-item-handover.webp"],
   ["notifications", "/illustrations/notifications-campus-match.webp"],
   ["administration", "/illustrations/administration-review.webp"],
+  ["adminOverview", "/illustrations/admin-operations-overview.png"],
+  ["adminAccounts", "/illustrations/admin-accounts-staff.png"],
+  ["adminReference", "/illustrations/admin-reference-data.png"],
+  ["adminModeration", "/illustrations/admin-report-moderation.png"],
 ] satisfies ReadonlyArray<readonly [IllustrationKind, string]>)
   ("renders the local %s visual as decorative content", (kind, source) => {
     const { container } = render(<ContextIllustration kind={kind} />);

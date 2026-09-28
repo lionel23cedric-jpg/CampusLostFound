@@ -60,7 +60,7 @@ export function AdminReferenceDataClient(): React.JSX.Element {
         </p>
       </header>
 
-      <ContextIllustration kind="administration" variant="banner" priority />
+      <ContextIllustration kind="adminReference" variant="banner" priority />
 
       <div className={styles.tabs} role="tablist" aria-label="Reference data resources">
         {/* These buttons are the UI entry points for the two editable resources. */}

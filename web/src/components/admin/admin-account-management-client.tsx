@@ -712,7 +712,7 @@ export function AdminAccountManagementClient() {
         </div>
       </header>
 
-      <ContextIllustration kind="administration" variant="banner" priority />
+      <ContextIllustration kind="adminAccounts" variant="banner" priority />
 
       <form
         className={styles.filters}

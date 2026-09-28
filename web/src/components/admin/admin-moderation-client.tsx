@@ -89,7 +89,7 @@ export function AdminModerationClient() {
         </p>
       </header>
 
-      <ContextIllustration kind="administration" variant="banner" priority />
+      <ContextIllustration kind="adminModeration" variant="banner" priority />
 
       <section className={styles.section} aria-labelledby="moderation-duplicates">
         <div className={styles.sectionHeading}>

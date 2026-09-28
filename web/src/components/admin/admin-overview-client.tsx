@@ -263,7 +263,7 @@ export function AdminOverviewClient() {
         <Link href="/admin/moderation">Review report moderation</Link>
       </nav>
 
-      <ContextIllustration kind="administration" variant="banner" priority />
+      <ContextIllustration kind="adminOverview" variant="banner" priority />
 
       {state.refreshFailed ? (
         <p className={styles.refreshAlert} role="alert">
