@@ -67,10 +67,73 @@
 
 .account h2,
 .upcoming h2,
+.staffActions h2,
 .statePanel h1 {
   margin: 0;
   color: var(--ink);
   font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.staffDashboard {
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+.staffIntroduction {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: end;
+  border-radius: 18px;
+  background: var(--ink);
+  color: var(--paper-light);
+  padding: clamp(1.5rem, 5vw, 3.5rem);
+}
+
+.staffIntroduction h1 {
+  max-width: 15ch;
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.35rem, 6vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.staffIntroduction > div > p {
+  max-width: 56ch;
+  margin: 1.2rem 0 0;
+  color: #dce7e2;
+  line-height: 1.6;
+}
+
+.staffFacts {
+  display: grid;
+  min-width: min(100%, 19rem);
+  gap: 1rem;
+  margin: 0;
+  border-left: 1px solid rgb(255 253 248 / 35%);
+  padding-left: clamp(1.25rem, 3vw, 2rem);
+}
+
+.staffFacts div {
+  display: flex;
+  min-width: 0;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.staffFacts dt {
+  color: #b9cbc4;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.staffFacts dd {
+  overflow-wrap: anywhere;
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
 }
 
 .facts {
@@ -111,6 +174,64 @@
 
 .upcomingHeading p {
   margin: 0.65rem 0 0;
+}
+
+.staffActionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.staffActionGrid article {
+  display: flex;
+  flex-direction: column;
+  min-height: 17rem;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--campus-green);
+  border-radius: 16px;
+  background: var(--paper-light);
+  padding: 1.5rem;
+  box-shadow: 0 12px 30px rgb(23 55 47 / 8%);
+}
+
+.staffActionGrid article:nth-child(2) {
+  border-top-color: var(--warm-accent);
+}
+
+.staffActionGrid h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.staffActionGrid article > p:not(.availableLabel) {
+  margin: 0.8rem 0 1.5rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.staffActionLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  border: 1px solid var(--campus-green);
+  border-radius: 10px;
+  color: var(--campus-green-dark);
+  font-weight: 800;
+  padding: 0.65rem 0.9rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.staffActionLink:hover {
+  background: #e8f0eb;
+}
+
+.staffActionLink:active {
+  transform: translateY(1px);
 }
 
 .upcomingGrid {
@@ -218,15 +339,29 @@
 
 @media (max-width: 48rem) {
   .facts,
-  .upcomingGrid {
+  .upcomingGrid,
+  .staffActionGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .staffIntroduction {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .staffFacts {
+    width: 100%;
+    border-top: 1px solid rgb(255 253 248 / 35%);
+    border-left: 0;
+    padding-top: 1.25rem;
+    padding-left: 0;
+  }
 }
 
 @media (max-width: 32rem) {
   .facts,
-  .upcomingGrid {
+  .upcomingGrid,
+  .staffActionGrid {
     grid-template-columns: 1fr;
   }
 

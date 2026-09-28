@@ -125,59 +125,37 @@ it("renders safe account details and the available report actions", () => {
   expect(container.textContent).not.toContain("user-id");
 });
 
-it.each(["staff", "administrator"] as const)(
-  "links an active %s to ownership Claim reviews",
-  (role) => {
-    mockSession({
-      status: "authenticated",
-      user: { ...safeUser, role, status: "active" },
-    });
-    render(<DashboardClient />);
+it("renders a recovery operations desk for staff", () => {
+  mockSession({
+    status: "authenticated",
+    user: { ...safeUser, role: "staff", status: "active" },
+  });
+  render(<DashboardClient />);
 
-    expect(
-      screen.getByRole("link", { name: "Review ownership claims" }).getAttribute("href"),
-    ).toBe("/staff/claims");
-    expect(
-      screen.getByRole("link", { name: "Handle item reports" }).getAttribute("href"),
-    ).toBe("/staff/reports");
-    expect(screen.queryByRole("link", { name: "Manage recovery requests" })).toBeNull();
-    expect(
-      screen.getByRole("link", { name: "Manage profile settings" }).getAttribute("href"),
-    ).toBe("/profile");
-    expect(
-      screen.getByRole("link", { name: "Review my report history" }).getAttribute("href"),
-    ).toBe("/reports/mine");
-    expect(screen.getAllByText("Available now")).toHaveLength(
-      role === "administrator" ? 7 : 6,
-    );
-    expect(screen.queryByText("Upcoming")).toBeNull();
-  },
-);
+  expect(screen.getByRole("heading", { name: "Recovery Operations Desk" })).toBeTruthy();
+  expect(
+    screen.getByRole("link", { name: "Open report handling" }).getAttribute("href"),
+  ).toBe("/staff/reports");
+  expect(
+    screen.getByRole("link", { name: "Open Claim reviews" }).getAttribute("href"),
+  ).toBe("/staff/claims");
+  expect(
+    screen.getByRole("link", { name: "Open notifications" }).getAttribute("href"),
+  ).toBe("/notifications");
+  expect(screen.queryByRole("link", { name: "Report an item" })).toBeNull();
+  expect(screen.getAllByText("Available now")).toHaveLength(3);
+});
 
-it("links an active administrator to the system overview", () => {
+it("routes an active administrator to Campus Find Operations", async () => {
   mockSession({
     status: "authenticated",
     user: { ...safeUser, role: "administrator", status: "active" },
   });
   render(<DashboardClient />);
 
-  expect(
-    screen.getByRole("link", { name: "Review system overview" }).getAttribute("href"),
-  ).toBe("/admin");
-});
-
-it.each([
-  ["student", { ...safeUser, role: "student" as const, status: "active" as const }],
-  ["staff", { ...safeUser, role: "staff" as const, status: "active" as const }],
-  [
-    "inactive administrator",
-    { ...safeUser, role: "administrator" as const, status: "suspended" as const },
-  ],
-])("does not link a %s to the system overview", (_label, user) => {
-  mockSession({ status: "authenticated", user });
-  render(<DashboardClient />);
-
-  expect(screen.queryByRole("link", { name: "Review system overview" })).toBeNull();
+  await waitFor(() => expect(replace).toHaveBeenCalledWith("/admin"));
+  expect(screen.queryByRole("heading", { name: "Recovery Operations Desk" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: /Welcome/ })).toBeNull();
 });
 
 it.each([
