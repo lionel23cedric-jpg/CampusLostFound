@@ -1,4 +1,4 @@
-// Explicit course evaluation: this is the only setup command that intentionally downloads the model.
+// Explicit course evaluation of the model files packaged with the application.
 import { readFile } from "node:fs/promises";
 
 import { scoreReportMatch } from "../src/lib/reports/matching-score.ts";

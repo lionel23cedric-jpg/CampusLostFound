@@ -1,15 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The text model is server-only. Keep the production Smart Search bundle
-  // isolated so Vercel Hobby does not count every API route as new.
+  // The text model is server-only. The portable WASM runtime is statically
+  // bundled; only the pinned model files need explicit server tracing.
   outputFileTracingIncludes: {
     "/api/reports": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
-      "./node_modules/onnxruntime-node/package.json",
-      "./node_modules/onnxruntime-node/dist/**/*",
-      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/*",
     ],
+    "/api/reports/\\[id\\]/matches": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
+    "/api/ai/report-assistant": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
+    "/api/admin/ai/duplicates": ["./models/Xenova/all-MiniLM-L6-v2/**/*"],
   },
 };
 

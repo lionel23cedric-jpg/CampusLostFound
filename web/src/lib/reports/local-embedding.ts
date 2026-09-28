@@ -1,9 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
-// Loaded only when a member requests matches: builds and ordinary tests never download a model.
+import { Tokenizer } from "@huggingface/tokenizers";
+import * as ort from "onnxruntime-web/wasm";
+
+// Loaded only when a member requests an AI text feature. The pinned model and
+// tokenizer are packaged with the app; runtime inference never calls a remote API.
 const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
-const MODEL_REVISION = "751bff37182d3f1213fa05d7196b954e230abad9";
 const MODEL_CONFIG_PATH = path.join(MODEL_ID, "config.json");
 
 function resolveLocalModelRoot() {
@@ -18,48 +21,95 @@ function resolveLocalModelRoot() {
   );
 }
 
-const LOCAL_MODEL_ROOT = resolveLocalModelRoot();
+const MODEL_DIRECTORY = path.join(resolveLocalModelRoot(), MODEL_ID);
+const MODEL_PATH = path.join(MODEL_DIRECTORY, "onnx", "model_quantized.onnx");
+const TOKENIZER_PATH = path.join(MODEL_DIRECTORY, "tokenizer.json");
+const TOKENIZER_CONFIG_PATH = path.join(MODEL_DIRECTORY, "tokenizer_config.json");
 
-type Extractor = (
-  text: string,
-  options: { pooling: "mean"; normalize: true },
-) => Promise<{ data: ArrayLike<number> }>;
-let extractorPromise: Promise<Extractor> | undefined;
+let tokenizer: Tokenizer | undefined;
+let sessionPromise: Promise<ort.InferenceSession> | undefined;
 
-async function getExtractor() {
-  extractorPromise ??= import("@huggingface/transformers")
-    .then(({ env, pipeline }) => {
-      env.localModelPath = LOCAL_MODEL_ROOT;
-      env.allowLocalModels = true;
-      env.allowRemoteModels = false;
-      const featurePipeline = pipeline as unknown as (
-        task: "feature-extraction",
-        model: string,
-        options: { dtype: "q8"; local_files_only: true; revision: string },
-      ) => Promise<Extractor>;
-      return featurePipeline("feature-extraction", MODEL_ID, {
-        dtype: "q8",
-        local_files_only: true,
-        revision: MODEL_REVISION,
-      });
-    })
-    .catch((error: unknown) => {
-      console.warn(
-        "[local-embedding] packaged text model unavailable; using the caller fallback",
-        error instanceof Error ? error.message : "unknown loader error",
-      );
-      extractorPromise = undefined;
-      throw error;
-    });
-  return extractorPromise;
+function getTokenizer() {
+  tokenizer ??= new Tokenizer(
+    JSON.parse(fs.readFileSync(TOKENIZER_PATH, "utf8")) as object,
+    JSON.parse(fs.readFileSync(TOKENIZER_CONFIG_PATH, "utf8")) as object,
+  );
+  return tokenizer;
+}
+
+async function getSession() {
+  sessionPromise ??= (async () => {
+    // One thread avoids worker/blob loading, which is unsupported in Vercel's
+    // Node runtime. The WASM backend stays portable and needs no native addon.
+    ort.env.wasm.numThreads = 1;
+    const model = await fs.promises.readFile(MODEL_PATH);
+    return ort.InferenceSession.create(model, { executionProviders: ["wasm"] });
+  })().catch((error: unknown) => {
+    console.warn(
+      "[local-embedding] packaged text model unavailable; using the caller fallback",
+      error instanceof Error ? error.message : "unknown loader error",
+    );
+    sessionPromise = undefined;
+    throw error;
+  });
+  return sessionPromise;
+}
+
+function normalizedMeanPool(
+  hiddenState: ort.Tensor,
+  attentionMask: number[],
+): Float32Array {
+  const [batchSize, tokenCount, dimensions] = hiddenState.dims;
+  if (
+    batchSize !== 1 ||
+    tokenCount !== attentionMask.length ||
+    !dimensions ||
+    hiddenState.data.length !== tokenCount * dimensions
+  ) {
+    throw new Error("Invalid local embedding output");
+  }
+
+  const vector = new Float32Array(dimensions);
+  let includedTokens = 0;
+  for (let tokenIndex = 0; tokenIndex < tokenCount; tokenIndex += 1) {
+    if (!attentionMask[tokenIndex]) continue;
+    includedTokens += 1;
+    const offset = tokenIndex * dimensions;
+    for (let dimension = 0; dimension < dimensions; dimension += 1) {
+      vector[dimension] += Number(hiddenState.data[offset + dimension]);
+    }
+  }
+  if (includedTokens === 0) throw new Error("Invalid local embedding input");
+
+  let squaredNorm = 0;
+  for (let dimension = 0; dimension < dimensions; dimension += 1) {
+    vector[dimension] /= includedTokens;
+    squaredNorm += vector[dimension] ** 2;
+  }
+  const norm = Math.sqrt(squaredNorm);
+  if (!Number.isFinite(norm) || norm === 0) throw new Error("Invalid local embedding");
+  for (let dimension = 0; dimension < dimensions; dimension += 1) {
+    vector[dimension] /= norm;
+  }
+  return vector;
 }
 
 export async function embedPublicText(text: string): Promise<Float32Array> {
-  const extractor = await getExtractor();
-  const output = await extractor(text, { pooling: "mean", normalize: true });
-  const vector = Float32Array.from(output.data);
-  if (vector.length === 0 || vector.some((value) => !Number.isFinite(value))) {
-    throw new Error("Invalid local embedding");
-  }
-  return vector;
+  const encoding = getTokenizer().encode(text);
+  const inputIds = BigInt64Array.from(encoding.ids, BigInt);
+  const attentionMask = encoding.attention_mask;
+  const dimensions: [number, number] = [1, inputIds.length];
+  const session = await getSession();
+  const output = await session.run({
+    input_ids: new ort.Tensor("int64", inputIds, dimensions),
+    attention_mask: new ort.Tensor(
+      "int64",
+      BigInt64Array.from(attentionMask, BigInt),
+      dimensions,
+    ),
+    token_type_ids: new ort.Tensor("int64", new BigInt64Array(inputIds.length), dimensions),
+  });
+  const hiddenState = output.last_hidden_state;
+  if (!hiddenState) throw new Error("Invalid local embedding output");
+  return normalizedMeanPool(hiddenState, attentionMask);
 }
