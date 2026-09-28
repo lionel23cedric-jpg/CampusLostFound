@@ -9,6 +9,7 @@ const PAGE_SIZE = 12;
 
 const knownKeys = [
   "q",
+  "smartQuery",
   "reportType",
   "categoryId",
   "campusLocationId",
@@ -24,6 +25,7 @@ const knownKeySet = new Set<string>(knownKeys);
 
 export type ReportSearchValues = {
   q: string;
+  smartQuery: string;
   reportType: "" | "lost" | "found";
   categoryId: string;
   campusLocationId: string;
@@ -94,6 +96,13 @@ const searchValuesSchema = z
       .refine((value) => value.length === 0 || value.length >= 2, {
         message: "Enter at least 2 characters",
       }),
+    smartQuery: z
+      .string()
+      .trim()
+      .max(240, "Use 240 characters or fewer")
+      .refine((value) => value.length === 0 || value.length >= 3, {
+        message: "Enter at least 3 characters",
+      }),
     reportType: z.enum(["", "lost", "found"]),
     categoryId: z.union([z.literal(""), objectId]),
     campusLocationId: z.union([z.literal(""), objectId]),
@@ -136,6 +145,7 @@ const searchValuesSchema = z
 export function createEmptyReportSearchValues(): ReportSearchValues {
   return {
     q: "",
+    smartQuery: "",
     reportType: "",
     categoryId: "",
     campusLocationId: "",
@@ -171,6 +181,7 @@ export function validateReportSearch(
   const data = parsed.data;
   const request: ReportBrowseRequest = {};
   if (data.q) request.q = data.q;
+  if (data.smartQuery) request.smartQuery = data.smartQuery;
   if (data.reportType) request.reportType = data.reportType;
   if (data.categoryId) request.categoryId = data.categoryId;
   if (data.campusLocationId) request.campusLocationId = data.campusLocationId;
@@ -216,7 +227,7 @@ export function parseReportSearchParams(params: URLSearchParams): {
     return all[0];
   };
 
-  for (const key of ["q", "reportType", "categoryId", "campusLocationId", "status", "color", "hasPhoto"] as const) {
+  for (const key of ["q", "smartQuery", "reportType", "categoryId", "campusLocationId", "status", "color", "hasPhoto"] as const) {
     const value = read(key);
     if (value !== undefined) values[key] = value as never;
   }
@@ -255,6 +266,7 @@ export function parseReportSearchParams(params: URLSearchParams): {
 export function reportSearchHref(input: ReportBrowseRequest): string {
   const search = new URLSearchParams();
   if (input.q) search.set("q", input.q);
+  if (input.smartQuery) search.set("smartQuery", input.smartQuery);
   if (input.reportType) search.set("reportType", input.reportType);
   if (input.categoryId) search.set("categoryId", input.categoryId);
   if (input.campusLocationId) {

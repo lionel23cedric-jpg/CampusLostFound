@@ -25,6 +25,7 @@ export const MEMBER_REPORT_STATUSES = [
 export const reportBrowseQuerySchema = z
   .strictObject({
     q: z.string().trim().min(2).max(100).optional(),
+    smartQuery: z.string().trim().min(3).max(240).optional(),
     reportType: z.enum(["lost", "found"]).optional(),
     categoryId: objectIdSchema.optional(),
     campusLocationId: objectIdSchema.optional(),

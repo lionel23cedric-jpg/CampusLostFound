@@ -302,10 +302,47 @@ describe("ReportBrowser filters, results and pagination", () => {
     await screen.findByText(memberReport.title);
 
     await user.type(screen.getByLabelText("Keyword"), "laptop bag");
+    await user.type(
+      screen.getByLabelText("Describe what you are looking for"),
+      "black charger near library",
+    );
     await user.selectOptions(screen.getByLabelText("Report type"), "lost");
     await user.click(screen.getByRole("button", { name: "Search reports" }));
 
-    expect(push).toHaveBeenCalledWith("/reports?q=laptop+bag&reportType=lost");
+    expect(push).toHaveBeenCalledWith(
+      "/reports?q=laptop+bag&smartQuery=black+charger+near+library&reportType=lost",
+    );
+  });
+
+  it.each([
+    ["model_assisted", "AI-assisted search"],
+    ["fallback", "Keyword fallback"],
+  ] as const)("labels %s smart-search results", async (searchMethod, label) => {
+    currentSearch = new URLSearchParams(
+      "smartQuery=black+charger+near+library",
+    );
+    vi.mocked(getReports).mockResolvedValue({ ...readyPage, searchMethod });
+
+    render(<ReportBrowser />);
+
+    expect(await screen.findByText(label)).toBeTruthy();
+    expect(
+      (screen.getByLabelText(
+        "Describe what you are looking for",
+      ) as HTMLInputElement).value,
+    ).toBe("black charger near library");
+    expect(getReports).toHaveBeenCalledWith({
+      smartQuery: "black charger near library",
+    });
+  });
+
+  it("does not show an AI label for ordinary structured search", async () => {
+    currentSearch = new URLSearchParams("status=open");
+    render(<ReportBrowser />);
+
+    await screen.findByText(memberReport.title);
+    expect(screen.queryByText("AI-assisted search")).toBeNull();
+    expect(screen.queryByText("Keyword fallback")).toBeNull();
   });
 
   it("keeps URL category and location filters selected while labels load and after they arrive", async () => {
@@ -350,6 +387,10 @@ describe("ReportBrowser filters, results and pagination", () => {
     render(<ReportBrowser />);
     await screen.findByText(memberReport.title);
     await user.type(screen.getByLabelText("Keyword"), "x");
+    await user.type(
+      screen.getByLabelText("Describe what you are looking for"),
+      "xx",
+    );
     await user.type(screen.getByLabelText("Occurred from"), "2026-08-20");
     await user.type(screen.getByLabelText("Occurred to"), "2026-08-19");
     await user.click(screen.getByRole("button", { name: "Search reports" }));
@@ -358,6 +399,11 @@ describe("ReportBrowser filters, results and pagination", () => {
     expect(document.activeElement).toBe(summary);
     expect(screen.getByLabelText("Keyword").getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByLabelText("Keyword").getAttribute("aria-describedby")).toBe("q-error");
+    expect(
+      screen
+        .getByLabelText("Describe what you are looking for")
+        .getAttribute("aria-invalid"),
+    ).toBe("true");
     expect(push).not.toHaveBeenCalled();
   });
 

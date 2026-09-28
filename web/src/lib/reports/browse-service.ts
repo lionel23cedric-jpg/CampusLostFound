@@ -1,5 +1,6 @@
 import type { QueryFilter } from "mongoose";
 
+import type { AiMethod } from "@/lib/ai/contracts";
 import type { PublicUser } from "@/lib/auth/public-user";
 import { connectToDatabase } from "@/lib/db";
 import { ItemReportModel, type ItemReport } from "@/models/item-report";
@@ -9,7 +10,11 @@ import {
   type ReportBrowseQuery,
 } from "./browse-validation";
 import { ReportError } from "./errors";
+import { embedPublicText } from "./local-embedding";
 import { type MemberReport, toMemberReport } from "./public-report";
+import { cosineSimilarity } from "./semantic-score";
+
+const SMART_SEARCH_CANDIDATE_LIMIT = 100;
 
 const MEMBER_REPORT_PROJECTION = {
   _id: 1,
@@ -39,6 +44,7 @@ export type ReportPage = {
     total: number;
     totalPages: number;
   };
+  searchMethod?: AiMethod;
 };
 
 function escapeRegularExpression(value: string) {
@@ -84,19 +90,25 @@ function buildFilter(query: ReportBrowseQuery): QueryFilter<ItemReport> {
   return filter;
 }
 
-export async function listReports(
+function publicSearchText(
+  report: Pick<ItemReport, "title" | "publicDescription" | "tags">,
+) {
+  return `${report.title}. ${report.publicDescription}. ${report.tags.join(" ")}`;
+}
+
+async function listKeywordReports(
   user: PublicUser,
   query: ReportBrowseQuery,
+  filter: QueryFilter<ItemReport>,
+  searchMethod?: AiMethod,
 ): Promise<ReportPage> {
-  await connectToDatabase();
-  const filter = buildFilter(query);
-  const projection = query.q
+  const usesTextScore = filter.$text !== undefined;
+  const projection = usesTextScore
     ? { ...MEMBER_REPORT_PROJECTION, score: { $meta: "textScore" } }
     : MEMBER_REPORT_PROJECTION;
-  const sort: Record<string, -1 | { $meta: "textScore" }> = query.q
+  const sort: Record<string, -1 | { $meta: "textScore" }> = usesTextScore
     ? { score: { $meta: "textScore" }, occurredAt: -1, _id: -1 }
     : { occurredAt: -1, _id: -1 };
-
   const reportsQuery = ItemReportModel.find(filter, projection)
     .sort(sort)
     .skip((query.page - 1) * query.pageSize)
@@ -115,7 +127,69 @@ export async function listReports(
       total,
       totalPages: Math.ceil(total / query.pageSize),
     },
+    ...(searchMethod ? { searchMethod } : {}),
   };
+}
+
+async function listSmartReports(
+  user: PublicUser,
+  query: ReportBrowseQuery & { smartQuery: string },
+  filter: QueryFilter<ItemReport>,
+): Promise<ReportPage> {
+  const candidates = await ItemReportModel.find(filter, MEMBER_REPORT_PROJECTION)
+    .sort({ createdAt: -1, _id: -1 })
+    .limit(SMART_SEARCH_CANDIDATE_LIMIT)
+    .exec();
+
+  try {
+    const queryVector = await embedPublicText(query.smartQuery);
+    const ranked: Array<{ report: (typeof candidates)[number]; similarity: number }> = [];
+    for (const report of candidates) {
+      const reportVector = await embedPublicText(publicSearchText(report));
+      ranked.push({
+        report,
+        similarity: cosineSimilarity(queryVector, reportVector),
+      });
+    }
+    ranked.sort(
+      (left, right) =>
+        right.similarity - left.similarity ||
+        right.report.createdAt.getTime() - left.report.createdAt.getTime() ||
+        String(right.report._id).localeCompare(String(left.report._id)),
+    );
+
+    const start = (query.page - 1) * query.pageSize;
+    const page = ranked.slice(start, start + query.pageSize);
+    return {
+      reports: page.map(({ report }) => toMemberReport(report, user.id)),
+      pagination: {
+        page: query.page,
+        pageSize: query.pageSize,
+        total: ranked.length,
+        totalPages: Math.ceil(ranked.length / query.pageSize),
+      },
+      searchMethod: "model_assisted",
+    };
+  } catch {
+    const keywordFilter = {
+      ...filter,
+      $text: {
+        $search: [query.q, query.smartQuery].filter(Boolean).join(" "),
+      },
+    };
+    return listKeywordReports(user, query, keywordFilter, "fallback");
+  }
+}
+
+export async function listReports(
+  user: PublicUser,
+  query: ReportBrowseQuery,
+): Promise<ReportPage> {
+  await connectToDatabase();
+  const filter = buildFilter(query);
+  return query.smartQuery
+    ? listSmartReports(user, { ...query, smartQuery: query.smartQuery }, filter)
+    : listKeywordReports(user, query, filter);
 }
 
 export async function getReport(user: PublicUser, reportId: string) {

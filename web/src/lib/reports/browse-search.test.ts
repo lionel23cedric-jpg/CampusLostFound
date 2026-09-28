@@ -19,6 +19,7 @@ describe("report browse search URLs", () => {
   it("creates blank browser values and an empty request", () => {
     expect(createEmptyReportSearchValues()).toEqual({
       q: "",
+      smartQuery: "",
       reportType: "",
       categoryId: "",
       campusLocationId: "",
@@ -37,20 +38,22 @@ describe("report browse search URLs", () => {
 
   it("round-trips valid filters and preserves a requested page", () => {
     const params = new URLSearchParams(
-      "q=laptop+bag&reportType=lost&status=open&hasPhoto=true&page=3",
+      "q=laptop+bag&smartQuery=black+bag+near+library&reportType=lost&status=open&hasPhoto=true&page=3",
     );
     const parsed = parseReportSearchParams(params);
 
     expect(parsed.values.q).toBe("laptop bag");
+    expect(parsed.values.smartQuery).toBe("black bag near library");
     expect(parsed.request).toMatchObject({
       q: "laptop bag",
+      smartQuery: "black bag near library",
       reportType: "lost",
       status: "open",
       hasPhoto: true,
       page: 3,
     });
     expect(reportSearchHref(parsed.request)).toBe(
-      "/reports?q=laptop+bag&reportType=lost&status=open&hasPhoto=true&page=3",
+      "/reports?q=laptop+bag&smartQuery=black+bag+near+library&reportType=lost&status=open&hasPhoto=true&page=3",
     );
   });
 
@@ -58,6 +61,7 @@ describe("report browse search URLs", () => {
     const result = validateReportSearch(
       values({
         q: "  laptop bag  ",
+        smartQuery: "  black charger near library  ",
         reportType: "found",
         categoryId,
         campusLocationId,
@@ -70,7 +74,7 @@ describe("report browse search URLs", () => {
     expect(result.success).toBe(true);
     if (!result.success) throw new Error("Expected valid filters");
     expect(reportSearchHref(result.request)).toBe(
-      `/reports?q=laptop+bag&reportType=found&categoryId=${categoryId}` +
+      `/reports?q=laptop+bag&smartQuery=black+charger+near+library&reportType=found&categoryId=${categoryId}` +
         `&campusLocationId=${campusLocationId}&status=claim_pending` +
         "&color=Black&hasPhoto=false",
     );
@@ -106,6 +110,13 @@ describe("report browse search URLs", () => {
   it.each([
     ["two-character keyword", { q: "xx" }, "q", "xx"],
     ["100-character keyword", { q: "x".repeat(100) }, "q", "x".repeat(100)],
+    ["three-character smart query", { smartQuery: "xyz" }, "smartQuery", "xyz"],
+    [
+      "240-character smart query",
+      { smartQuery: "x".repeat(240) },
+      "smartQuery",
+      "x".repeat(240),
+    ],
     ["one-character colour", { color: "x" }, "color", "x"],
     ["32-character colour", { color: "x".repeat(32) }, "color", "x".repeat(32)],
   ] as const)("accepts the %s boundary", (_case, overrides, field, expected) => {
@@ -118,6 +129,8 @@ describe("report browse search URLs", () => {
   it.each([
     ["one-character keyword", { q: "x" }, "q"],
     ["101-character keyword", { q: "x".repeat(101) }, "q"],
+    ["two-character smart query", { smartQuery: "xx" }, "smartQuery"],
+    ["241-character smart query", { smartQuery: "x".repeat(241) }, "smartQuery"],
     ["33-character colour", { color: "x".repeat(33) }, "color"],
     ["invalid category", { categoryId: "not-an-object-id" }, "categoryId"],
     ["invalid location", { campusLocationId: "not-an-object-id" }, "campusLocationId"],
@@ -203,8 +216,16 @@ describe("report browse search URLs", () => {
     expect(reportSearchHref({ page: 1 })).toBe("/reports");
     expect(reportSearchHref({ page: 2 })).toBe("/reports?page=2");
     expect(
-      reportSearchHref({ q: "laptop", status: "open", hasPhoto: false, page: 4 }),
-    ).toBe("/reports?q=laptop&status=open&hasPhoto=false&page=4");
+      reportSearchHref({
+        q: "laptop",
+        smartQuery: "black charger",
+        status: "open",
+        hasPhoto: false,
+        page: 4,
+      }),
+    ).toBe(
+      "/reports?q=laptop&smartQuery=black+charger&status=open&hasPhoto=false&page=4",
+    );
   });
 
   it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER])(

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { aiMethodSchema, type AiMethod } from "@/lib/ai/contracts";
+
 import {
   REPORT_IMAGE_CONTENT_TYPES,
   REPORT_IMAGE_MAX_BYTES,
@@ -95,6 +97,7 @@ export type ReportPagination = {
 export type ReportPage = {
   reports: MemberReport[];
   pagination: ReportPagination;
+  searchMethod?: AiMethod;
 };
 
 export type MatchFactorKey =
@@ -132,6 +135,7 @@ export type UploadedReportImage = {
 
 export type ReportBrowseRequest = {
   q?: string;
+  smartQuery?: string;
   reportType?: "lost" | "found";
   categoryId?: string;
   campusLocationId?: string;
@@ -243,6 +247,7 @@ const reportPaginationSchema = z.strictObject({
 const reportPageSchema = z.strictObject({
   reports: z.array(memberReportSchema),
   pagination: reportPaginationSchema,
+  searchMethod: aiMethodSchema.optional(),
 }) satisfies z.ZodType<ReportPage>;
 
 const matchFactorMaximums = {
@@ -456,6 +461,7 @@ export async function getReports(
 ): Promise<ReportPage> {
   const search = new URLSearchParams();
   if (input.q) search.set("q", input.q);
+  if (input.smartQuery) search.set("smartQuery", input.smartQuery);
   if (input.reportType) search.set("reportType", input.reportType);
   if (input.categoryId) search.set("categoryId", input.categoryId);
   if (input.campusLocationId) {

@@ -374,6 +374,7 @@ describe("report browser client", () => {
       Response.json({
         reports: [memberReport],
         pagination: { page: 2, pageSize: 12, total: 13, totalPages: 2 },
+        searchMethod: "model_assisted",
       }),
     );
     vi.stubGlobal("fetch", fetchMock);
@@ -381,6 +382,7 @@ describe("report browser client", () => {
     await expect(
       getReports({
         q: "laptop bag",
+        smartQuery: "black charger near library",
         reportType: "lost",
         status: "open",
         hasPhoto: false,
@@ -389,9 +391,10 @@ describe("report browser client", () => {
     ).resolves.toEqual({
       reports: [memberReport],
       pagination: { page: 2, pageSize: 12, total: 13, totalPages: 2 },
+      searchMethod: "model_assisted",
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/reports?q=laptop+bag&reportType=lost&status=open&hasPhoto=false&page=2",
+      "/api/reports?q=laptop+bag&smartQuery=black+charger+near+library&reportType=lost&status=open&hasPhoto=false&page=2",
       { method: "GET", credentials: "same-origin" },
     );
   });
@@ -508,6 +511,15 @@ describe("report browser client", () => {
       {
         reports: [memberReport],
         pagination: { page: 1.5, pageSize: 12, total: 1, totalPages: 1 },
+      },
+    ],
+    [
+      "invalid smart-search method",
+      () => getReports({ smartQuery: "black charger" }),
+      {
+        reports: [memberReport],
+        pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+        searchMethod: "rule_fallback",
       },
     ],
   ])("rejects member responses containing %s", async (_name, request, body) => {

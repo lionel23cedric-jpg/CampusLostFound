@@ -328,6 +328,25 @@
   gap: 1rem;
 }
 
+.resultHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.searchMethod {
+  width: fit-content;
+  margin: 0;
+  border: 1px solid var(--campus-green);
+  border-radius: 999px;
+  color: var(--campus-green-dark);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.35rem 0.65rem;
+}
+
 .reportList {
   display: grid;
   gap: 1rem;

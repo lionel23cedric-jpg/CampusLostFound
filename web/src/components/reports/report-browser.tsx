@@ -50,6 +50,7 @@ type ReferenceState =
 
 const searchFields = [
   "q",
+  "smartQuery",
   "reportType",
   "categoryId",
   "campusLocationId",
@@ -478,6 +479,20 @@ function ActiveReportBrowser() {
             />
             {fieldError("q") ? <span id="q-error">{fieldError("q")}</span> : null}
           </label>
+          <label htmlFor="smart-query">
+            Describe what you are looking for
+            <input
+              id="smart-query"
+              aria-label="Describe what you are looking for"
+              name="smartQuery"
+              defaultValue={values.smartQuery}
+              maxLength={240}
+              {...fieldAccessibility("smartQuery")}
+            />
+            {fieldError("smartQuery") ? (
+              <span id="smartQuery-error">{fieldError("smartQuery")}</span>
+            ) : null}
+          </label>
           <label>
             Report type
             <select
@@ -643,14 +658,24 @@ function ActiveReportBrowser() {
         </form>
 
         <section aria-labelledby="report-results-heading" className={styles.results}>
-          <h2
-            id="report-results-heading"
-            ref={resultsHeadingRef}
-            data-query-key={queryKey}
-            tabIndex={-1}
-          >
-            <span aria-live="polite">{totalLabel}</span>
-          </h2>
+          <div className={styles.resultHeading}>
+            <h2
+              id="report-results-heading"
+              ref={resultsHeadingRef}
+              data-query-key={queryKey}
+              tabIndex={-1}
+            >
+              <span aria-live="polite">{totalLabel}</span>
+            </h2>
+            {visibleReportState.status === "ready" &&
+            visibleReportState.page.searchMethod ? (
+              <p className={styles.searchMethod} role="status">
+                {visibleReportState.page.searchMethod === "model_assisted"
+                  ? "AI-assisted search"
+                  : "Keyword fallback"}
+              </p>
+            ) : null}
+          </div>
           {referenceWarning}
           {reportContent}
           {pagination}

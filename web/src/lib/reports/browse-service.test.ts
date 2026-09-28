@@ -9,12 +9,14 @@ vi.mock("@/models/item-report", () => ({
   },
 }));
 vi.mock("./public-report", () => ({ toMemberReport: vi.fn() }));
+vi.mock("./local-embedding", () => ({ embedPublicText: vi.fn() }));
 
 import { connectToDatabase } from "@/lib/db";
 import { ItemReportModel } from "@/models/item-report";
 
 import type { ReportBrowseQuery } from "./browse-validation";
 import { ReportError } from "./errors";
+import { embedPublicText } from "./local-embedding";
 import { toMemberReport } from "./public-report";
 import { getReport, listReports } from "./browse-service";
 
@@ -142,6 +144,101 @@ describe("report browse service", () => {
       { ...memberReportProjection, score: { $meta: "textScore" } },
     );
     expect(findChain.sort).toHaveBeenCalledWith({
+      score: { $meta: "textScore" },
+      occurredAt: -1,
+      _id: -1,
+    });
+  });
+
+  it("ranks at most 100 structured-filter results using public report text only", async () => {
+    const olderDocument = {
+      _id: "older-report",
+      title: "Black laptop charger",
+      publicDescription: "USB-C charger near library",
+      tags: ["charger", "usb-c", "black"],
+      createdAt: new Date("2026-08-14T00:00:00.000Z"),
+      serialNumber: "private-serial",
+      privateVerification: { exactLocationDetails: "private desk" },
+      reporterId: "private-reporter",
+    };
+    const newerDocument = {
+      _id: "newer-report",
+      title: "Laptop power adapter",
+      publicDescription: "Power supply found in a study space",
+      tags: ["adapter"],
+      createdAt: new Date("2026-08-15T00:00:00.000Z"),
+    };
+    findExec.mockResolvedValue([olderDocument, newerDocument]);
+    vi.mocked(toMemberReport).mockImplementation((document) => ({
+      id: String((document as { _id: string })._id),
+    }) as never);
+    vi.mocked(embedPublicText).mockImplementation(async (text) => {
+      if (text === "black charger near library") {
+        return new Float32Array([1, 0]);
+      }
+      if (text.startsWith("Black laptop charger")) {
+        return new Float32Array([1, 0]);
+      }
+      return new Float32Array([0, 1]);
+    });
+
+    await expect(
+      listReports(
+        user,
+        query({ smartQuery: "black charger near library", reportType: "lost" }),
+      ),
+    ).resolves.toEqual({
+      reports: [{ id: "older-report" }, { id: "newer-report" }],
+      pagination: { page: 1, pageSize: 12, total: 2, totalPages: 1 },
+      searchMethod: "model_assisted",
+    });
+
+    expect(ItemReportModel.find).toHaveBeenCalledWith(
+      expect.objectContaining({ reportType: "lost" }),
+      memberReportProjection,
+    );
+    expect(findChain.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
+    expect(findChain.limit).toHaveBeenCalledWith(100);
+    expect(findChain.skip).not.toHaveBeenCalled();
+    expect(ItemReportModel.countDocuments).not.toHaveBeenCalled();
+    expect(embedPublicText).toHaveBeenCalledWith(
+      "Black laptop charger. USB-C charger near library. charger usb-c black",
+    );
+    expect(JSON.stringify(vi.mocked(embedPublicText).mock.calls)).not.toMatch(
+      /serial|verification|exactLocation|reporterId/i,
+    );
+  });
+
+  it("falls back to the existing keyword query when local embeddings fail", async () => {
+    const candidate = {
+      _id: "candidate-report",
+      title: "Black charger",
+      publicDescription: "Found near the library",
+      tags: ["charger"],
+      createdAt: new Date("2026-08-15T00:00:00.000Z"),
+    };
+    findExec
+      .mockResolvedValueOnce([candidate])
+      .mockResolvedValueOnce([firstDocument]);
+    countExec.mockResolvedValue(1);
+    vi.mocked(embedPublicText).mockRejectedValue(new Error("model unavailable"));
+
+    await expect(
+      listReports(user, query({ smartQuery: "black charger near library" })),
+    ).resolves.toEqual({
+      reports: [firstMemberReport],
+      pagination: { page: 1, pageSize: 12, total: 1, totalPages: 1 },
+      searchMethod: "fallback",
+    });
+
+    expect(ItemReportModel.find).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        $text: { $search: "black charger near library" },
+      }),
+      { ...memberReportProjection, score: { $meta: "textScore" } },
+    );
+    expect(findChain.sort).toHaveBeenLastCalledWith({
       score: { $meta: "textScore" },
       occurredAt: -1,
       _id: -1,
