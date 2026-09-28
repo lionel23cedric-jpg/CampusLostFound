@@ -1,8 +1,55 @@
 import { describe, expect, it } from "vitest";
 
-import { replaceTextFactor, semanticTextPoints } from "./semantic-score";
+import {
+  cosineSimilarity,
+  replaceTextFactor,
+  semanticTextPoints,
+} from "./semantic-score";
 
 describe("semantic text scoring", () => {
+  it("returns a bounded cosine similarity for compatible vectors", () => {
+    expect(
+      cosineSimilarity(
+        new Float32Array([1, 0]),
+        new Float32Array([1, 0]),
+      ),
+    ).toBe(1);
+    expect(
+      cosineSimilarity(
+        new Float32Array([1, 0]),
+        new Float32Array([-1, 0]),
+      ),
+    ).toBe(0);
+    expect(
+      cosineSimilarity(
+        new Float32Array([1, 1]),
+        new Float32Array([1, 0]),
+      ),
+    ).toBeGreaterThan(0);
+    expect(
+      cosineSimilarity(
+        new Float32Array([1, 1]),
+        new Float32Array([1, 0]),
+      ),
+    ).toBeLessThan(1);
+  });
+
+  it("returns zero for empty, mismatched, zero-length, or non-finite vectors", () => {
+    expect(cosineSimilarity(new Float32Array(), new Float32Array())).toBe(0);
+    expect(
+      cosineSimilarity(new Float32Array([1]), new Float32Array([1, 0])),
+    ).toBe(0);
+    expect(
+      cosineSimilarity(new Float32Array([0]), new Float32Array([0])),
+    ).toBe(0);
+    expect(
+      cosineSimilarity(
+        new Float32Array([Number.POSITIVE_INFINITY]),
+        new Float32Array([1]),
+      ),
+    ).toBe(0);
+  });
+
   it("maps cosine similarity to at most the existing twenty text points", () => {
     expect(semanticTextPoints(new Float32Array([1, 0]), new Float32Array([1, 0]))).toBe(20);
     expect(semanticTextPoints(new Float32Array([1, 0]), new Float32Array([0, 1]))).toBe(0);

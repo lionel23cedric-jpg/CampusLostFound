@@ -1,6 +1,6 @@
 import type { MatchScore } from "./matching-score";
 
-export function semanticTextPoints(left: Float32Array, right: Float32Array) {
+export function cosineSimilarity(left: Float32Array, right: Float32Array) {
   if (left.length === 0 || left.length !== right.length) return 0;
   let dot = 0;
   let leftLength = 0;
@@ -11,10 +11,11 @@ export function semanticTextPoints(left: Float32Array, right: Float32Array) {
     rightLength += right[index] ** 2;
   }
   if (!Number.isFinite(dot) || leftLength <= 0 || rightLength <= 0) return 0;
-  const similarity = dot / Math.sqrt(leftLength * rightLength);
-  return Number.isFinite(similarity)
-    ? Math.round(20 * Math.max(0, Math.min(1, similarity)))
-    : 0;
+  return Math.max(0, Math.min(1, dot / Math.sqrt(leftLength * rightLength)));
+}
+
+export function semanticTextPoints(left: Float32Array, right: Float32Array) {
+  return Math.round(20 * cosineSimilarity(left, right));
 }
 
 export function replaceTextFactor(base: MatchScore, points: number): MatchScore {
