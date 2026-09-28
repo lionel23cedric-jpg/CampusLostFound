@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import type { MemberReport, ReportBrowseRequest } from "./browser-client";
+import {
+  hasVisibleReportSearchLength,
+  normalizeReportSearchText,
+} from "./browse-validation";
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i);
 const dateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -91,17 +95,15 @@ const searchValuesSchema = z
   .strictObject({
     q: z
       .string()
-      .trim()
-      .max(100, "Use 100 characters or fewer")
-      .refine((value) => value.length === 0 || value.length >= 2, {
-        message: "Enter at least 2 characters",
+      .transform(normalizeReportSearchText)
+      .refine((value) => value.length === 0 || hasVisibleReportSearchLength(value, 2, 100), {
+        message: "Use 2 to 100 visible characters",
       }),
     smartQuery: z
       .string()
-      .trim()
-      .max(240, "Use 240 characters or fewer")
-      .refine((value) => value.length === 0 || value.length >= 3, {
-        message: "Enter at least 3 characters",
+      .transform(normalizeReportSearchText)
+      .refine((value) => value.length === 0 || hasVisibleReportSearchLength(value, 3, 240), {
+        message: "Use 3 to 240 visible characters",
       }),
     reportType: z.enum(["", "lost", "found"]),
     categoryId: z.union([z.literal(""), objectId]),

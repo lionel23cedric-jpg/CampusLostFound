@@ -15,6 +15,35 @@ const positiveInteger = z
   .transform(Number)
   .pipe(z.number().int().min(1).max(Number.MAX_SAFE_INTEGER));
 
+const unsupportedSearchCharacters = /[\p{Cc}\p{Cf}\p{Cs}]/u;
+
+export function normalizeReportSearchText(value: string) {
+  return value.normalize("NFKC").replace(/\p{Z}+/gu, " ").trim();
+}
+
+export function hasVisibleReportSearchLength(
+  value: string,
+  minimum: number,
+  maximum: number,
+) {
+  const length = [...value].length;
+  return (
+    !unsupportedSearchCharacters.test(value) &&
+    length >= minimum &&
+    length <= maximum
+  );
+}
+
+function visibleSearchText(minimum: number, maximum: number) {
+  return z
+    .string()
+    .transform(normalizeReportSearchText)
+    .refine(
+      (value) => hasVisibleReportSearchLength(value, minimum, maximum),
+      `Use ${minimum} to ${maximum} visible characters`,
+    );
+}
+
 export const MEMBER_REPORT_STATUSES = [
   "open",
   "claim_pending",
@@ -24,8 +53,8 @@ export const MEMBER_REPORT_STATUSES = [
 
 export const reportBrowseQuerySchema = z
   .strictObject({
-    q: z.string().trim().min(2).max(100).optional(),
-    smartQuery: z.string().trim().min(3).max(240).optional(),
+    q: visibleSearchText(2, 100).optional(),
+    smartQuery: visibleSearchText(3, 240).optional(),
     reportType: z.enum(["lost", "found"]).optional(),
     categoryId: objectIdSchema.optional(),
     campusLocationId: objectIdSchema.optional(),

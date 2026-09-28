@@ -131,6 +131,8 @@ describe("report browse search URLs", () => {
     ["101-character keyword", { q: "x".repeat(101) }, "q"],
     ["two-character smart query", { smartQuery: "xx" }, "smartQuery"],
     ["241-character smart query", { smartQuery: "x".repeat(241) }, "smartQuery"],
+    ["format-only smart query", { smartQuery: "\u200B\u200B\u200B" }, "smartQuery"],
+    ["control character smart query", { smartQuery: "bag\nnear library" }, "smartQuery"],
     ["33-character colour", { color: "x".repeat(33) }, "color"],
     ["invalid category", { categoryId: "not-an-object-id" }, "categoryId"],
     ["invalid location", { campusLocationId: "not-an-object-id" }, "campusLocationId"],

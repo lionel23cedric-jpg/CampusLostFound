@@ -301,7 +301,6 @@ export function AdminOverviewClient() {
       <section className={styles.metricSection} aria-labelledby="claim-overview">
         <div className={styles.sectionHeading}>
           <h2 id="claim-overview">Ownership Claims</h2>
-          <Link href="/staff/claims">Review ownership Claims</Link>
         </div>
         <div className={styles.sectionBody}>
           {/* Claim statuses are shown as proportions of the complete Claim total. */}

@@ -139,8 +139,8 @@ it("loads once and renders every metric with a definition", async () => {
   expect(metricValue("Total accounts")).toBe("11");
   expect(screen.getByText(/25 Aug 2026/)).toBeTruthy();
   expect(
-    screen.getByRole("link", { name: "Review ownership Claims" }).getAttribute("href"),
-  ).toBe("/staff/claims");
+    screen.queryByRole("link", { name: "Review ownership Claims" }),
+  ).toBeNull();
   expect(screen.queryByRole("link", { name: "Back to dashboard" })).toBeNull();
   expect(container.textContent).not.toMatch(
     /admin@example|userId|reportId|claimId|password|token|verification/i,
