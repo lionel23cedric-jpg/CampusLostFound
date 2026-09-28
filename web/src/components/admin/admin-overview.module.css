@@ -93,11 +93,14 @@
 .overview {
   display: grid;
   box-sizing: border-box;
-  width: min(100% - 2rem, 72rem);
+  width: min(100% - 2rem, 76rem);
   margin-inline: auto;
-  gap: clamp(2rem, 5vw, 3.5rem);
+  gap: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid #274a40;
+  border-radius: 24px;
+  background: #102822;
   overflow-wrap: anywhere;
-  padding-block: clamp(2.5rem, 7vw, 5rem);
+  padding: clamp(1rem, 3vw, 2.5rem);
 }
 
 .overviewHeader {
@@ -106,18 +109,22 @@
   align-items: end;
   justify-content: space-between;
   gap: 1.5rem;
-  border-block-end: 1px solid var(--line);
-  padding-block-end: clamp(1.5rem, 4vw, 2.25rem);
+  border-block-end: 4px solid #c8784e;
+  padding-block-end: clamp(1.25rem, 3vw, 2rem);
 }
 
 .headingCopy {
   max-width: 48rem;
 }
 
+.overviewHeader a {
+  color: #f1d4b5;
+}
+
 .headingCopy h1 {
   max-width: 16ch;
   margin: 0;
-  color: var(--ink);
+  color: #fffdf8;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(2.25rem, 7vw, 4.5rem);
   font-weight: 600;
@@ -128,13 +135,13 @@
 .headingCopy > p:last-child,
 .overviewActions p,
 .sectionHeading p {
-  color: var(--ink-soft);
   line-height: 1.6;
 }
 
 .headingCopy > p:last-child {
   max-width: 65ch;
   margin: 1rem 0 0;
+  color: #d7e2dd;
 }
 
 .overviewActions {
@@ -145,11 +152,13 @@
 
 .overviewActions p {
   margin: 0;
+  color: #d7e2dd;
   font-size: 0.9rem;
 }
 
 .overviewActions button,
-.sectionHeading a {
+.sectionHeading a,
+.responsibilityLinks a {
   display: inline-flex;
   min-width: 44px;
   min-height: 44px;
@@ -162,15 +171,15 @@
 }
 
 .overviewActions button {
-  border: 0;
-  background: var(--campus-green);
-  color: white;
+  border: 1px solid #efc99f;
+  background: #e5b77b;
+  color: #102822;
   cursor: pointer;
   padding: 0.65rem 1rem;
 }
 
 .overviewActions button:hover:not(:disabled) {
-  background: var(--campus-green-dark);
+  background: #f1d4b5;
 }
 
 .overviewActions button:disabled {
@@ -179,15 +188,45 @@
 }
 
 .sectionHeading a {
-  border: 1px solid var(--campus-green);
-  color: var(--campus-green-dark);
+  border: 1px solid #315e50;
+  color: #183d32;
   padding: 0.6rem 0.9rem;
 }
 
 .overviewActions :focus-visible,
-.sectionHeading a:focus-visible {
-  outline: 3px solid var(--campus-green-dark);
+.sectionHeading a:focus-visible,
+.responsibilityLinks a:focus-visible {
+  outline: 3px solid #e5b77b;
   outline-offset: 3px;
+}
+
+.responsibilityLinks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid #c8784e;
+  background: #c8784e;
+}
+
+.responsibilityLinks a {
+  align-items: center;
+  justify-content: flex-start;
+  background: #f8f4eb;
+  color: #183d32;
+  padding: 1rem clamp(0.9rem, 2vw, 1.35rem);
+}
+
+.responsibilityLinks a:hover {
+  background: #fffdf8;
+  color: #8d452d;
+}
+
+.overview > figure {
+  margin: 0;
+  border: 3px solid #c8784e;
+  border-radius: 12px;
+  background: #f8f4eb;
+  overflow: hidden;
 }
 
 .refreshAlert,
@@ -205,20 +244,22 @@
 }
 
 .zeroNotice {
-  border: 1px solid var(--line);
-  background: var(--paper-light);
-  color: var(--ink-soft);
+  border: 1px solid #cdbfae;
+  background: #f8f4eb;
+  color: #475b54;
 }
 
 .metricSection {
   display: grid;
   min-width: 0;
   gap: 1.25rem;
+  border-block-start: 6px solid #c8784e;
+  background: #f8f4eb;
+  padding: clamp(1rem, 3vw, 1.75rem);
 }
 
 .reportSection {
-  border-block-start: 2px solid var(--ink);
-  padding-block-start: clamp(1.25rem, 3vw, 1.75rem);
+  border-block-start-color: #e5b77b;
 }
 
 .sectionHeading {
@@ -233,16 +274,9 @@
   min-width: 0;
 }
 
-.sectionLinks {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.65rem;
-}
-
 .sectionHeading h2 {
   margin: 0;
-  color: var(--ink);
+  color: #102822;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.65rem, 4vw, 2.25rem);
   line-height: 1.1;
@@ -251,6 +285,7 @@
 .sectionHeading p {
   max-width: 32rem;
   margin: 0;
+  color: #475b54;
   text-align: end;
 }
 
@@ -259,8 +294,8 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   margin: 0;
   gap: 1px;
-  border: 1px solid var(--line);
-  background: var(--line);
+  border: 1px solid #cdbfae;
+  background: #cdbfae;
 }
 
 .sectionBody {
@@ -275,8 +310,8 @@
   min-width: 0;
   gap: 1rem;
   margin: 0;
-  border: 1px solid var(--line);
-  background: var(--paper-light);
+  border: 1px solid #cdbfae;
+  background: #fffdf8;
   padding: 1.25rem;
 }
 
@@ -295,12 +330,12 @@
   aspect-ratio: 1;
   place-content: center;
   border-radius: 50%;
-  background: var(--paper-light);
+  background: #fffdf8;
   text-align: center;
 }
 
 .donutChart strong {
-  color: var(--ink);
+  color: #102822;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.75rem, 5vw, 2.5rem);
   font-variant-numeric: tabular-nums;
@@ -309,7 +344,7 @@
 
 .donutChart small {
   margin-block-start: 0.25rem;
-  color: var(--ink-soft);
+  color: #52655e;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -318,7 +353,7 @@
 
 .chartFigure h3 {
   margin: 0;
-  color: var(--ink);
+  color: #102822;
   font-size: 1rem;
 }
 
@@ -335,12 +370,12 @@
   grid-template-columns: 0.75rem minmax(0, 1fr) auto;
   gap: 0.5rem;
   align-items: center;
-  color: var(--ink-soft);
+  color: #475b54;
   font-size: 0.82rem;
 }
 
 .chartLegend strong {
-  color: var(--ink);
+  color: #102822;
   font-variant-numeric: tabular-nums;
 }
 
@@ -353,7 +388,7 @@
 }
 
 .legendValue small {
-  color: var(--ink-soft);
+  color: #52655e;
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
@@ -368,12 +403,12 @@
   display: grid;
   min-width: 0;
   align-content: start;
-  background: var(--paper-light);
+  background: #fffdf8;
   padding: clamp(1rem, 3vw, 1.4rem);
 }
 
 .metricCard dt {
-  color: var(--ink);
+  color: #102822;
   font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.35;
@@ -381,7 +416,7 @@
 
 .metricCard dd {
   margin: 0.35rem 0 0;
-  color: var(--campus-green-dark);
+  color: #8d452d;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(2rem, 5vw, 3rem);
   font-variant-numeric: tabular-nums;
@@ -390,14 +425,14 @@
 
 .metricCard p {
   margin: 0.75rem 0 0;
-  color: var(--ink-soft);
+  color: #52655e;
   font-size: 0.86rem;
   line-height: 1.5;
 }
 
 .loadingOverview {
   margin: 0;
-  color: var(--ink-soft);
+  color: #edf3f0;
   line-height: 1.6;
 }
 
@@ -405,31 +440,14 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
-  border: 1px solid var(--line);
-  background: var(--line);
+  border: 1px solid #c8784e;
+  background: #c8784e;
 }
 
 .skeletonGroup span {
   display: block;
   min-height: 9rem;
-  background: linear-gradient(
-    100deg,
-    var(--paper-light) 20%,
-    var(--paper) 40%,
-    var(--paper-light) 60%
-  );
-  background-size: 200% 100%;
-  animation: overview-loading 1.4s ease-in-out infinite;
-}
-
-@keyframes overview-loading {
-  from {
-    background-position: 100% 0;
-  }
-
-  to {
-    background-position: -100% 0;
-  }
+  background: #e4ded2;
 }
 
 @media (max-width: 42rem) {
@@ -448,8 +466,8 @@
     text-align: start;
   }
 
-  .sectionLinks {
-    justify-content: flex-start;
+  .responsibilityLinks {
+    grid-template-columns: 1fr;
   }
 
   .sectionBody {
@@ -470,7 +488,8 @@
 
 @media (max-width: 20rem) {
   .overview {
-    width: min(100% - 1rem, 72rem);
+    width: min(100% - 1rem, 76rem);
+    border-radius: 12px;
   }
 
   .overviewActions,
@@ -480,7 +499,8 @@
   }
 
   .overviewActions button,
-  .sectionHeading a {
+  .sectionHeading a,
+  .responsibilityLinks a {
     width: 100%;
   }
 
@@ -491,7 +511,4 @@
     transform: none;
   }
 
-  .skeletonGroup span {
-    animation: none;
-  }
 }

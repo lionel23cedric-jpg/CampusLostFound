@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { AdminOverviewClient } from "@/components/admin/admin-overview-client";
 import { AdministratorAccessBoundary } from "@/components/admin/administrator-access-boundary";
 
-export const metadata: Metadata = { title: "Administrator overview" };
+export const metadata: Metadata = { title: "Campus Find Operations" };
 
 export default function AdminPage() {
   return (

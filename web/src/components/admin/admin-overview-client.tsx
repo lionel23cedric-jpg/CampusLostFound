@@ -235,12 +235,8 @@ export function AdminOverviewClient() {
     <article className={styles.overview}>
       <header className={styles.overviewHeader}>
         <div className={styles.headingCopy}>
-          <PageBackLink href="/dashboard">Back to dashboard</PageBackLink>
-          <h1>Administrator overview</h1>
-          <p>
-            Monitor report recovery, ownership Claims and account availability
-            from one privacy-safe snapshot.
-          </p>
+          <h1>Campus Find Operations</h1>
+          <p>System oversight, access control and report integrity.</p>
         </div>
         <div className={styles.overviewActions}>
           <p>
@@ -257,6 +253,15 @@ export function AdminOverviewClient() {
           </button>
         </div>
       </header>
+
+      <nav
+        className={styles.responsibilityLinks}
+        aria-label="Administrator responsibilities"
+      >
+        <Link href="/admin/accounts">Manage accounts and staff</Link>
+        <Link href="/admin/reference-data">Manage reference data</Link>
+        <Link href="/admin/moderation">Review report moderation</Link>
+      </nav>
 
       <ContextIllustration kind="administration" variant="banner" priority />
 
@@ -277,10 +282,6 @@ export function AdminOverviewClient() {
           <div>
             <h2 id="report-overview">Reports</h2>
             <p>Submitted reports and recovery outcomes.</p>
-          </div>
-          <div className={styles.sectionLinks}>
-            <Link href="/admin/moderation">Review flagged reports</Link>
-            <Link href="/admin/reference-data">Manage reference data</Link>
           </div>
         </div>
         <div className={styles.sectionBody}>
@@ -325,7 +326,6 @@ export function AdminOverviewClient() {
             <h2 id="account-overview">Accounts</h2>
             <p>Current access states across all registered accounts.</p>
           </div>
-          <Link href="/admin/accounts">Manage accounts</Link>
         </div>
         <div className={styles.sectionBody}>
           {/* Account statuses describe current access availability, not user activity. */}

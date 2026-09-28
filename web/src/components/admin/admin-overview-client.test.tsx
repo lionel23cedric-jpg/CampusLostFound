@@ -89,8 +89,24 @@ it("loads once and renders every metric with a definition", async () => {
   );
   await waitFor(() => expect(getAdministratorOverview).toHaveBeenCalledOnce());
   expect(
-    await screen.findByRole("heading", { name: "Administrator overview" }),
+    await screen.findByRole("heading", {
+      level: 1,
+      name: "Campus Find Operations",
+    }),
   ).toBeTruthy();
+  expect(
+    screen.getByText("System oversight, access control and report integrity."),
+  ).toBeTruthy();
+  expect(
+    screen.getByRole("link", { name: "Manage accounts and staff" }).getAttribute("href"),
+  ).toBe("/admin/accounts");
+  expect(
+    screen.getByRole("link", { name: "Manage reference data" }).getAttribute("href"),
+  ).toBe("/admin/reference-data");
+  expect(
+    screen.getByRole("link", { name: "Review report moderation" }).getAttribute("href"),
+  ).toBe("/admin/moderation");
+  expect(screen.queryByText(/welcome admin/i)).toBeNull();
 
   const expectedLabels = [
     "Lost submitted",
@@ -125,20 +141,7 @@ it("loads once and renders every metric with a definition", async () => {
   expect(
     screen.getByRole("link", { name: "Review ownership Claims" }).getAttribute("href"),
   ).toBe("/staff/claims");
-  expect(
-    screen.getByRole("link", { name: "Manage accounts" }).getAttribute("href"),
-  ).toBe("/admin/accounts");
-  expect(
-    screen
-      .getByRole("link", { name: "Manage reference data" })
-      .getAttribute("href"),
-  ).toBe("/admin/reference-data");
-  expect(
-    screen.getByRole("link", { name: "Review flagged reports" }).getAttribute("href"),
-  ).toBe("/admin/moderation");
-  expect(
-    screen.getByRole("link", { name: "Back to dashboard" }).getAttribute("href"),
-  ).toBe("/dashboard");
+  expect(screen.queryByRole("link", { name: "Back to dashboard" })).toBeNull();
   expect(container.textContent).not.toMatch(
     /admin@example|userId|reportId|claimId|password|token|verification/i,
   );
@@ -292,4 +295,7 @@ it("keeps overview controls and metrics usable at 320 pixels", () => {
   expect(css).toMatch(/@media\s*\(max-width:\s*20rem\)/);
   expect(css).toMatch(/grid-template-columns:\s*1fr/);
   expect(css).toMatch(/prefers-reduced-motion:\s*reduce/);
+  expect(css).not.toMatch(/(?:linear|radial)-gradient/);
+  expect(css).not.toMatch(/backdrop-filter/);
+  expect(css).not.toMatch(/animation:\s*[^n]/);
 });

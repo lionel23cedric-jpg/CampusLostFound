@@ -17,7 +17,7 @@ import AdminPage, { metadata } from "./page";
 it("composes the protected administrator overview route", () => {
   const { container } = render(<AdminPage />);
 
-  expect(metadata.title).toBe("Administrator overview");
+  expect(metadata.title).toBe("Campus Find Operations");
   expect(container.querySelector("main#main-content")).toBeTruthy();
   expect(screen.getByLabelText("Administrator access fixture")).toBeTruthy();
   expect(screen.getByLabelText("Administrator overview fixture")).toBeTruthy();
