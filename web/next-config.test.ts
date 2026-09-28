@@ -4,7 +4,11 @@ import nextConfig from "./next.config";
 describe("Next.js text model tracing", () => {
   it("includes the pinned local model only for text-AI routes", () => {
     const includes = nextConfig.outputFileTracingIncludes;
-    const routeAssets = ["./models/Xenova/all-MiniLM-L6-v2/**/*"];
+    const routeAssets = [
+      "./models/Xenova/all-MiniLM-L6-v2/**/*",
+      "./node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs",
+      "./node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm",
+    ];
     expect(includes).toEqual({
       "/api/reports": routeAssets,
       "/api/reports/\\[id\\]/matches": routeAssets,

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import { Tokenizer } from "@huggingface/tokenizers";
 import * as ort from "onnxruntime-web/wasm";
@@ -26,6 +27,22 @@ const MODEL_PATH = path.join(MODEL_DIRECTORY, "onnx", "model_quantized.onnx");
 const TOKENIZER_PATH = path.join(MODEL_DIRECTORY, "tokenizer.json");
 const TOKENIZER_CONFIG_PATH = path.join(MODEL_DIRECTORY, "tokenizer_config.json");
 
+function resolveWasmRuntimeRoot() {
+  const candidates = [
+    path.join(process.cwd(), "node_modules", "onnxruntime-web", "dist"),
+    path.join(process.cwd(), "web", "node_modules", "onnxruntime-web", "dist"),
+  ];
+  return (
+    candidates.find((candidate) =>
+      fs.existsSync(path.join(candidate, "ort-wasm-simd-threaded.mjs")),
+    ) ?? candidates[0]
+  );
+}
+
+const WASM_RUNTIME_ROOT = resolveWasmRuntimeRoot();
+const WASM_MODULE_PATH = path.join(WASM_RUNTIME_ROOT, "ort-wasm-simd-threaded.mjs");
+const WASM_BINARY_PATH = path.join(WASM_RUNTIME_ROOT, "ort-wasm-simd-threaded.wasm");
+
 let tokenizer: Tokenizer | undefined;
 let sessionPromise: Promise<ort.InferenceSession> | undefined;
 
@@ -42,7 +59,12 @@ async function getSession() {
     // One thread avoids worker/blob loading, which is unsupported in Vercel's
     // Node runtime. The WASM backend stays portable and needs no native addon.
     ort.env.wasm.numThreads = 1;
-    const model = await fs.promises.readFile(MODEL_PATH);
+    ort.env.wasm.wasmPaths = { mjs: pathToFileURL(WASM_MODULE_PATH).href };
+    const [model, wasmBinary] = await Promise.all([
+      fs.promises.readFile(MODEL_PATH),
+      fs.promises.readFile(WASM_BINARY_PATH),
+    ]);
+    ort.env.wasm.wasmBinary = wasmBinary;
     return ort.InferenceSession.create(model, { executionProviders: ["wasm"] });
   })().catch((error: unknown) => {
     console.warn(
