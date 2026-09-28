@@ -1,6 +1,5 @@
 .hero,
 .workflow,
-.notices,
 .privacy,
 .footer {
   width: min(100% - 2rem, 72rem);
@@ -9,29 +8,19 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   align-items: center;
   gap: clamp(2rem, 6vw, 5rem);
-  min-height: min(46rem, calc(100dvh - 4.5rem));
+  min-height: min(48rem, calc(100dvh - 4.5rem));
   padding-block: clamp(3rem, 8vw, 6rem);
 }
 
 .heroCopy {
-  max-width: 34rem;
-}
-
-.eyebrow {
-  margin: 0 0 0.9rem;
-  color: var(--warm-accent);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  max-width: 38rem;
 }
 
 .hero h1,
 .workflow h2,
-.notices h2,
 .privacy h2 {
   color: var(--ink);
   font-family: Georgia, "Times New Roman", serif;
@@ -43,6 +32,7 @@
   font-size: clamp(2.75rem, 4.6vw, 4.25rem);
   line-height: 0.98;
   letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
 .intro {
@@ -53,18 +43,67 @@
   line-height: 1.65;
 }
 
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.heroActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
   margin-top: 1.75rem;
+}
+
+.actionCard {
+  display: flex;
+  min-height: 5.5rem;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-light);
+  color: var(--ink);
+  padding: 1rem;
+  text-decoration: none;
+}
+
+.actionCard:first-child {
+  border-color: var(--campus-green);
+  background: var(--campus-green);
+  color: white;
+}
+
+.actionCard:last-child {
+  grid-column: 1 / -1;
+  border-color: #d7c2b5;
+  background: #f2e5dc;
+}
+
+.actionCard:hover {
+  border-color: var(--campus-green-dark);
+}
+
+.actionCard:first-child:hover {
+  background: var(--campus-green-dark);
+}
+
+.actionCard strong {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.actionCard span {
+  margin-top: 0.4rem;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.actionCard:first-child span {
+  color: #e5f3ed;
 }
 
 .heroVisual {
   overflow: hidden;
-  border: 1px solid var(--line);
+  margin: 0;
   border-radius: 16px;
-  background: var(--paper-light);
+  background: var(--ink);
   box-shadow: var(--shadow);
 }
 
@@ -75,118 +114,116 @@
   object-fit: cover;
 }
 
-.workflow,
-.notices {
+.heroVisual figcaption {
+  color: var(--paper-light);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  padding: 0.9rem 1rem 1rem;
+}
+
+.workflow {
+  border-top: 1px solid var(--line);
   padding-block: clamp(4rem, 9vw, 7rem);
 }
 
+.sectionHeading {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(18rem, 1.2fr);
+  align-items: end;
+  gap: clamp(1.5rem, 6vw, 5rem);
+}
+
 .workflow h2,
-.notices h2,
 .privacy h2 {
   max-width: 18ch;
   margin: 0;
   font-size: clamp(2rem, 4vw, 3.5rem);
   line-height: 1.05;
   letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 
-.workflowList {
-  display: grid;
-  margin: 2.5rem 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.workflowList li {
-  display: grid;
-  grid-template-columns: minmax(12rem, 0.7fr) minmax(0, 1fr);
-  gap: 2rem;
-  border-top: 1px solid var(--line);
-  padding: 1.5rem 0;
-}
-
-.workflowList h3 {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.1rem;
-}
-
-.workflowList p,
 .sectionHeading p,
-.notice p,
 .privacy p,
 .footer p {
   color: var(--ink-soft);
   line-height: 1.65;
 }
 
-.workflowList p {
-  max-width: 58ch;
+.sectionHeading p {
+  max-width: 54ch;
   margin: 0;
 }
 
-.notices {
-  border-top: 1px solid var(--line);
-}
-
-.sectionHeading p {
-  max-width: 56ch;
-  margin: 1rem 0 0;
-}
-
-.noticeGrid {
+.workflowList {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  margin-top: 2.5rem;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.notice {
-  min-height: 13rem;
+.workflowList li {
+  min-width: 0;
+}
+
+.stepLink {
+  display: grid;
+  height: 100%;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--paper-light);
-  padding: clamp(1.25rem, 3vw, 2rem);
-  box-shadow: 0 0.75rem 2rem rgb(23 55 47 / 7%);
-}
-
-.notice:nth-child(2) {
-  background: #e8f0eb;
-}
-
-.notice:nth-child(3) {
-  grid-column: 1 / -1;
-  min-height: auto;
-  background: #f2e5dc;
-}
-
-.noticeKind {
-  margin: 0 0 1.5rem;
-  color: var(--campus-green) !important;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.notice h3 {
-  margin: 0;
   color: var(--ink);
-  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  text-decoration: none;
 }
 
-.notice p:not(.noticeKind) {
-  margin: 0.7rem 0 1rem;
+.stepLink:hover {
+  border-color: var(--campus-green);
 }
 
-.notice time {
+.stepImage {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.stepCopy {
+  display: flex;
+  min-height: 12rem;
+  flex-direction: column;
+  padding: 1.25rem;
+}
+
+.stepCopy > strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  line-height: 1.12;
+}
+
+.stepCopy > span:not(.stepAction) {
+  margin-top: 0.85rem;
   color: var(--ink-soft);
-  font-size: 0.84rem;
+  font-size: 0.93rem;
+  line-height: 1.55;
+}
+
+.stepAction {
+  margin-top: auto;
+  padding-top: 1.25rem;
+  color: var(--campus-green);
+  font-size: 0.9rem;
   font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.18em;
 }
 
 .privacy {
-  padding-block: clamp(3rem, 7vw, 5rem);
+  padding-block: 0 clamp(3rem, 7vw, 5rem);
 }
 
 .privacy > div {
@@ -218,18 +255,9 @@
   font-size: 0.9rem;
 }
 
-@media (min-width: 56.01rem) {
-  .notice:nth-child(1) {
-    rotate: -0.5deg;
-  }
-
-  .notice:nth-child(2) {
-    rotate: 0.5deg;
-  }
-}
-
 @media (max-width: 56rem) {
   .hero,
+  .sectionHeading,
   .privacy > div {
     grid-template-columns: 1fr;
   }
@@ -245,21 +273,28 @@
   .hero h1 {
     max-width: 14ch;
   }
+
+  .sectionHeading {
+    align-items: start;
+  }
 }
 
 @media (max-width: 40rem) {
-  .workflowList li,
-  .noticeGrid {
+  .heroActions,
+  .workflowList {
     grid-template-columns: 1fr;
   }
 
-  .notice:nth-child(3) {
+  .actionCard:last-child {
     grid-column: auto;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .notice {
-    rotate: 0deg !important;
+  .stepCopy {
+    min-height: auto;
+  }
+
+  .stepAction {
+    margin-top: 1rem;
+    padding-top: 0;
   }
 }

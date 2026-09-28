@@ -3,64 +3,77 @@ import Link from "next/link";
 
 import styles from "./page.module.css";
 
-const workflow = [
+const heroActions = [
   {
-    title: "Report an item",
-    description: "Share clear public details while keeping ownership evidence private.",
+    title: "Report a lost item",
+    description: "Record what went missing and keep proof of ownership private.",
+    href: "/reports/new",
   },
   {
-    title: "Receive possible matches",
-    description: "Campus Find compares lost and found reports as the collection grows.",
+    title: "Report a found item",
+    description: "Share the public details that can help the owner recognise it.",
+    href: "/reports/new",
   },
   {
-    title: "Recover it securely",
-    description: "Confirm ownership and arrange handover through a controlled process.",
+    title: "Search reports",
+    description: "Browse member-visible lost and found reports across campus.",
+    href: "/reports",
   },
-];
+] as const;
 
-const sampleNotices = [
+const recoverySteps = [
   {
-    kind: "Found",
-    item: "Canvas backpack",
-    detail: "Near the library entrance",
-    date: "Today",
+    title: "Report clearly",
+    description: "Add the public details that help with discovery while keeping evidence private.",
+    image: "/illustrations/reports-found-item.webp",
+    imageAlt: "A found backpack and everyday belongings ready to be reported",
+    href: "/reports/new",
+    action: "Open report form",
   },
   {
-    kind: "Lost",
-    item: "Reusable bottle",
-    detail: "Between the gym and bus stop",
-    date: "Yesterday",
+    title: "Review AI-assisted matches",
+    description: "Compare possible matches and decide which report is worth reviewing.",
+    image: "/illustrations/notifications-campus-match.webp",
+    imageAlt: "A campus notification for a possible item match",
+    href: "/reports",
+    action: "Search reports",
   },
   {
-    kind: "Found",
-    item: "Set of keys",
-    detail: "Student services reception",
-    date: "This week",
+    title: "Recover through a controlled handover",
+    description: "Use ownership checks and staff-supported updates before an item changes hands.",
+    image: "/illustrations/claims-item-handover.webp",
+    imageAlt: "A careful campus handover of a recovered item",
+    href: "/claims",
+    action: "Review my claims",
   },
-];
+] as const;
 
 export default function Home() {
   return (
     <main id="main-content">
       <section className={styles.hero} aria-labelledby="home-title">
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Massey campus community</p>
           <h1 id="home-title">Lost something? Let the campus help.</h1>
           <p className={styles.intro}>
             Report belongings, receive possible matches, and arrange a safer recovery through one
             campus service.
           </p>
-          <div className={styles.actions}>
-            <Link className="primary-action" href="/register">
-              Create an account
-            </Link>
-            <Link className="text-link" href="/login">
-              Sign in
-            </Link>
-          </div>
+          <nav className={styles.heroActions} aria-label="Start a lost and found task">
+            {heroActions.map((action) => (
+              <Link
+                className={styles.actionCard}
+                href={action.href}
+                key={action.title}
+                aria-label={action.title}
+              >
+                <strong>{action.title}</strong>
+                <span>{action.description}</span>
+              </Link>
+            ))}
+          </nav>
         </div>
 
-        <div className={styles.heroVisual}>
+        <figure className={styles.heroVisual}>
           <Image
             className={styles.heroImage}
             src="/campus-find-hero.webp"
@@ -70,36 +83,36 @@ export default function Home() {
             priority
             sizes="(max-width: 896px) 100vw, 50vw"
           />
-        </div>
+          <figcaption>One campus place for reporting, matching, and secure recovery.</figcaption>
+        </figure>
       </section>
 
       <section className={styles.workflow} aria-labelledby="workflow-title">
-        <h2 id="workflow-title">How Campus Find works</h2>
+        <div className={styles.sectionHeading}>
+          <h2 id="workflow-title">How Campus Find works</h2>
+          <p>Move from a clear report to a verified recovery without exposing private evidence.</p>
+        </div>
         <ol className={styles.workflowList}>
-          {workflow.map((item) => (
-            <li key={item.title} aria-label={`Workflow: ${item.title}`}>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
+          {recoverySteps.map((step) => (
+            <li key={step.title} aria-label={`Recovery step: ${step.title}`}>
+              <Link className={styles.stepLink} href={step.href} aria-label={step.title}>
+                <Image
+                  className={styles.stepImage}
+                  src={step.image}
+                  alt={step.imageAlt}
+                  width={960}
+                  height={640}
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                />
+                <span className={styles.stepCopy}>
+                  <strong>{step.title}</strong>
+                  <span>{step.description}</span>
+                  <span className={styles.stepAction}>{step.action}</span>
+                </span>
+              </Link>
             </li>
           ))}
         </ol>
-      </section>
-
-      <section className={styles.notices} aria-labelledby="notices-title">
-        <div className={styles.sectionHeading}>
-          <h2 id="notices-title">Illustrative campus notices</h2>
-          <p>These are examples. Signed-in members can browse live reports.</p>
-        </div>
-        <div className={styles.noticeGrid}>
-          {sampleNotices.map((notice) => (
-            <article className={styles.notice} key={`${notice.kind}-${notice.item}`}>
-              <p className={styles.noticeKind}>{notice.kind}</p>
-              <h3>{notice.item}</h3>
-              <p>{notice.detail}</p>
-              <time>{notice.date}</time>
-            </article>
-          ))}
-        </div>
       </section>
 
       <section className={styles.privacy} aria-labelledby="privacy-title">
