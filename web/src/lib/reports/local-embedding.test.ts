@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const extractor = vi.fn();
 const pipeline = vi.fn();
-vi.mock("@huggingface/transformers", () => ({ pipeline }));
+const env = {
+  allowLocalModels: false,
+  allowRemoteModels: true,
+  localModelPath: "",
+};
+vi.mock("@huggingface/transformers", () => ({ env, pipeline }));
 
 describe("local public-text embedding", () => {
   beforeEach(() => {
@@ -18,8 +23,12 @@ describe("local public-text embedding", () => {
     expect(pipeline).toHaveBeenCalledOnce();
     expect(pipeline).toHaveBeenCalledWith("feature-extraction", "Xenova/all-MiniLM-L6-v2", {
       dtype: "q8",
+      local_files_only: true,
       revision: "751bff37182d3f1213fa05d7196b954e230abad9",
     });
+    expect(env.allowLocalModels).toBe(true);
+    expect(env.allowRemoteModels).toBe(false);
+    expect(env.localModelPath.replaceAll("\\", "/")).toMatch(/\/models$/);
     expect(extractor).toHaveBeenCalledWith("Public item wording", { pooling: "mean", normalize: true });
     expect(extractor).toHaveBeenCalledTimes(2);
   });
