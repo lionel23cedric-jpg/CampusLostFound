@@ -1,9 +1,24 @@
+import fs from "node:fs";
 import path from "node:path";
 
 // Loaded only when a member requests matches: builds and ordinary tests never download a model.
 const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
 const MODEL_REVISION = "751bff37182d3f1213fa05d7196b954e230abad9";
-const LOCAL_MODEL_ROOT = path.join(process.cwd(), "models");
+const MODEL_CONFIG_PATH = path.join(MODEL_ID, "config.json");
+
+function resolveLocalModelRoot() {
+  const candidates = [
+    path.join(process.cwd(), "models"),
+    path.join(process.cwd(), "web", "models"),
+    path.join(process.cwd(), ".next", "server", "models"),
+  ];
+  return (
+    candidates.find((candidate) => fs.existsSync(path.join(candidate, MODEL_CONFIG_PATH))) ??
+    candidates[0]
+  );
+}
+
+const LOCAL_MODEL_ROOT = resolveLocalModelRoot();
 
 type Extractor = (
   text: string,
@@ -29,6 +44,10 @@ async function getExtractor() {
       });
     })
     .catch((error: unknown) => {
+      console.warn(
+        "[local-embedding] packaged text model unavailable; using the caller fallback",
+        error instanceof Error ? error.message : "unknown loader error",
+      );
       extractorPromise = undefined;
       throw error;
     });
