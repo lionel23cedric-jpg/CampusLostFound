@@ -191,7 +191,7 @@ it("shows the safe display name and dashboard for an authenticated user", () => 
   expect(screen.queryByRole("link", { name: "Report handling" })).toBeNull();
 });
 
-it.each(["student", "staff", "administrator"] as const)(
+it.each(["student", "staff"] as const)(
   "shows notifications to an active %s",
   (role) => {
     mockSession({
@@ -206,21 +206,6 @@ it.each(["student", "staff", "administrator"] as const)(
     });
     expect(link.getAttribute("href")).toBe("/notifications");
     expect(link.textContent).toContain("3");
-  },
-);
-
-it.each(["student", "staff", "administrator"] as const)(
-  "shows My reports to an active %s",
-  (role) => {
-    mockSession({
-      status: "authenticated",
-      user: { ...safeUser, role, status: "active" },
-    });
-    render(<SiteHeader />);
-
-    expect(
-      screen.getByRole("link", { name: "My reports" }).getAttribute("href"),
-    ).toBe("/reports/mine");
   },
 );
 
@@ -282,41 +267,54 @@ it.each([
   expect(screen.queryByRole("link", { name: "My reports" })).toBeNull();
 });
 
-it.each(["staff", "administrator"] as const)(
-  "shows staff tools only to an active %s",
-  (role) => {
-    mockSession({
-      status: "authenticated",
-      user: { ...safeUser, role, status: "active" },
-    });
-    render(<SiteHeader />);
+it("shows only operational links to active staff", () => {
+  mockSession({
+    status: "authenticated",
+    user: { ...safeUser, role: "staff", status: "active" },
+  });
+  render(<SiteHeader />);
 
-    expect(
-      screen.getByRole("link", { name: "Claim reviews" }).getAttribute("href"),
-    ).toBe("/staff/claims");
-    expect(
-      screen.getByRole("link", { name: "Report handling" }).getAttribute("href"),
-    ).toBe("/staff/reports");
-    expect(screen.getByRole("link", { name: "Profile" }).getAttribute("href")).toBe(
-      "/profile",
-    );
-    expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
-  },
-);
+  expect(
+    screen.getByRole("link", { name: "Report handling" }).getAttribute("href"),
+  ).toBe("/staff/reports");
+  expect(
+    screen.getByRole("link", { name: "Claim reviews" }).getAttribute("href"),
+  ).toBe("/staff/claims");
+  expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
+    "/dashboard",
+  );
+  expect(screen.getByRole("link", { name: "Profile" }).getAttribute("href")).toBe(
+    "/profile",
+  );
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "My reports" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "My claims" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Overview" })).toBeNull();
+});
 
-it("shows Admin overview only to an active administrator", () => {
+it("shows only administration links to an active administrator", () => {
   mockSession({
     status: "authenticated",
     user: { ...safeUser, role: "administrator", status: "active" },
   });
   render(<SiteHeader />);
 
-  expect(
-    screen.getByRole("link", { name: "Admin overview" }).getAttribute("href"),
-  ).toBe("/admin");
-  expect(
-    screen.getByRole("link", { name: "Report moderation" }).getAttribute("href"),
-  ).toBe("/admin/moderation");
+  for (const [name, href] of [
+    ["Overview", "/admin"],
+    ["Accounts and staff", "/admin/accounts"],
+    ["Reference data", "/admin/reference-data"],
+    ["Moderation", "/admin/moderation"],
+  ] as const) {
+    expect(screen.getByRole("link", { name }).getAttribute("href")).toBe(href);
+  }
+  expect(screen.queryByRole("link", { name: "Browse" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "My reports" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Report item" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
+  expect(screen.queryByRole("link", { name: /notifications/i })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Dashboard" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
 });
 
 it.each([
@@ -330,12 +328,13 @@ it.each([
     "deactivated administrator",
     { ...safeUser, role: "administrator" as const, status: "deactivated" as const },
   ],
-])("hides Admin overview from a %s", (_label, user) => {
+])("hides administration links from a %s", (_label, user) => {
   mockSession({ status: "authenticated", user });
   render(<SiteHeader />);
 
-  expect(screen.queryByRole("link", { name: "Admin overview" })).toBeNull();
-  expect(screen.queryByRole("link", { name: "Report moderation" })).toBeNull();
+  for (const name of ["Overview", "Accounts and staff", "Reference data", "Moderation"]) {
+    expect(screen.queryByRole("link", { name })).toBeNull();
+  }
 });
 
 it.each([
@@ -367,6 +366,26 @@ it.each([
   expect(screen.queryByRole("link", { name: "Claim reviews" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Report handling" })).toBeNull();
   expect(screen.queryByRole("link", { name: "Profile" })).toBeNull();
+});
+
+it("keeps limited general navigation for an inactive account", () => {
+  mockSession({
+    status: "authenticated",
+    user: { ...safeUser, role: "administrator", status: "suspended" },
+  });
+  render(<SiteHeader />);
+
+  expect(screen.getByRole("link", { name: "Browse" }).getAttribute("href")).toBe(
+    "/reports",
+  );
+  expect(screen.getByRole("link", { name: "Report item" }).getAttribute("href")).toBe(
+    "/reports/new",
+  );
+  expect(screen.getByRole("link", { name: "Dashboard" }).getAttribute("href")).toBe(
+    "/dashboard",
+  );
+  expect(screen.queryByRole("link", { name: "Overview" })).toBeNull();
+  expect(screen.queryByRole("link", { name: /notifications/i })).toBeNull();
 });
 
 it("signs out and replaces navigation with home", async () => {

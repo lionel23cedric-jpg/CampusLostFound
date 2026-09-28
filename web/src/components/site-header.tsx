@@ -9,6 +9,35 @@ import { useNotifications } from "@/components/notifications/notification-provid
 
 import styles from "./site-header.module.css";
 
+const studentLinks = [
+  ["Browse", "/reports"],
+  ["My reports", "/reports/mine"],
+  ["My claims", "/claims"],
+  ["Report item", "/reports/new"],
+  ["Dashboard", "/dashboard"],
+  ["Profile", "/profile"],
+] as const;
+
+const staffLinks = [
+  ["Report handling", "/staff/reports"],
+  ["Claim reviews", "/staff/claims"],
+  ["Dashboard", "/dashboard"],
+  ["Profile", "/profile"],
+] as const;
+
+const administratorLinks = [
+  ["Overview", "/admin"],
+  ["Accounts and staff", "/admin/accounts"],
+  ["Reference data", "/admin/reference-data"],
+  ["Moderation", "/admin/moderation"],
+] as const;
+
+const inactiveLinks = [
+  ["Browse", "/reports"],
+  ["Report item", "/reports/new"],
+  ["Dashboard", "/dashboard"],
+] as const;
+
 export function SiteHeader() {
   const router = useRouter();
   const { status, user, refreshSession, logout } = useAuthSession();
@@ -16,10 +45,15 @@ export function SiteHeader() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [logoutError, setLogoutError] = useState(false);
   const isActive = user?.status === "active";
-  const canUseStaffTools =
-    isActive && (user?.role === "staff" || user?.role === "administrator");
-  const canManageOwnClaims = isActive && user?.role === "student";
-  const canViewAdminOverview = isActive && user?.role === "administrator";
+  const accountLinks = !isActive
+    ? inactiveLinks
+    : user?.role === "administrator"
+      ? administratorLinks
+      : user?.role === "staff"
+        ? staffLinks
+        : studentLinks;
+  const canViewNotifications =
+    isActive && (user?.role === "student" || user?.role === "staff");
   const unreadCount =
     isActive && notifications.status === "ready" ? notifications.unreadCount : 0;
   const unreadLabel =
@@ -69,46 +103,12 @@ export function SiteHeader() {
           {status === "authenticated" && user ? (
             <>
               <span className={styles.userName}>{user.profile.displayName}</span>
-              <Link className={`${styles.navLink} text-link`} href="/reports">
-                Browse
-              </Link>
-              {isActive ? (
-                <Link className={`${styles.navLink} text-link`} href="/reports/mine">
-                  My reports
+              {accountLinks.map(([label, href]) => (
+                <Link key={href} className={`${styles.navLink} text-link`} href={href}>
+                  {label}
                 </Link>
-              ) : null}
-              {canManageOwnClaims ? (
-                <Link className={`${styles.navLink} text-link`} href="/claims">
-                  My claims
-                </Link>
-              ) : null}
-              {canUseStaffTools ? (
-                <>
-                  <Link className={`${styles.navLink} text-link`} href="/staff/reports">
-                    Report handling
-                  </Link>
-                  <Link className={`${styles.navLink} text-link`} href="/staff/claims">
-                    Claim reviews
-                  </Link>
-                </>
-              ) : null}
-              <Link className={`${styles.navLink} text-link`} href="/reports/new">
-                Report item
-              </Link>
-              {canViewAdminOverview ? (
-                <>
-                  <Link className={`${styles.navLink} text-link`} href="/admin">
-                    Admin overview
-                  </Link>
-                  <Link
-                    className={`${styles.navLink} text-link`}
-                    href="/admin/moderation"
-                  >
-                    Report moderation
-                  </Link>
-                </>
-              ) : null}
-              {isActive ? (
+              ))}
+              {canViewNotifications ? (
                 <Link
                   className={`${styles.navLink} ${styles.notificationLink} text-link`}
                   href="/notifications"
@@ -120,14 +120,6 @@ export function SiteHeader() {
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   ) : null}
-                </Link>
-              ) : null}
-              <Link className={`${styles.navLink} text-link`} href="/dashboard">
-                Dashboard
-              </Link>
-              {isActive ? (
-                <Link className={`${styles.navLink} text-link`} href="/profile">
-                  Profile
                 </Link>
               ) : null}
               <button
