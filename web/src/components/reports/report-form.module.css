@@ -298,6 +298,102 @@
   padding: 0.85rem;
 }
 
+.assistantActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+}
+
+.assistantActions p,
+.assistantStatus,
+.assistantError p,
+.assistantPanel p {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.assistantActions p {
+  max-width: 52ch;
+  font-size: 0.84rem;
+}
+
+.assistantPanel,
+.assistantError {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f0f5f2;
+  padding: 1rem;
+}
+
+.assistantPanel h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.assistantError {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  background: #fff5f2;
+}
+
+.assistantError p {
+  color: var(--danger);
+}
+
+.assistantPanel .suggestedDescription {
+  color: var(--ink);
+}
+
+.suggestedTags {
+  font-size: 0.9rem;
+}
+
+.suggestionButtons {
+  display: flex;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.assistantButton,
+.secondaryButton {
+  min-height: 44px;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+}
+
+.assistantButton {
+  border: 1px solid var(--campus-green);
+  background: var(--campus-green);
+  color: white;
+}
+
+.secondaryButton {
+  border: 1px solid var(--campus-green);
+  background: transparent;
+  color: var(--campus-green);
+}
+
+.assistantButton:hover:not(:disabled) {
+  background: var(--campus-green-dark);
+}
+
+.secondaryButton:hover:not(:disabled) {
+  background: #e8f0eb;
+}
+
+.assistantButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .errorSummary {
   margin-bottom: 1.5rem;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--line));

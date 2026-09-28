@@ -10,6 +10,7 @@ import {
 
 import {
   BrowserReportError,
+  getReportAssistantSuggestion,
   submitReport,
   type CreatedReport,
   type ReportCampusLocation,
@@ -21,6 +22,7 @@ import {
   type ReportFormErrors,
   type ReportFormValues,
 } from "@/lib/reports/form-validation";
+import type { ReportAssistantResponse } from "@/lib/ai/contracts";
 
 import {
   ReportImagePicker,
@@ -49,6 +51,12 @@ export type ReportFormProps = {
 };
 
 type FocusRequest = { token: number; targetId?: string };
+
+type AssistantState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; suggestion: ReportAssistantResponse }
+  | { status: "error" };
 
 const SERVER_FIELD_TARGETS = new Set([
   "title",
@@ -118,6 +126,9 @@ export function ReportForm({
   const [errors, setErrors] = useState<ReportFormErrors>({});
   const [formMessage, setFormMessage] = useState<string>();
   const [isPending, setIsPending] = useState(false);
+  const [assistantState, setAssistantState] = useState<AssistantState>({
+    status: "idle",
+  });
   const [focusRequest, setFocusRequest] = useState<FocusRequest>();
   const summaryRef = useRef<HTMLDivElement>(null);
   const submitLock = useRef(false);
@@ -125,6 +136,7 @@ export function ReportForm({
   const nextFeatureId = useRef(1);
   const nextQuestionId = useRef(1);
   const mappedServerGroups = useRef<Record<string, string>>({});
+  const assistantRequest = useRef<AbortController | undefined>(undefined);
 
   const inputId = (path: string) => `${idPrefix}-${path.replaceAll(".", "-")}`;
   const errorId = (path: string) => `${inputId(path)}-error`;
@@ -179,6 +191,8 @@ export function ReportForm({
     return () => window.clearTimeout(timer);
   }, [focusRequest]);
 
+  useEffect(() => () => assistantRequest.current?.abort(), []);
+
   function clearErrorsFor(...paths: string[]) {
     const mappedTargets = Object.entries(mappedServerGroups.current)
       .filter(([, group]) =>
@@ -209,7 +223,71 @@ export function ReportForm({
     value: ReportFormValues[K],
   ) {
     setValues((current) => ({ ...current, [field]: value }));
+    if (
+      field === "title" ||
+      field === "publicDescription" ||
+      field === "colors" ||
+      field === "reportType"
+    ) {
+      assistantRequest.current?.abort();
+      setAssistantState({ status: "idle" });
+    }
     clearErrorsFor(field);
+  }
+
+  async function requestAssistantSuggestion() {
+    assistantRequest.current?.abort();
+    const controller = new AbortController();
+    assistantRequest.current = controller;
+    setAssistantState({ status: "loading" });
+
+    try {
+      const suggestion = await getReportAssistantSuggestion(
+        {
+          title: values.title.trim(),
+          publicDescription: values.publicDescription.trim(),
+          colors: values.colors
+            .split(",")
+            .map((color) => color.trim())
+            .filter(Boolean),
+          reportType: values.reportType,
+        },
+        controller.signal,
+      );
+      if (!controller.signal.aborted) {
+        setAssistantState({ status: "ready", suggestion });
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (
+        error instanceof BrowserReportError &&
+        error.code === "AUTHENTICATION_REQUIRED"
+      ) {
+        setAssistantState({ status: "idle" });
+        onAuthenticationRequired();
+        return;
+      }
+      if (
+        error instanceof BrowserReportError &&
+        (error.code === "ACCOUNT_UNAVAILABLE" ||
+          error.code === "REPORT_CREATION_FORBIDDEN")
+      ) {
+        setAssistantState({ status: "idle" });
+        onPermissionLost();
+        return;
+      }
+      setAssistantState({ status: "error" });
+    }
+  }
+
+  function applyAssistantSuggestion(suggestion: ReportAssistantResponse) {
+    setValues((current) => ({
+      ...current,
+      publicDescription: suggestion.suggestedDescription,
+      tags: suggestion.suggestedTags.join(", "),
+    }));
+    clearErrorsFor("publicDescription", "tags");
+    setAssistantState({ status: "idle" });
   }
 
   function updateFeature(id: string, value: string) {
@@ -398,6 +476,9 @@ export function ReportForm({
   const occurredErrors = messagesFor(errors, "occurredAt");
   const colorErrors = messagesFor(errors, "colors", ["colors.0"]);
   const tagErrors = messagesFor(errors, "tags", ["tags.0"]);
+  const canRequestSuggestion =
+    values.title.trim().length >= 5 &&
+    values.publicDescription.trim().length >= 10;
 
   return (
     <form className={styles.form} onSubmit={handleSubmit} noValidate>
@@ -505,6 +586,93 @@ export function ReportForm({
             messages={descriptionErrors}
           />
         </div>
+
+        <div className={styles.assistantActions}>
+          <button
+            className={styles.assistantButton}
+            type="button"
+            disabled={
+              !canRequestSuggestion ||
+              isPending ||
+              assistantState.status === "loading"
+            }
+            onClick={() => void requestAssistantSuggestion()}
+          >
+            {assistantState.status === "loading"
+              ? "Preparing suggestion..."
+              : "Suggest description and tags"}
+          </button>
+          <p>
+            Uses only the public title, description, colours and report type.
+            Nothing changes until you apply a suggestion.
+          </p>
+        </div>
+
+        {assistantState.status === "loading" && (
+          <p className={styles.assistantStatus} role="status">
+            Comparing public wording with a controlled tag vocabulary...
+          </p>
+        )}
+
+        {assistantState.status === "error" && (
+          <div className={styles.assistantError} role="alert">
+            <p>We could not prepare a suggestion. Please try again.</p>
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={() => void requestAssistantSuggestion()}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {assistantState.status === "ready" && (
+          <section
+            className={styles.assistantPanel}
+            aria-label="Description and tag suggestion"
+          >
+            <h3>
+              {assistantState.suggestion.method === "model_assisted"
+                ? "AI-assisted suggestion"
+                : "Fallback suggestion"}
+            </h3>
+            <p className={styles.suggestedDescription}>
+              {assistantState.suggestion.suggestedDescription}
+            </p>
+            <p className={styles.suggestedTags}>
+              <strong>Suggested tags:</strong>{" "}
+              {assistantState.suggestion.suggestedTags.length > 0
+                ? assistantState.suggestion.suggestedTags.join(", ")
+                : "No controlled tags suggested"}
+            </p>
+            <div className={styles.suggestionButtons}>
+              <button
+                className={styles.assistantButton}
+                type="button"
+                onClick={() =>
+                  applyAssistantSuggestion(assistantState.suggestion)
+                }
+              >
+                Apply suggestion
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => setAssistantState({ status: "idle" })}
+              >
+                Keep my text
+              </button>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => void requestAssistantSuggestion()}
+              >
+                Try again
+              </button>
+            </div>
+          </section>
+        )}
 
         <div className={styles.shortGrid}>
           <div className={styles.field}>

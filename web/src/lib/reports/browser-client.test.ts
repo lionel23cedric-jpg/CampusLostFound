@@ -7,6 +7,7 @@ import {
   getReportById,
   getReportCampusLocations,
   getReportCategories,
+  getReportAssistantSuggestion,
   getReportMatches,
   getReports,
   getOwnReports,
@@ -177,6 +178,62 @@ afterEach(() => {
 });
 
 describe("report browser client", () => {
+  it("requests and strictly parses a public report assistant suggestion", async () => {
+    const suggestion = {
+      method: "model_assisted",
+      suggestedDescription:
+        "A black charger was left near the library. The item is black.",
+      suggestedTags: ["charger", "black", "library"],
+    } as const;
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(suggestion));
+    vi.stubGlobal("fetch", fetchMock);
+    const assistantInput = {
+      title: "Black laptop charger",
+      publicDescription: "A black charger was left near the library",
+      colors: ["Black"],
+      reportType: "lost" as const,
+    };
+
+    await expect(
+      getReportAssistantSuggestion(assistantInput),
+    ).resolves.toEqual(suggestion);
+    expect(fetchMock).toHaveBeenCalledWith("/api/ai/report-assistant", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(assistantInput),
+      signal: undefined,
+      credentials: "same-origin",
+    });
+  });
+
+  it("rejects report assistant responses with extra or invalid fields", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          method: "model_assisted",
+          suggestedDescription: "Safe public description.",
+          suggestedTags: ["charger"],
+          privateEvidence: "secret",
+        }),
+      ),
+    );
+
+    await expect(
+      getReportAssistantSuggestion({
+        title: "Black laptop charger",
+        publicDescription: "A black charger was left near the library",
+        colors: ["Black"],
+        reportType: "lost",
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining<Partial<BrowserReportError>>({
+        code: "REQUEST_FAILED",
+        status: 200,
+      }),
+    );
+  });
+
   it("loads strict owner history with same-origin credentials and abort support", async () => {
     const controller = new AbortController();
     const fetchMock = vi.fn().mockResolvedValue(Response.json(ownerPage));

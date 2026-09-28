@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { aiMethodSchema, type AiMethod } from "@/lib/ai/contracts";
+import {
+  aiMethodSchema,
+  reportAssistantResponseSchema,
+  type AiMethod,
+  type ReportAssistantRequest,
+  type ReportAssistantResponse,
+} from "@/lib/ai/contracts";
 
 import {
   REPORT_IMAGE_CONTENT_TYPES,
@@ -531,6 +537,19 @@ export async function submitReport(
   });
   const data = await parseResponse(response, reportResponseSchema);
   return data.report;
+}
+
+export async function getReportAssistantSuggestion(
+  input: ReportAssistantRequest,
+  signal?: AbortSignal,
+): Promise<ReportAssistantResponse> {
+  const response = await fetchSameOrigin("/api/ai/report-assistant", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+    signal,
+  });
+  return parseResponse(response, reportAssistantResponseSchema);
 }
 
 export async function uploadReportImage(

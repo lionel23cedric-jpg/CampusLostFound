@@ -15,11 +15,16 @@ vi.mock("@/lib/reports/browser-client", async () => {
   const actual = await vi.importActual<
     typeof import("@/lib/reports/browser-client")
   >("@/lib/reports/browser-client");
-  return { ...actual, submitReport: vi.fn() };
+  return {
+    ...actual,
+    getReportAssistantSuggestion: vi.fn(),
+    submitReport: vi.fn(),
+  };
 });
 
 import {
   BrowserReportError,
+  getReportAssistantSuggestion,
   submitReport,
   type CreatedReport,
 } from "@/lib/reports/browser-client";
@@ -137,6 +142,112 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ReportForm", () => {
+  it("requires public context and applies a reviewed assistant suggestion only after confirmation", async () => {
+    vi.mocked(getReportAssistantSuggestion).mockResolvedValue({
+      method: "model_assisted",
+      suggestedDescription:
+        "A black laptop bag was left near the library. The item is black and silver.",
+      suggestedTags: ["bag", "laptop", "black", "silver", "library"],
+    });
+    const user = userEvent.setup();
+    renderForm();
+    const suggest = screen.getByRole("button", {
+      name: "Suggest description and tags",
+    });
+    expect(suggest.hasAttribute("disabled")).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: { value: "Black laptop bag" },
+    });
+    fireEvent.change(screen.getByLabelText("Public description"), {
+      target: { value: "Black laptop bag near the library." },
+    });
+    fireEvent.change(screen.getByLabelText("Colours"), {
+      target: { value: " Black, Silver " },
+    });
+    fireEvent.change(screen.getByLabelText(/^Tags/), {
+      target: { value: "my original tag" },
+    });
+    fireEvent.change(screen.getByLabelText("Serial number (optional)"), {
+      target: { value: "PRIVATE-SERIAL" },
+    });
+    expect(suggest.hasAttribute("disabled")).toBe(false);
+
+    await user.click(suggest);
+
+    expect(getReportAssistantSuggestion).toHaveBeenCalledWith(
+      {
+        title: "Black laptop bag",
+        publicDescription: "Black laptop bag near the library.",
+        colors: ["Black", "Silver"],
+        reportType: "lost",
+      },
+      expect.any(AbortSignal),
+    );
+    expect(
+      JSON.stringify(vi.mocked(getReportAssistantSuggestion).mock.calls),
+    ).not.toContain("PRIVATE-SERIAL");
+    expect(await screen.findByText("AI-assisted suggestion")).toBeTruthy();
+    expect(
+      (screen.getByLabelText("Public description") as HTMLTextAreaElement).value,
+    ).toBe("Black laptop bag near the library.");
+    expect((screen.getByLabelText(/^Tags/) as HTMLInputElement).value).toBe(
+      "my original tag",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Apply suggestion" }));
+
+    expect(
+      (screen.getByLabelText("Public description") as HTMLTextAreaElement).value,
+    ).toBe(
+      "A black laptop bag was left near the library. The item is black and silver.",
+    );
+    expect((screen.getByLabelText(/^Tags/) as HTMLInputElement).value).toBe(
+      "bag, laptop, black, silver, library",
+    );
+    expect(screen.queryByText("AI-assisted suggestion")).toBeNull();
+  });
+
+  it("dismisses a fallback suggestion without changing the form and supports retry", async () => {
+    vi.mocked(getReportAssistantSuggestion)
+      .mockRejectedValueOnce(new Error("private inference failure"))
+      .mockResolvedValueOnce({
+        method: "fallback",
+        suggestedDescription: "Original public description. The item is blue.",
+        suggestedTags: ["blue"],
+      });
+    const user = userEvent.setup();
+    renderForm();
+    fireEvent.change(screen.getByLabelText("Title"), {
+      target: { value: "Blue water bottle" },
+    });
+    fireEvent.change(screen.getByLabelText("Public description"), {
+      target: { value: "Original public description" },
+    });
+    fireEvent.change(screen.getByLabelText("Colours"), {
+      target: { value: "Blue" },
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: "Suggest description and tags" }),
+    );
+    expect(
+      await screen.findByText(
+        "We could not prepare a suggestion. Please try again.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("private inference failure")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Fallback suggestion")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Keep my text" }));
+
+    expect(
+      (screen.getByLabelText("Public description") as HTMLTextAreaElement).value,
+    ).toBe("Original public description");
+    expect(screen.queryByText("Fallback suggestion")).toBeNull();
+  });
+
   it("renders four semantic groups with labelled initial controls", () => {
     renderForm();
 
