@@ -2,7 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { Tokenizer } from "@huggingface/tokenizers";
 import * as ort from "onnxruntime-web/wasm";
+import sharp from "sharp";
 
 import {
   imageCategoryResponseSchema,
@@ -14,6 +16,8 @@ import {
 const MODEL_ID = "Xenova/mobileclip_s0";
 const HYPOTHESIS_TEMPLATE = "This is a photo of a {}";
 const LOGIT_SCALE = 100;
+const TOKEN_COUNT = 77;
+const IMAGE_SIZE = 256;
 
 type CategoryCandidate = { id: string; name: string };
 type Classification = { label: string; score: number };
@@ -26,16 +30,6 @@ type Classifier = (
 type ClassifierRuntime = {
   classifier: Classifier;
   fromBlob: (image: Blob) => Promise<unknown>;
-};
-
-type TokenTensor = {
-  data: BigInt64Array;
-  dims: number[];
-};
-
-type FloatTensor = {
-  data: Float32Array;
-  dims: number[];
 };
 
 let classifierPromise: Promise<ClassifierRuntime> | undefined;
@@ -107,33 +101,69 @@ function normalizedScores(
     .sort((left, right) => right.score - left.score);
 }
 
+function tokenTensor(tokenizer: Tokenizer, prompts: string[]) {
+  const inputIds = new BigInt64Array(prompts.length * TOKEN_COUNT);
+  const eosTokenId = tokenizer.token_to_id("<|endoftext|>") ?? 49407;
+  prompts.forEach((prompt, promptIndex) => {
+    const encoded = tokenizer.encode(prompt).ids;
+    const ids = encoded.slice(0, TOKEN_COUNT);
+    if (encoded.length > TOKEN_COUNT) ids[TOKEN_COUNT - 1] = eosTokenId;
+    const offset = promptIndex * TOKEN_COUNT;
+    ids.forEach((id, tokenIndex) => {
+      inputIds[offset + tokenIndex] = BigInt(id);
+    });
+  });
+  return new ort.Tensor("int64", inputIds, [prompts.length, TOKEN_COUNT]);
+}
+
+async function imageTensor(image: Blob) {
+  const { data, info } = await sharp(Buffer.from(await image.arrayBuffer()))
+    .rotate()
+    .resize(IMAGE_SIZE, IMAGE_SIZE, { fit: "cover", position: "centre" })
+    .removeAlpha()
+    .toColourspace("srgb")
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  if (info.width !== IMAGE_SIZE || info.height !== IMAGE_SIZE || info.channels < 3) {
+    throw new Error("Invalid prepared image");
+  }
+
+  const pixelsPerChannel = IMAGE_SIZE * IMAGE_SIZE;
+  const values = new Float32Array(pixelsPerChannel * 3);
+  for (let pixel = 0; pixel < pixelsPerChannel; pixel += 1) {
+    for (let channel = 0; channel < 3; channel += 1) {
+      values[channel * pixelsPerChannel + pixel] =
+        data[pixel * info.channels + channel] / 255;
+    }
+  }
+  return new ort.Tensor("float32", values, [1, 3, IMAGE_SIZE, IMAGE_SIZE]);
+}
+
 async function getClassifier() {
   classifierPromise ??= (async () => {
-    const [{ AutoProcessor, AutoTokenizer, RawImage, env }, wasmBinary] =
-      await Promise.all([
-        import("@huggingface/transformers"),
-        fs.promises.readFile(
-          path.join(resolveWasmRuntimeRoot(), "ort-wasm-simd-threaded.wasm"),
-        ),
-      ]);
     const modelRoot = resolveLocalModelRoot();
     const modelDirectory = path.join(modelRoot, MODEL_ID);
+    const wasmRoot = resolveWasmRuntimeRoot();
+    const [tokenizerJson, tokenizerConfig, wasmBinary] = await Promise.all([
+      fs.promises.readFile(path.join(modelDirectory, "tokenizer.json"), "utf8"),
+      fs.promises.readFile(
+        path.join(modelDirectory, "tokenizer_config.json"),
+        "utf8",
+      ),
+      fs.promises.readFile(path.join(wasmRoot, "ort-wasm-simd-threaded.wasm")),
+    ]);
+    const tokenizer = new Tokenizer(
+      JSON.parse(tokenizerJson) as object,
+      JSON.parse(tokenizerConfig) as object,
+    );
 
-    // Remote downloads are deliberately disabled: inference must use only the
-    // audited model files bundled with this application.
-    env.allowRemoteModels = false;
-    env.localModelPath = modelRoot;
     ort.env.wasm.numThreads = 1;
     ort.env.wasm.wasmPaths = {
-      mjs: pathToFileURL(
-        path.join(resolveWasmRuntimeRoot(), "ort-wasm-simd-threaded.mjs"),
-      ).href,
+      mjs: pathToFileURL(path.join(wasmRoot, "ort-wasm-simd-threaded.mjs")).href,
     };
     ort.env.wasm.wasmBinary = wasmBinary;
 
-    const [tokenizer, processor, textSession, visionSession] = await Promise.all([
-      AutoTokenizer.from_pretrained(MODEL_ID, { local_files_only: true }),
-      AutoProcessor.from_pretrained(MODEL_ID, { local_files_only: true }),
+    const [textSession, visionSession] = await Promise.all([
       ort.InferenceSession.create(
         await fs.promises.readFile(
           path.join(modelDirectory, "onnx", "text_model_quantized.onnx"),
@@ -149,29 +179,13 @@ async function getClassifier() {
     ]);
 
     const classifier: Classifier = async (image, candidateLabels, options) => {
+      if (!(image instanceof Blob)) throw new Error("Invalid image input");
       const prompts = candidateLabels.map((label) =>
         options.hypothesis_template.replace("{}", label),
       );
-      const tokenized = tokenizer(prompts, {
-        padding: "max_length",
-        truncation: true,
-      }) as { input_ids: TokenTensor };
-      const processed = (await processor(image)) as { pixel_values: FloatTensor };
       const [textOutput, imageOutput] = await Promise.all([
-        textSession.run({
-          input_ids: new ort.Tensor(
-            "int64",
-            tokenized.input_ids.data,
-            tokenized.input_ids.dims,
-          ),
-        }),
-        visionSession.run({
-          pixel_values: new ort.Tensor(
-            "float32",
-            processed.pixel_values.data,
-            processed.pixel_values.dims,
-          ),
-        }),
+        textSession.run({ input_ids: tokenTensor(tokenizer, prompts) }),
+        imageSessionRun(visionSession, image),
       ]);
       const textEmbeddings = textOutput.text_embeds;
       const imageEmbeddings = imageOutput.image_embeds;
@@ -183,7 +197,7 @@ async function getClassifier() {
 
     return {
       classifier,
-      fromBlob: (image: Blob) => RawImage.fromBlob(image),
+      fromBlob: async (image: Blob) => image,
     };
   })().catch((error: unknown) => {
     console.warn(
@@ -194,6 +208,10 @@ async function getClassifier() {
     throw error;
   });
   return classifierPromise;
+}
+
+async function imageSessionRun(session: ort.InferenceSession, image: Blob) {
+  return session.run({ pixel_values: await imageTensor(image) });
 }
 
 function normalizedScore(value: number) {
