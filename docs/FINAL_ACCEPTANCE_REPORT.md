@@ -8,10 +8,11 @@
 - Branches: `develop` and `main`
 - Runtime: Vercel-hosted Next.js 16 application with MongoDB persistence
 
-This report records the final read-only production checks. The acceptance run did
-not approve or reject Claims, change an account role, hide a report, submit a
-duplicate flag, create reference data, or save a test report. The only uploaded
-image was analysed in memory by the category assistant and was not persisted.
+This report records the final production checks and the subsequent reversible
+demonstration-data cleanup. The run did not approve or reject Claims, change an
+account role, delete a report, submit a duplicate flag, create reference data,
+or save a test report. The only uploaded image was analysed in memory by the
+category assistant and was not persisted.
 
 ## Overall result
 
@@ -136,19 +137,26 @@ Recorded results:
 - Role-restricted routes enforce an active Student, Staff, or Administrator
   session on the server; hiding a navigation link is not the security boundary.
 
-## Operational data note
+## Demonstration-data cleanup
 
-Production still contains demonstration data, including an active Category named
-`weqwe` and several reports with placeholder numeric text. This is not a source
-code or deployment failure, but it should be renamed, deactivated, or hidden by
-an Administrator before a polished classroom demonstration. The acceptance run
-did not change this data because reference-data and moderation changes affect
-other users and should be an explicit project-owner decision.
+After the project owner explicitly authorised the cleanup, the Administrator
+interface was used to:
+
+- deactivate the placeholder Category `weqwe`, preserving every historical
+  report reference;
+- hide nine reports whose title or description was unambiguously numeric,
+  placeholder text, or explicitly labelled as a QA test;
+- record `Administrative review` and an internal cleanup note for each hidden
+  report.
+
+These actions are reversible through the same Administrator interface. No report
+was deleted, no recovery or Claim record was changed, and plausible recovery and
+AI demonstration reports (including the backpack, bottle, notebook, AirPods,
+and charger examples) remain available.
 
 ## Final conclusion
 
 The requested role redesign, Administrator workspace, percentage charts, image
 improvements, Staff management workflow, five bounded AI functions, privacy
-controls, automated verification, and Vercel deployment are implemented and
-working. The remaining recommendation is production demonstration-data cleanup,
-not missing application functionality.
+controls, automated verification, Vercel deployment, and demonstration-data
+cleanup are complete.
