@@ -128,8 +128,8 @@ rare categories, or reports with several hidden fields.
 
 ## Privacy and ethics
 
-- After the one-time model-file download, inference runs locally in the
-  application process; report text is not sent to an external AI provider.
+- Inference uses the model packaged with the application; report text is not
+  sent to an external AI provider.
 - Only public report fields are used.
 - Explanations contain bounded factor descriptions rather than private input.
 - The algorithm does not infer identity or decide ownership.
@@ -149,8 +149,8 @@ rare categories, or reports with several hidden fields.
 - The model is English-focused; the synthetic fixture is too small to validate
   real-world accuracy, multilingual wording, or fairness. The 30-candidate
   shortlist may omit a relevant low-rule-score report.
-- The first model download needs network access. If it is unavailable or local
-  inference fails, matching continues using only the baseline rules.
+- If a packaged model file is unavailable or local inference fails, matching
+  continues using only the baseline rules.
 - A future study could use consented, anonymised labels and compare thresholds,
   but that is outside the current course-project scope.
 
@@ -163,10 +163,10 @@ npm run evaluate:matching
 npm run evaluate:matching:ai
 ```
 
-The first command verifies the deterministic baseline. The second downloads
-and caches the quantized model if needed, runs real local inference on the same
-synthetic fixture, and prints its measured confusion matrix and metrics. The
-model files stay outside Git and are not included in the source ZIP. The model
-is published under the [Apache 2.0 licence](https://huggingface.co/Xenova/all-MiniLM-L6-v2);
+The first command verifies the deterministic baseline. The second loads the
+packaged quantized model, runs real local inference on the same synthetic
+fixture, and prints its measured confusion matrix and metrics. The model files
+are included in Git and the source ZIP so the test is reproducible without a
+runtime download. The model is published under the [Apache 2.0 licence](https://huggingface.co/Xenova/all-MiniLM-L6-v2);
 see the [Transformers.js pipeline documentation](https://huggingface.co/docs/transformers.js/pipelines)
 for the feature-extraction API.

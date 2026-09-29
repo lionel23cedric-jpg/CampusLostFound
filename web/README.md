@@ -109,11 +109,11 @@ title and description, replacing at most the existing 20 text points and
 reranking up to 30 rule-qualified candidates. If model loading or inference
 fails, the original rule ranking remains available and the page says so.
 
-Run `npm run evaluate:matching:ai` once during setup to download and cache the
-model and reproduce the synthetic comparison. The first run needs internet
-access; later inference runs locally. The model is not bundled into Git or the
-source ZIP. Do not use private verification answers or contact information as
-model input. A suggested match never approves a Claim.
+Run `npm run evaluate:matching:ai` to load the packaged model and reproduce the
+synthetic comparison. Runtime inference does not download model files or call
+an external AI service. The pinned model is bundled into Git and the source
+ZIP. Do not use private verification answers or contact information as model
+input. A suggested match never approves a Claim.
 
 ## Quality and security checks
 

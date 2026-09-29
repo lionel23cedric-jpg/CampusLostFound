@@ -9,10 +9,10 @@ do not decide ownership, approve a Claim, hide content, or change a category
 without a person's action.
 
 No OpenAI, Gemini, or other paid inference API is used. Inference runs inside
-the Next.js server process with `@huggingface/transformers` 4.3.0. Model files
-are downloaded and cached on the first relevant request and remain outside Git.
-If a model is unavailable, each core workflow remains usable through a bounded
-deterministic fallback.
+the Next.js server process with pinned ONNX models and ONNX Runtime WebAssembly.
+The audited model files are packaged with the source, so production inference
+does not depend on a first-request download. If a model is unavailable, each
+core workflow remains usable through a bounded deterministic fallback.
 
 ## Feature summary
 
@@ -21,7 +21,7 @@ deterministic fallback.
 | Lost/Found matching | MiniLM semantic wording score reranks rule-qualified opposite-type reports | Original weighted rule score and ranking | Member inspects a result and separately creates a Claim |
 | Smart search | MiniLM ranks up to 100 visible reports by natural-language similarity | MongoDB text search using the same query | Member chooses whether to open a result |
 | Description and tag assistant | MiniLM ranks a controlled tag vocabulary; description wording is formatted deterministically | Lexical tags from the same controlled vocabulary | Member applies or dismisses the proposed text and tags |
-| Image category assistant | CLIP ranks the currently active category names for the first selected photo | Empty, visibly labelled fallback suggestion | Member chooses a proposed category or keeps the current one |
+| Image category assistant | MobileCLIP ranks the currently active category names for the first selected photo | Empty, visibly labelled fallback suggestion | Member chooses a proposed category or keeps the current one |
 | Duplicate detection | MiniLM replaces only the text factor for structured same-type candidate pairs | The existing explainable rule score | Administrator explicitly sends one candidate to the normal moderation queue |
 
 ## Shared text model
@@ -82,9 +82,11 @@ The form does not change until the member clicks **Apply suggestion**.
 After selecting one or more report photos, a member can click **Suggest
 category from first photo**. The API accepts exactly one JPEG, PNG, or WebP file
 up to 3 MB and requires an active signed-in account. It uses
-`Xenova/clip-vit-base-patch32` at revision `d15189d` with quantized `q4` weights
-to perform zero-shot image classification against the current active category
-names. Up to three category names and bounded confidence values are returned.
+`Xenova/mobileclip_s0` at revision
+`20c6e4f26ad3f7f7e9cde13c4f9bb54852dd42c6` with separate quantized `q8`
+text and vision weights to perform zero-shot image classification against the
+current active category names. Up to three category names and bounded
+confidence values are returned.
 
 The analysis endpoint processes the uploaded file in memory, sends `Cache-Control:
 no-store`, and does not create a report image record. If inference is not
@@ -116,9 +118,8 @@ decision; scanning never hides or deletes a report.
   to reject extra fields. AI endpoints require the appropriate active role.
 - The interface distinguishes AI-assisted and fallback results. Errors are
   closed to safe messages rather than exposing database or model details.
-- Local models still require a first-run download and server memory. A cold
-  request can be slower, and an offline server without cached files uses the
-  documented fallback.
+- Packaged local models still require server memory. A cold request can be
+  slower, and a missing or damaged model file uses the documented fallback.
 - Similarity and confidence are ranking aids, not probabilities of ownership or
   proof that two records describe the same physical item.
 - MiniLM is English-focused, CLIP may reflect training-data bias, and the small
@@ -151,4 +152,4 @@ npm run evaluate:matching:ai
 ```
 
 The first matching evaluation is deterministic. The second performs real local
-MiniLM inference and may download the pinned model on its first run.
+MiniLM inference using the model packaged under `web/models`.

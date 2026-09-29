@@ -1,13 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 
-const classifier = vi.fn();
-const pipeline = vi.fn();
-const fromBlob = vi.fn();
+import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@huggingface/transformers", () => ({
-  pipeline,
-  RawImage: { fromBlob },
-}));
+import { suggestImageCategories } from "./image-classifier";
 
 const categories = [
   { id: "0123456789abcdef01234567", name: "Electronics" },
@@ -17,24 +13,20 @@ const categories = [
 ];
 
 describe("local image category classifier", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
-    pipeline.mockResolvedValue(classifier);
-    fromBlob.mockResolvedValue({ prepared: true });
-    classifier.mockResolvedValue([
+  it("returns the best three active categories from model-assisted output", async () => {
+    const classifier = vi.fn().mockResolvedValue([
       { label: "Bags", score: 0.91 },
       { label: "Electronics", score: 0.7 },
       { label: "Books", score: 0.4 },
       { label: "Clothing", score: 0.2 },
     ]);
-  });
-
-  it("uses the pinned quantized model and returns the best three active categories", async () => {
-    const { suggestImageCategories } = await import("./image-classifier");
+    const fromBlob = vi.fn().mockResolvedValue({ prepared: true });
+    const loadRuntime = vi.fn().mockResolvedValue({ classifier, fromBlob });
     const image = new Blob(["image"], { type: "image/png" });
 
-    await expect(suggestImageCategories(image, categories)).resolves.toEqual({
+    await expect(
+      suggestImageCategories(image, categories, loadRuntime),
+    ).resolves.toEqual({
       method: "model_assisted",
       suggestions: [
         { categoryId: categories[1].id, categoryName: "Bags", confidence: 0.91 },
@@ -46,11 +38,6 @@ describe("local image category classifier", () => {
         { categoryId: categories[2].id, categoryName: "Books", confidence: 0.4 },
       ],
     });
-    expect(pipeline).toHaveBeenCalledWith(
-      "zero-shot-image-classification",
-      "Xenova/clip-vit-base-patch32",
-      { dtype: "q4", revision: "d15189d" },
-    );
     expect(fromBlob).toHaveBeenCalledWith(image);
     expect(classifier).toHaveBeenCalledWith(
       { prepared: true },
@@ -60,21 +47,31 @@ describe("local image category classifier", () => {
   });
 
   it("returns a safe fallback without exposing model failures", async () => {
-    pipeline.mockRejectedValue(new Error("private model cache path"));
-    const { suggestImageCategories } = await import("./image-classifier");
+    const loadRuntime = vi.fn().mockRejectedValue(new Error("private model path"));
 
     await expect(
-      suggestImageCategories(new Blob(["image"]), categories),
+      suggestImageCategories(new Blob(["image"]), categories, loadRuntime),
     ).resolves.toEqual({ method: "fallback", suggestions: [] });
   });
 
   it("does not load the model when no active category exists", async () => {
-    const { suggestImageCategories } = await import("./image-classifier");
+    const loadRuntime = vi.fn();
 
     await expect(
-      suggestImageCategories(new Blob(["image"]), []),
+      suggestImageCategories(new Blob(["image"]), [], loadRuntime),
     ).resolves.toEqual({ method: "fallback", suggestions: [] });
-    expect(pipeline).not.toHaveBeenCalled();
-    expect(fromBlob).not.toHaveBeenCalled();
+    expect(loadRuntime).not.toHaveBeenCalled();
+  });
+
+  it("runs the packaged model without a network download", async () => {
+    const image = new Blob([
+      fs.readFileSync(path.join(process.cwd(), "public", "campus-find-hero.webp")),
+    ], { type: "image/webp" });
+
+    const result = await suggestImageCategories(image, categories);
+
+    expect(result.method).toBe("model_assisted");
+    expect(result.suggestions).toHaveLength(3);
+    expect(result.suggestions.every(({ confidence }) => confidence > 0)).toBe(true);
   });
 });

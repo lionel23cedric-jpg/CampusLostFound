@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
       "./node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs",
       "./node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm",
     ],
+    "/api/ai/image-category": [
+      "./models/Xenova/mobileclip_s0/**/*",
+      "./node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs",
+      "./node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm",
+    ],
     "/api/admin/ai/duplicates": [
       "./models/Xenova/all-MiniLM-L6-v2/**/*",
       "./node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs",
