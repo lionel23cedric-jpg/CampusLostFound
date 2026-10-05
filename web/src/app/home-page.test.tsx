@@ -7,13 +7,13 @@ import Home from "./page";
 
 afterEach(cleanup);
 
-it("presents visual recovery pathways that lead to real product routes", () => {
+it("offers clear report and browse actions on the illustrated public homepage", () => {
   const { container } = render(<Home />);
 
   expect(
     screen.getByRole("heading", {
       level: 1,
-      name: "Lost something? Let the campus help.",
+      name: "Lost. Found. Back together.",
     }),
   ).toBeTruthy();
   expect(screen.getByRole("link", { name: "Report a lost item" }).getAttribute("href")).toBe(
@@ -22,25 +22,22 @@ it("presents visual recovery pathways that lead to real product routes", () => {
   expect(screen.getByRole("link", { name: "Report a found item" }).getAttribute("href")).toBe(
     "/reports/new",
   );
-  expect(screen.getByRole("link", { name: "Search reports" }).getAttribute("href")).toBe(
+  expect(screen.getByRole("link", { name: "Browse reports" }).getAttribute("href")).toBe(
     "/reports",
   );
-  expect(screen.getByRole("heading", { name: "How Campus Find works" })).toBeTruthy();
-  expect(screen.getByText(/ownership-verification details stay private/i)).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "How things find their way home" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Share what you know" }).getAttribute("href")).toBe(
+    "/reports/new",
+  );
+  expect(screen.getByRole("link", { name: "Spot a possible match" }).getAttribute("href")).toBe(
+    "/reports",
+  );
+  expect(screen.getByRole("link", { name: "Return it safely" }).getAttribute("href")).toBe(
+    "/claims",
+  );
+  expect(screen.getByText(/ownership evidence stays out of public reports/i)).toBeTruthy();
   expect(screen.queryByText("Illustrative campus notices")).toBeNull();
   expect(container.querySelectorAll("main#main-content")).toHaveLength(1);
-  expect(screen.getAllByRole("listitem", { name: /recovery step:/i })).toHaveLength(3);
-  expect(screen.getAllByRole("img")).toHaveLength(4);
-  const hero = screen.getByRole("img", {
-    name: /found belongings on a campus bench/i,
-  });
-  expect(decodeURIComponent(hero.getAttribute("src") ?? "")).toContain(
-    "/campus-find-hero.webp",
-  );
-  const matchingImage = screen.getByRole("img", {
-    name: /campus notification for a possible item match/i,
-  });
-  expect(decodeURIComponent(matchingImage.getAttribute("src") ?? "")).toContain(
-    "/illustrations/notifications-campus-match.webp",
-  );
+  expect(container.querySelectorAll('svg[aria-hidden="true"]').length).toBeGreaterThanOrEqual(4);
+  expect(container.querySelectorAll("img")).toHaveLength(0);
 });
