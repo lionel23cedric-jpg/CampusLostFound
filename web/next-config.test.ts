@@ -22,3 +22,41 @@ describe("Next.js local model tracing", () => {
     });
   });
 });
+
+describe("HTTP response headers", () => {
+  it("protects every page and prevents sensitive API caching", async () => {
+    const rules = await nextConfig.headers!();
+    const [globalRule, ...privateApiRules] = rules;
+    const globalHeaders = new Map(
+      globalRule.headers.map(({ key, value }) => [key, value]),
+    );
+
+    expect(globalRule.source).toBe("/(.*)");
+    expect(globalHeaders.get("Content-Security-Policy")).toContain(
+      "frame-ancestors 'none'",
+    );
+    expect(globalHeaders.get("Referrer-Policy")).toBe(
+      "strict-origin-when-cross-origin",
+    );
+    expect(globalHeaders.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(globalHeaders.get("X-Frame-Options")).toBe("DENY");
+    expect(globalHeaders.get("Permissions-Policy")).toBe(
+      "camera=(), geolocation=(), microphone=()",
+    );
+
+    expect(privateApiRules.map(({ source }) => source)).toEqual([
+      "/api/auth/:path*",
+      "/api/profile/:path*",
+      "/api/claims/:path*",
+      "/api/notifications/:path*",
+      "/api/admin/:path*",
+      "/api/staff/:path*",
+      "/api/reports/:path*",
+    ]);
+    for (const rule of privateApiRules) {
+      expect(rule.headers).toEqual([
+        { key: "Cache-Control", value: "no-store" },
+      ]);
+    }
+  });
+});

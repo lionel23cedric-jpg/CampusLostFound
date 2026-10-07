@@ -17,7 +17,7 @@
   "dependencies": {
     "@huggingface/tokenizers": "0.2.0",
     "mongoose": "^9.9.1",
-    "next": "16.3.5",
+    "next": "16.3.8",
     "onnxruntime-web": "1.31.0-dev.20260914-8d85527a0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -32,7 +32,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "16.3.8",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
