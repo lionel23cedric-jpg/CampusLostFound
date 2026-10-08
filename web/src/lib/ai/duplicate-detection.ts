@@ -150,7 +150,19 @@ async function modelScores(candidates: CandidatePair[]) {
     ),
   );
 }
-
+/**
+ * Identifies potentially duplicate reports.
+ *
+ * Compares reports of the same type and uses structured
+ * evidence to shortlist candidate pairs.
+ *
+ * Semantic similarity improves the text component
+ * of the combined score without replacing rule-based
+ * factors such as category, location and date.
+ *
+ * Returns ranked candidates for manual review.
+ * Falls back to rule-based scoring if inference fails.
+ */
 export async function scanDuplicateReports(
   administrator: PublicUser,
 ): Promise<DuplicateScanResponse> {

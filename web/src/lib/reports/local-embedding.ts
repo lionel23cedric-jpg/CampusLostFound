@@ -76,7 +76,15 @@ async function getSession() {
   });
   return sessionPromise;
 }
-
+/**
+ * Converts token embeddings into a sentence vector.
+ *
+ * Mean pooling uses the attention mask to exclude
+ * padding tokens from the average.
+ *
+ * L2 normalization produces a unit-length vector
+ * suitable for cosine similarity comparison.
+ */
 function normalizedMeanPool(
   hiddenState: ort.Tensor,
   attentionMask: number[],

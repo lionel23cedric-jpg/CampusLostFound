@@ -42,7 +42,11 @@ export async function updateManagedAccountRole(
     transaction = await database.startSession();
     const actorId = new Types.ObjectId(administrator.id);
     const targetId = new Types.ObjectId(targetUserId);
-
+/**
+ * Updates account roles within a database transaction.
+ * Session revocation and audit logging are included
+ * to keep permission changes consistent and traceable.
+ */
     await transaction.withTransaction(async () => {
       const actor = await UserModel.findOne({
         _id: actorId,

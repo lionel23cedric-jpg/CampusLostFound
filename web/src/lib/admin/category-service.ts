@@ -125,7 +125,11 @@ export async function createAdminCategory(
     rethrowCategoryError(error);
   }
 }
-
+/**
+ * Uses optimistic concurrency control for updates.
+ * Both the record ID and its previous timestamp
+ * must match to prevent overwriting newer changes.
+ */
 export async function updateAdminCategory(
   administrator: PublicUser,
   categoryId: string,

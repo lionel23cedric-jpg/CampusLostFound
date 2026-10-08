@@ -10,6 +10,11 @@ export type OverviewDonutSegment = {
 
 // Convert each segment's share of the total into a conic-gradient stop. The
 // zero-total branch deliberately renders a neutral full circle instead of NaN.
+/**
+ * Converts segment values into proportional angles.
+ * Each segment occupies value / total * 360 degrees.
+ * A CSS conic gradient renders the resulting chart.
+ */
 function buildGradient(segments: readonly OverviewDonutSegment[], total: number) {
   if (total === 0) {
     return "conic-gradient(var(--line) 0deg 360deg)";

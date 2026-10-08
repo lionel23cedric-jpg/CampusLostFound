@@ -29,7 +29,11 @@ export function AdminModerationClient() {
     scanController.current?.abort();
     flagController.current?.abort();
   }, []);
-
+/**
+ * Requests possible duplicate reports for review.
+ * Scanning does not modify report visibility.
+ * Candidates must be submitted to moderation separately.
+ */
   async function scan() {
     scanController.current?.abort();
     const controller = new AbortController();

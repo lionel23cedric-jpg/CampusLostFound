@@ -111,6 +111,11 @@ export function AdminOverviewClient() {
   const requestId = useRef(0);
   const controller = useRef<AbortController | null>(null);
 
+  /**
+ * Fetches the latest administrator overview data.
+ * Updates the dashboard after a successful response
+ * and handles loading and error states.
+ */
   const loadOverview = useCallback(
     async (mode: "initial" | "refresh") => {
       const currentRequest = ++requestId.current;

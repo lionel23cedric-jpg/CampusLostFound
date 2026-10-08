@@ -15,7 +15,13 @@ function noStore(response: Response) {
   response.headers.set("Cache-Control", "no-store");
   return response;
 }
-
+/**
+ * Returns possible duplicate report pairs.
+ * Requires administrator authorization and delegates
+ * detection to the duplicate scanning service.
+ *
+ * This endpoint does not modify report records.
+ */
 export async function GET(request: Request) {
   let administrator: PublicUser;
   try {

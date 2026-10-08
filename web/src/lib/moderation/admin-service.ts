@@ -255,7 +255,11 @@ function rethrowSafeModerationError(error: unknown): never {
   if (error instanceof ModerationError) throw error;
   throw new ModerationError("REPORT_MODERATION_FAILED");
 }
-
+/**
+ * Applies administrator moderation decisions.
+ * Report visibility, flag resolution and audit records
+ * are updated consistently without deleting report history.
+ */
 async function runModerationTransaction<T>(
   administratorId: string,
   work: (

@@ -9,7 +9,11 @@ import { CategoryManagementPanel } from "./category-management-panel";
 import styles from "./admin-reference-data.module.css";
 
 type ReferenceDataTab = "categories" | "campusLocations";
-
+/**
+ * Manages categories and campus locations.
+ * Supports searching, editing and deactivation
+ * without removing historical references.
+ */
 export function AdminReferenceDataClient(): React.JSX.Element {
   const [selectedTab, setSelectedTab] = useState<ReferenceDataTab>("categories");
   // Mount the heavier campus panel only after its first visit, then keep it mounted

@@ -174,7 +174,11 @@ export function parseAccountAggregate(input: unknown): AccountOverviewCounts {
       }
     : { active: 0, suspended: 0, deactivated: 0 };
 }
-
+/**
+ * Builds the administrator overview response.
+ * Derives summary totals and validates consistency
+ * before returning the data to the client.
+ */
 export function buildAdministratorOverview(
   generatedAt: string,
   reports: ReportOverviewCounts,

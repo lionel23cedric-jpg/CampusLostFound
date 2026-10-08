@@ -28,7 +28,11 @@ export const categorySchema = new Schema(
     timestamps: true,
   },
 );
-
+/**
+ * Enforces category name uniqueness at database level.
+ * Inactive categories remain stored so existing
+ * reports can retain their references.
+ */
 categorySchema.index(
   { name: 1 },
   {

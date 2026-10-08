@@ -490,7 +490,11 @@ export function AdminAccountManagementClient() {
     setMutationStatus("pending");
     setMutationError(null);
     setMutationNotice(null);
-
+/**
+ * Handles administrator account management actions.
+ * Role changes affect permissions, while account
+ * status determines whether access is allowed.
+ */
     try {
       const updated = action === "promote" || action === "demote"
         ? await updateAdministratorAccountRole(
