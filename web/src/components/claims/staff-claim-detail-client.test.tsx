@@ -373,7 +373,7 @@ describe("StaffClaimDetailClient loading and refresh", () => {
     const errorHeading = await screen.findByRole("heading", {
       name: "We could not load this Claim",
     });
-    expect(document.activeElement).toBe(errorHeading);
+    await waitFor(() => expect(document.activeElement).toBe(errorHeading));
     await user.click(screen.getByRole("button", { name: "Retry Claim review" }));
     expect(await screen.findByText(staffDetail.report.title)).toBeTruthy();
     expect(document.body.textContent).not.toContain("private load detail");

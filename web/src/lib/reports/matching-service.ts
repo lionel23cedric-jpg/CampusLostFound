@@ -142,7 +142,14 @@ export async function findReportMatches(
 
   let matchingMethod: ReportMatches["matchingMethod"] = "rule_fallback";
   let ranked = rankMatches(ruleMatches);
-  const eligible = ranked.filter((match) => match.score >= MATCH_MINIMUM_SCORE);
+  const eligible = ranked.filter(
+    (match) =>
+      match.score >= MATCH_MINIMUM_SCORE ||
+      match.factors
+        .filter((factor) => factor.key !== "text")
+        .reduce((total, factor) => total + factor.points, 0) >=
+        MATCH_MINIMUM_SCORE - 20,
+  );
   if (eligible.length > 0) {
     try {
       const shortlist = eligible.slice(0, MATCH_SEMANTIC_SHORTLIST_LIMIT);

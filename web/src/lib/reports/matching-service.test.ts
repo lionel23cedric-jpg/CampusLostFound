@@ -365,19 +365,31 @@ describe("report matching service", () => {
     }
   });
 
-  it("does not use AI text points to admit a candidate below the rule threshold", async () => {
-    candidateExec.mockResolvedValue([document("eligible"), document("ineligible")]);
+  it("uses semantic text to admit an eligible low-lexical candidate", async () => {
+    candidateExec.mockResolvedValue([document("low-lexical"), document("unrelated")]);
     vi.mocked(scoreReportMatch).mockImplementation((_source, candidate) => ({
-      score: candidate.id === "eligible" ? 40 : 34,
-      factors: [{ key: "category", points: 25, maximum: 25, explanation: "Same category" }],
+      score: candidate.id === "low-lexical" ? 25 : 14,
+      factors: candidate.id === "low-lexical"
+        ? [{ key: "category", points: 25, maximum: 25, explanation: "Same category" }]
+        : [{ key: "location", points: 14, maximum: 15, explanation: "Nearby location" }],
     }));
     vi.mocked(embedPublicText).mockResolvedValue(new Float32Array([1, 0]));
 
     const result = await findReportMatches(user, reportId);
 
     expect(result.matchingMethod).toBe("model_assisted");
-    expect(result.matches.map((match) => match.report.id)).toEqual(["eligible"]);
+    expect(result.matches).toMatchObject([
+      {
+        report: { id: "low-lexical" },
+        score: 45,
+        factors: [
+          { key: "category", points: 25 },
+          { key: "text", points: 20 },
+        ],
+      },
+    ]);
     expect(embedPublicText).toHaveBeenCalledTimes(2);
+    expect(embedPublicText).not.toHaveBeenCalledWith("Candidate unrelated. Found candidate report");
   });
 
   it("falls back to the full rule result if model inference fails after shortlisting", async () => {
