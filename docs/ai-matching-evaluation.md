@@ -40,7 +40,7 @@ points.
 | --- | ---: | --- |
 | Category | 25 | Exact category identifier |
 | Location | 15 | Exact public campus-location identifier |
-| Date | 15 | Same day: 15; within 3 days: 12; within 7: 8; within 14: 4 |
+| Date | 15 | Same Pacific/Auckland calendar date: 15; within 3 calendar days: 12; within 7: 8; within 14: 4 |
 | Colours | 15 | Jaccard overlap after case and Unicode normalisation |
 | Tags | 10 | Jaccard overlap after case and Unicode normalisation |
 | Text | 20 | Baseline: cosine similarity of term frequencies; model-assisted: cosine similarity of mean-pooled, normalised MiniLM embeddings |
@@ -109,19 +109,19 @@ The measured results were:
 
 | Measure | Current model-assisted result |
 | --- | ---: |
-| Precision | 0.558 |
+| Precision | 0.571 |
 | Recall | 1.000 |
-| F1 score | 0.716 |
-| Accuracy | 0.683 |
+| F1 score | 0.727 |
+| Accuracy | 0.700 |
 | Top-match accuracy | 1.000 |
 
 | Actual / predicted | Match | No match |
 | --- | ---: | ---: |
 | Match | 24 | 0 |
-| No match | 19 | 17 |
+| No match | 18 | 18 |
 
 All 12 sources still placed a labelled relevant candidate first, and all 24
-labelled matches crossed the threshold. However, 19 distractors also crossed
+labelled matches crossed the threshold. However, 18 distractors also crossed
 it, up from 5 under the narrower gate. The broader shortlist can recover a
 low-lexical candidate that the earlier gate would never embed, but this fixture
 shows a substantial precision cost. These synthetic results are **not evidence
@@ -129,7 +129,7 @@ of improved matching accuracy or a prediction of real-campus performance**.
 
 ## Error analysis
 
-The current 19 false positives often have some shared public structure and
+The current 18 false positives often have some shared public structure and
 semantically similar but non-identical wording. With a low recommendation
 threshold, the model can lift such distractors over 35 even when the rule score
 alone would not. This is why a score is presented only as a suggestion and why
