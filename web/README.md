@@ -103,11 +103,13 @@ the report's current `updatedAt` value to avoid overwriting a concurrent edit.
 
 ## Local AI matching setup
 
-The existing rules first select open, visible opposite-type reports with a
-score of at least 35. A quantized MiniLM model then compares only their public
-title and description, replacing at most the existing 20 text points and
-reranking up to 30 rule-qualified candidates. If model loading or inference
-fails, the original rule ranking remains available and the page says so.
+The rules select open, visible opposite-type reports. A report enters the
+bounded semantic shortlist when its rule score is at least 35 or its non-text
+factors total at least 15, enough to reach 35 with the model's maximum 20 text
+points. Quantized MiniLM compares only public title and description, replaces
+the text factor, and reranks at most 30 candidates. Only final scores of at
+least 35 are shown. If model loading or inference fails, the original rule
+ranking remains available and the page says so.
 
 Run `npm run evaluate:matching:ai` to load the packaged model and reproduce the
 synthetic comparison. Runtime inference does not download model files or call

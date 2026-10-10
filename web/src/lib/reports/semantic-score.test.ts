@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canReachMatchThresholdWithSemanticText,
   cosineSimilarity,
   replaceTextFactor,
   semanticTextPoints,
 } from "./semantic-score";
 
 describe("semantic text scoring", () => {
+  it("shortlists candidates only when rule or attainable semantic points can reach the threshold", () => {
+    const category = { key: "category" as const, points: 25, maximum: 25, explanation: "Same category" };
+    const location = { key: "location" as const, points: 14, maximum: 15, explanation: "Nearby location" };
+    const text = { key: "text" as const, points: 20, maximum: 20, explanation: "Similar wording" };
+
+    expect(canReachMatchThresholdWithSemanticText({ score: 35, factors: [category, { ...text, points: 10 }] }, 35)).toBe(true);
+    expect(canReachMatchThresholdWithSemanticText({ score: 25, factors: [category] }, 35)).toBe(true);
+    expect(canReachMatchThresholdWithSemanticText({ score: 15, factors: [{ ...location, points: 15 }] }, 35)).toBe(true);
+    expect(canReachMatchThresholdWithSemanticText({ score: 34, factors: [location, text] }, 35)).toBe(false);
+  });
+
   it("returns a bounded cosine similarity for compatible vectors", () => {
     expect(
       cosineSimilarity(

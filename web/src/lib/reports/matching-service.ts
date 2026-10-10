@@ -12,7 +12,11 @@ import {
   type ScoringReport,
 } from "./matching-score";
 import { toMemberReport, type MemberReport } from "./public-report";
-import { replaceTextFactor, semanticTextPoints } from "./semantic-score";
+import {
+  canReachMatchThresholdWithSemanticText,
+  replaceTextFactor,
+  semanticTextPoints,
+} from "./semantic-score";
 
 export const MATCH_CANDIDATE_LIMIT = 500;
 export const MATCH_RESULT_LIMIT = 5;
@@ -142,13 +146,8 @@ export async function findReportMatches(
 
   let matchingMethod: ReportMatches["matchingMethod"] = "rule_fallback";
   let ranked = rankMatches(ruleMatches);
-  const eligible = ranked.filter(
-    (match) =>
-      match.score >= MATCH_MINIMUM_SCORE ||
-      match.factors
-        .filter((factor) => factor.key !== "text")
-        .reduce((total, factor) => total + factor.points, 0) >=
-        MATCH_MINIMUM_SCORE - 20,
+  const eligible = ranked.filter((match) =>
+    canReachMatchThresholdWithSemanticText(match, MATCH_MINIMUM_SCORE),
   );
   if (eligible.length > 0) {
     try {

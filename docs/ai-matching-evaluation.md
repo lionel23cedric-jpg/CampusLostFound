@@ -50,14 +50,15 @@ or `Dates are within 3 days`. Candidates below 35 points are not shown. The five
 highest remaining candidates are returned in score order with deterministic
 tie-breaking.
 
-The rule score is the admission gate: a candidate below 35 cannot become a
-suggestion merely because the model likes its wording. Of the rule-qualified
-candidates, at most 30 are sent to the local model. Its score replaces only the
-existing 20 text points, after which the candidates are reranked and checked
+The current model shortlist admits a candidate with either at least 35 rule
+points or at least 15 non-text points. The latter is the minimum from which the
+model's maximum 20 text points could reach the final 35-point threshold. At
+most 30 eligible candidates are sent to the local model. Its score replaces
+only the existing text factor, after which candidates are reranked and checked
 against 35 again. Category, location, date, colours, and tags retain their
-original fixed weights. No embedding or private evidence is returned to the
-browser. Model failures restore the original ranking over all queried
-candidates, not a partial AI list.
+fixed weights. No embedding or private evidence is returned to the browser.
+Model failures restore the original rule ranking over all queried candidates,
+not a partial AI list.
 
 ## Independent labelled dataset
 
@@ -97,30 +98,44 @@ September 2026.
 | Match | 24 | 0 |
 | No match | 5 | 31 |
 
-The local pretrained model was also run against the same 12 synthetic cases
-and 60 labelled comparisons on 22 September 2026, after the conservative
-rule-qualified gate was applied. It produced 24 true positives, 5 false
-positives, 0 false negatives, and 31 true negatives: precision 0.828, recall
-1.000, F1 0.906, accuracy 0.917, and top-match accuracy 1.000. These are the
-same aggregate metrics as the rule baseline, **not evidence that AI improves
-accuracy**. The model can change individual text scores and candidate order,
-but this small fixture does not demonstrate an aggregate gain. An earlier
-ungated trial produced 19 false positives, so allowing model similarity to
-admit rule-rejected candidates was rejected.
+Under the older, rule-qualified model gate on 22 September 2026, the local
+model produced the same aggregate matrix as the rule baseline: 24 true
+positives, 5 false positives, 0 false negatives, and 31 true negatives. This
+is a historical result, not an evaluation of the current shortlist.
 
-All 12 source reports placed a labelled relevant candidate first. All 24
-labelled matches crossed the threshold. Five distractors also crossed it, which
-is consistent with a recommendation feature designed to ask a person to review
-plausible possibilities rather than make a final ownership decision.
+On 10 October 2026, `npm run evaluate:matching:ai` was rerun with the current
+production eligibility rule on the same 12 synthetic cases and 60 comparisons.
+The measured results were:
+
+| Measure | Current model-assisted result |
+| --- | ---: |
+| Precision | 0.558 |
+| Recall | 1.000 |
+| F1 score | 0.716 |
+| Accuracy | 0.683 |
+| Top-match accuracy | 1.000 |
+
+| Actual / predicted | Match | No match |
+| --- | ---: | ---: |
+| Match | 24 | 0 |
+| No match | 19 | 17 |
+
+All 12 sources still placed a labelled relevant candidate first, and all 24
+labelled matches crossed the threshold. However, 19 distractors also crossed
+it, up from 5 under the narrower gate. The broader shortlist can recover a
+low-lexical candidate that the earlier gate would never embed, but this fixture
+shows a substantial precision cost. These synthetic results are **not evidence
+of improved matching accuracy or a prediction of real-campus performance**.
 
 ## Error analysis
 
-The five false positives share enough structured public evidence to reach the
-low recommendation threshold, despite being labelled as different items. This
-is most likely when a distractor has the same public location and a nearby date,
-or the same broad category plus overlapping wording. The result shows why the
-score is presented as a suggestion and why the Claim verification step remains
-separate.
+The current 19 false positives often have some shared public structure and
+semantically similar but non-identical wording. With a low recommendation
+threshold, the model can lift such distractors over 35 even when the rule score
+alone would not. This is why a score is presented only as a suggestion and why
+the Claim verification step remains separate. Choosing a stricter gate based
+only on these 60 synthetic pairs would risk overfitting; a larger independently
+labelled set is needed before changing the threshold responsibly.
 
 No false negatives appeared in this small synthetic set. That is encouraging
 but does not establish the same recall on real campus language, spelling errors,
@@ -148,7 +163,8 @@ rare categories, or reports with several hidden fields.
 - The score is not learned from outcomes and does not adapt automatically.
 - The model is English-focused; the synthetic fixture is too small to validate
   real-world accuracy, multilingual wording, or fairness. The 30-candidate
-  shortlist may omit a relevant low-rule-score report.
+  shortlist may omit a relevant low-structured-score report, while its current
+  broad eligibility can show more false positives.
 - If a packaged model file is unavailable or local inference fails, matching
   continues using only the baseline rules.
 - A future study could use consented, anonymised labels and compare thresholds,
