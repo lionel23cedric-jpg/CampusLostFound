@@ -45,7 +45,9 @@ Vitest initially failed before collecting tests because the managed Windows sand
 
 User-provided post-fix screenshots of the local 3001 `/admin/moderation` page show a scan summary of **20 pairings across 9 reports**, distinct short report IDs and dates on same-title cards, and both expanded and collapsed “other pairings” disclosures. This confirms the intended desktop grouping and visible disclosure content in the user's session.
 
-A later user-provided screenshot shows the already-pending case: the page says a flag for the report is already pending in the moderation queue and changes that report's action to the disabled “Already in moderation queue” state. This supports the UI handling of a pre-existing flag, but does not establish that a new queue entry was created or that the queue contains exactly one entry. The screenshot still shows a two-column layout, so it is not a narrow-screen acceptance check.
+A later user-provided screenshot shows the already-pending case: the page says a flag for the report is already pending in the moderation queue and changes that report's action to the disabled “Already in moderation queue” state. This supports the UI handling of a pre-existing flag, but does not establish that a new queue entry was created or that the queue contains exactly one entry.
+
+A subsequent narrow-window screenshot shows the report being reviewed and closest matching report stacked vertically, with wrapped titles and reasons and the full disabled action visible. No horizontal clipping is apparent in that screenshot. It does not establish the exact 320px breakpoint or keyboard behavior.
 
 The connected browser runtime could not load its installed browser-control module because of an `EPERM` realpath error. Consequently, this audit did not independently exercise the browser controls, verify the 320px layout or keyboard focus, submit a report to the moderation queue, or perform account, reference-data, flag, or visibility mutations against live data. Those remain separate live checks; no send/hide/account-change control should be pressed merely for visual acceptance.
 
