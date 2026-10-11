@@ -18,7 +18,7 @@ core workflow remains usable through a bounded deterministic fallback.
 
 | Feature | Model-assisted result | Deterministic fallback | Human decision |
 | --- | --- | --- | --- |
-| Lost/Found matching | MiniLM semantic wording score reranks rule-qualified opposite-type reports | Original weighted rule score and ranking | Member inspects a result and separately creates a Claim |
+| Lost/Found matching | MiniLM semantic wording score reranks bounded, structurally eligible opposite-type reports | Original weighted rule score and ranking | Member inspects a result and separately creates a Claim |
 | Smart search | MiniLM ranks up to 100 visible reports by natural-language similarity | MongoDB text search using the same query | Member chooses whether to open a result |
 | Description and tag assistant | MiniLM ranks a controlled tag vocabulary; description wording is formatted deterministically | Lexical tags from the same controlled vocabulary | Member applies or dismisses the proposed text and tags |
 | Image category assistant | MobileCLIP ranks the currently active category names for the first selected photo | Empty, visibly labelled fallback suggestion | Member chooses a proposed category or keeps the current one |
@@ -42,9 +42,14 @@ or rule-based fallback; raw model errors and vectors are never returned.
 The matching service queries at most 500 open, visible reports of the opposite
 type from other members. A transparent 100-point rule score uses category (25),
 public location (15), public date (15), colours (15), tags (10), and wording
-(20). A report must first reach 35 rule points. At most 30 qualified candidates
-are reranked by replacing only the 20-point wording factor with MiniLM semantic
-similarity, and at most five results are shown.
+(20). A candidate enters the model shortlist if its rule score is at least 35,
+or if its non-text factors total at least 15, from which the model's maximum
+20 text points could reach the final 35-point threshold. At most 30 candidates
+are reranked by replacing only the wording factor, and at most five results
+that still reach 35 are shown. The broader shortlist improves the chance of
+finding a low-lexical match but increased false positives in the small
+synthetic evaluation; see the linked results rather than treating the score
+as an ownership decision.
 
 Only title, public description, structured public fields, and privacy-permitted
 location/date values are used. A model failure restores the complete original

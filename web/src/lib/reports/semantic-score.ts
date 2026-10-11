@@ -1,5 +1,15 @@
 import type { MatchScore } from "./matching-score";
 
+const MAXIMUM_TEXT_POINTS = 20;
+
+export function canReachMatchThresholdWithSemanticText(base: MatchScore, threshold: number) {
+  if (base.score >= threshold) return true;
+  const nonTextPoints = base.factors
+    .filter((factor) => factor.key !== "text")
+    .reduce((total, factor) => total + factor.points, 0);
+  return nonTextPoints >= threshold - MAXIMUM_TEXT_POINTS;
+}
+
 export function cosineSimilarity(left: Float32Array, right: Float32Array) {
   if (left.length === 0 || left.length !== right.length) return 0;
   let dot = 0;
@@ -15,19 +25,19 @@ export function cosineSimilarity(left: Float32Array, right: Float32Array) {
 }
 
 export function semanticTextPoints(left: Float32Array, right: Float32Array) {
-  return Math.round(20 * cosineSimilarity(left, right));
+  return Math.round(MAXIMUM_TEXT_POINTS * cosineSimilarity(left, right));
 }
 
 export function replaceTextFactor(base: MatchScore, points: number): MatchScore {
   const safePoints = Number.isFinite(points)
-    ? Math.max(0, Math.min(20, Math.round(points)))
+    ? Math.max(0, Math.min(MAXIMUM_TEXT_POINTS, Math.round(points)))
     : 0;
   const factors = base.factors.filter((factor) => factor.key !== "text");
   if (safePoints > 0) {
     factors.push({
       key: "text",
       points: safePoints,
-      maximum: 20,
+      maximum: MAXIMUM_TEXT_POINTS,
       explanation: "AI semantic text similarity in public report wording",
     });
   }

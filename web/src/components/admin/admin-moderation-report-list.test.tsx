@@ -60,6 +60,28 @@ async function renderReady(current = page) {
 }
 
 describe("AdminModerationReportList", () => {
+  it("identifies the selected report when same-title reports are moderated", async () => {
+    const second = { ...report, id: "e".repeat(24) };
+    vi.mocked(listBrowserAdminReports).mockResolvedValue({
+      reports: [report, second],
+      pagination: { page: 1, pageSize: 20, totalItems: 2, totalPages: 1 },
+    });
+    const user = userEvent.setup();
+    render(<AdminModerationReportList />);
+    await screen.findAllByRole("heading", { name: report.title });
+    expect(screen.getByText("Report ID: aaaaaa")).toBeTruthy();
+    expect(screen.getByText("Report ID: eeeeee")).toBeTruthy();
+    await user.click(screen.getAllByRole("button", { name: "Hide report" })[1]);
+    expect(screen.getByText("Selected report: Black laptop charger (ID eeeeee)")).toBeTruthy();
+    await user.selectOptions(screen.getByLabelText("Hide reason"), "duplicate_report");
+    await user.click(screen.getByRole("button", { name: "Confirm hiding" }));
+    expect(moderateBrowserReport).toHaveBeenCalledWith(
+      second.id,
+      { moderationStatus: "hidden", reason: "duplicate_report", expectedUpdatedAt: second.updatedAt, note: null },
+      expect.any(AbortSignal),
+    );
+  });
+
   it("searches on submission and applies controlled filters", async () => {
     const user = userEvent.setup();
     await renderReady();

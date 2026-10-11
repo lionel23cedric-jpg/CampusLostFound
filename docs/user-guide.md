@@ -143,10 +143,11 @@ Use an active administrator account.
 2. Open the owner's report and select **Find possible matches**.
 3. Explain that the maximum score is 100: category 25, location 15, date 15,
    colours 15, tags 10, and text similarity 20.
-4. Explain that the rules first admit candidates scoring at least 35, up to
-   five are shown, and the local AI model can rerank up to 30 admitted
-   candidates by public wording. Point out the AI-assisted or rule-fallback
-   label; neither label means ownership has been proven.
+4. Explain that the local AI model can rerank up to 30 candidates using public
+   wording. A candidate enters that shortlist with either at least 35 rule
+   points or at least 15 non-text points; only a final score of at least 35 can
+   appear, with at most five suggestions shown. Point out the AI-assisted or
+   rule-fallback label; neither label means ownership has been proven.
 5. Point to the factor explanations. Confirm that private answers, reporter
    identity, contact information, serial number, and exact private location are
    not used.

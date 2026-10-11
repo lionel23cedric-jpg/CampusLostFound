@@ -257,7 +257,7 @@ export function AdminModerationReportList() {
           {state.data.reports.map((item) => (
             <li className={styles.card} key={item.id}>
               <div className={styles.cardHeader}>
-                <div><p className={styles.badges}><span>{item.reportType}</span><span>{item.status.replace("_", " ")}</span><span>{item.moderationStatus}</span></p><h3>{item.title}</h3></div>
+                <div><p className={styles.badges}><span>{item.reportType}</span><span>{item.status.replace("_", " ")}</span><span>{item.moderationStatus}</span></p><h3>{item.title}</h3><p className={styles.duplicateMeta}>Report ID: {item.id.slice(-6)}</p></div>
                 <time dateTime={item.updatedAt}>Updated {formatter.format(new Date(item.updatedAt))}</time>
               </div>
               <p>{item.publicDescription}</p>
@@ -292,6 +292,7 @@ export function AdminModerationReportList() {
         /* Hide requires a reason; Restore only needs the confirmation and note. */
         <form className={styles.confirmation} onSubmit={(event) => void confirmAction(event)}>
           <h3 ref={actionHeading} tabIndex={-1}>{action.kind === "hide" ? "Hide this report?" : "Restore this report?"}</h3>
+          <p>Selected report: {action.report.title} (ID {action.report.id.slice(-6)})</p>
           <p>{action.kind === "hide" ? "Members will no longer discover this report. Recovery and Claim records remain unchanged." : "Members will be able to discover this report again."}</p>
           {action.kind === "hide" ? (
             <label>

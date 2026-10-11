@@ -72,6 +72,49 @@ describe("explainable report matching score", () => {
     },
   );
 
+  it.each([
+    [
+      "2026-10-01T10:30:00.000Z",
+      "2026-10-01T11:30:00.000Z",
+      12,
+      "Dates are within 3 days",
+    ],
+    [
+      "2026-10-01T11:30:00.000Z",
+      "2026-10-02T10:30:00.000Z",
+      15,
+      "Reports occurred on the same day",
+    ],
+    [
+      "2026-09-26T13:30:00.000Z",
+      "2026-09-26T14:30:00.000Z",
+      15,
+      "Reports occurred on the same day",
+    ],
+  ] as const)(
+    "uses Auckland calendar dates for %s and %s",
+    (left, right, points, explanation) => {
+      const result = scoreReportMatch(
+        candidate({ occurredAt: left }),
+        candidate({ occurredAt: right }),
+      );
+
+      expect(factorPoints(result, "date")).toBe(points);
+      expect(
+        result.factors.find((factor) => factor.key === "date")?.explanation,
+      ).toBe(explanation);
+    },
+  );
+
+  it("omits invalid dates from the score", () => {
+    const result = scoreReportMatch(
+      source,
+      candidate({ occurredAt: "not a date" }),
+    );
+
+    expect(factorPoints(result, "date")).toBe(0);
+  });
+
   it("omits hidden candidate location and date completely", () => {
     const result = scoreReportMatch(
       source,
