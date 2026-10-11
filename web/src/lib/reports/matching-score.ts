@@ -31,6 +31,12 @@ export type MatchScore = {
 };
 
 const DAY_MS = 86_400_000;
+const AUCKLAND_DATE_FORMATTER = new Intl.DateTimeFormat("en-NZ", {
+  timeZone: "Pacific/Auckland",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 const STOP_WORDS = new Set([
   "a",
@@ -134,13 +140,26 @@ function sharedExplanation(label: "colours" | "tags", values: string[]) {
     : `Shared ${label}: ${values.length} matches`;
 }
 
+function aucklandDayOrdinal(value: string): number | null {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return null;
+
+  const parts = AUCKLAND_DATE_FORMATTER.formatToParts(new Date(timestamp));
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+  const day = Number(parts.find((part) => part.type === "day")?.value);
+  if (![year, month, day].every(Number.isFinite)) return null;
+
+  return Math.floor(Date.UTC(year, month - 1, day) / DAY_MS);
+}
+
 function dateScore(sourceDate: string | null, candidateDate: string | null) {
   if (!sourceDate || !candidateDate) return null;
 
-  const difference = Math.floor(
-    Math.abs(Date.parse(sourceDate) - Date.parse(candidateDate)) / DAY_MS,
-  );
-  if (!Number.isFinite(difference)) return null;
+  const sourceDay = aucklandDayOrdinal(sourceDate);
+  const candidateDay = aucklandDayOrdinal(candidateDate);
+  if (sourceDay === null || candidateDay === null) return null;
+  const difference = Math.abs(sourceDay - candidateDay);
   if (difference === 0) {
     return { points: 15, explanation: "Reports occurred on the same day" };
   }

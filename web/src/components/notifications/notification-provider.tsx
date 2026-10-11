@@ -108,7 +108,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     currentAccountId.current = activeAccountId;
   }, [activeAccountId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     stateRef.current = state;
   }, [state]);
 

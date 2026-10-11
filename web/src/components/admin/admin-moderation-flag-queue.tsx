@@ -39,6 +39,10 @@ const formatter = new Intl.DateTimeFormat("en-NZ", {
   timeStyle: "short",
   timeZone: "Pacific/Auckland",
 });
+const eventDateFormatter = new Intl.DateTimeFormat("en-NZ", {
+  dateStyle: "medium",
+  timeZone: "Pacific/Auckland",
+});
 
 type QueueState =
   | { status: "loading" }
@@ -270,6 +274,10 @@ export function AdminModerationFlagQueue() {
                     <span>{reasonLabels[item.reason]}</span>
                   </p>
                   <h3>{item.report.title}</h3>
+                  <p className={styles.duplicateMeta}>
+                    <span>Event date: <time dateTime={item.report.occurredAt}>{eventDateFormatter.format(new Date(item.report.occurredAt))}</time></span>
+                    <span>Report ID: {item.report.id.slice(-6)}</span>
+                  </p>
                 </div>
                 <time dateTime={item.createdAt}>{formatter.format(new Date(item.createdAt))}</time>
               </div>

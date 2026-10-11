@@ -69,6 +69,26 @@ async function renderReady() {
 }
 
 describe("AdminModerationFlagQueue", () => {
+  it("distinguishes same-title reports by event date and short ID", async () => {
+    vi.mocked(listBrowserAdminReportFlags).mockResolvedValue({
+      flags: [
+        flag,
+        {
+          ...flag,
+          id: "f".repeat(24),
+          report: { ...report, id: "e".repeat(24), occurredAt: "2026-09-26T01:00:00.000Z" },
+        },
+      ],
+      pagination: { page: 1, pageSize: 20, totalItems: 2, totalPages: 1 },
+    });
+    render(<AdminModerationFlagQueue />);
+    await screen.findAllByRole("heading", { name: report.title });
+    expect(screen.getByText("Report ID: aaaaaa")).toBeTruthy();
+    expect(screen.getByText("Report ID: eeeeee")).toBeTruthy();
+    expect(screen.getByText("29 Aug 2026")).toBeTruthy();
+    expect(screen.getByText("26 Sept 2026")).toBeTruthy();
+  });
+
   it("loads pending flags and applies controlled filters", async () => {
     const user = userEvent.setup();
     await renderReady();

@@ -2,13 +2,18 @@
 import { readFile } from "node:fs/promises";
 
 import { scoreReportMatch } from "../src/lib/reports/matching-score.ts";
-import { semanticTextPoints, replaceTextFactor } from "../src/lib/reports/semantic-score.ts";
+import {
+  canReachMatchThresholdWithSemanticText,
+  semanticTextPoints,
+  replaceTextFactor,
+} from "../src/lib/reports/semantic-score.ts";
 import { embedPublicText } from "../src/lib/reports/local-embedding.ts";
 
 const cases = JSON.parse(
   await readFile(new URL("../src/lib/reports/fixtures/matching-evaluation.json", import.meta.url), "utf8"),
 );
 const startedAt = performance.now();
+const minimumScore = 35;
 const confusion = { truePositive: 0, falsePositive: 0, falseNegative: 0, trueNegative: 0 };
 let topMatchCorrect = 0;
 
@@ -18,15 +23,16 @@ for (const item of cases) {
   const ranked = [];
   for (const candidate of item.candidates) {
     const baseline = scoreReportMatch(item.source, candidate);
-    const candidateVector = baseline.score >= 35
+    const eligible = canReachMatchThresholdWithSemanticText(baseline, minimumScore);
+    const candidateVector = eligible
       ? await embedPublicText(`${candidate.title}. ${candidate.publicDescription}`)
       : null;
     const score = candidateVector
       ? replaceTextFactor(baseline, semanticTextPoints(sourceVector, candidateVector)).score
       : baseline.score;
     const relevant = item.relevantCandidateIds.includes(candidate.id);
-    if (baseline.score >= 35) ranked.push({ id: candidate.id, score, relevant });
-    const predicted = baseline.score >= 35 && score >= 35;
+    const predicted = eligible && score >= minimumScore;
+    if (predicted) ranked.push({ id: candidate.id, score, relevant });
     if (predicted && relevant) confusion.truePositive += 1;
     else if (predicted) confusion.falsePositive += 1;
     else if (relevant) confusion.falseNegative += 1;
