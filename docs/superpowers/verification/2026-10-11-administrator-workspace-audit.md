@@ -52,3 +52,9 @@ A subsequent narrow-window screenshot shows the report being reviewed and closes
 The connected browser runtime could not load its installed browser-control module because of an `EPERM` realpath error. Consequently, this audit did not independently exercise the browser controls, verify the 320px layout or keyboard focus, submit a report to the moderation queue, or perform account, reference-data, flag, or visibility mutations against live data. Those remain separate live checks; no send/hide/account-change control should be pressed merely for visual acceptance.
 
 No production deployment, GitHub push, or live data write was performed in this audit.
+
+## Follow-up: same-title reports in the flag queue
+
+The duplicate review screenshots exposed several reports with identical titles. The flag queue previously showed only each report's title beside moderation actions, making the target hard to distinguish before a decision. The queue now shows the existing event date and short report ID on each card; no API, database, permission, or decision behavior changed. A regression test renders two same-title reports and checks both identities.
+
+The five focused moderation UI, route, and service suites passed with **113 tests** after this change. TypeScript, targeted ESLint, `git diff --check`, and the Impeccable detector also passed. The earlier full-project test and build results above predate this follow-up; no new live moderation decision was performed.
