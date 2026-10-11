@@ -58,3 +58,7 @@ No production deployment, GitHub push, or live data write was performed in this 
 The duplicate review screenshots exposed several reports with identical titles. The flag queue previously showed only each report's title beside moderation actions, making the target hard to distinguish before a decision. The queue now shows the existing event date and short report ID on each card; no API, database, permission, or decision behavior changed. A regression test renders two same-title reports and checks both identities.
 
 The five focused moderation UI, route, and service suites passed with **113 tests** after this change. TypeScript, targeted ESLint, `git diff --check`, and the Impeccable detector also passed. The earlier full-project test and build results above predate this follow-up; no new live moderation decision was performed.
+
+## Follow-up: direct report visibility decisions
+
+The direct visibility list also contained same-title reports without a visible report ID, and its hide/restore confirmation did not repeat the selected target. Each report card now shows its short ID and the confirmation repeats the selected title and short ID before any decision. The mutation request, server authorization, and conflict handling are unchanged. Four focused component, service, and route suites passed with **91 tests**; TypeScript, targeted ESLint, `git diff --check`, and the Impeccable detector passed. No live hide or restore action was performed.
