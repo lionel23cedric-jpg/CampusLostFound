@@ -43,6 +43,8 @@ Vitest initially failed before collecting tests because the managed Windows sand
 
 ## Live-acceptance limit
 
-The connected browser runtime could not load its installed browser-control module because of an `EPERM` realpath error. Therefore this pass did **not** complete fresh signed-in desktop/320px visual checks of the changed page or exercise account, reference-data, flag, or visibility mutations against live data. Earlier user screenshots established the pre-fix duplicate-list problem; they do not prove the post-fix visual result. A final manual check should load `/admin/moderation` on the local 3001 server, scan, inspect one grouped target and its other pairings at desktop and mobile widths, and confirm navigation, focus, and labels. Do not press a send/hide/account-change control merely for visual acceptance.
+User-provided post-fix screenshots of the local 3001 `/admin/moderation` page show a scan summary of **20 pairings across 9 reports**, distinct short report IDs and dates on same-title cards, and both expanded and collapsed “other pairings” disclosures. This confirms the intended desktop grouping and visible disclosure content in the user's session.
+
+The connected browser runtime could not load its installed browser-control module because of an `EPERM` realpath error. Consequently, this audit did not independently exercise the browser controls, verify the 320px layout or keyboard focus, submit a report to the moderation queue, or perform account, reference-data, flag, or visibility mutations against live data. Those remain separate live checks; no send/hide/account-change control should be pressed merely for visual acceptance.
 
 No production deployment, GitHub push, or live data write was performed in this audit.
