@@ -62,3 +62,9 @@ The five focused moderation UI, route, and service suites passed with **113 test
 ## Follow-up: direct report visibility decisions
 
 The direct visibility list also contained same-title reports without a visible report ID, and its hide/restore confirmation did not repeat the selected target. Each report card now shows its short ID and the confirmation repeats the selected title and short ID before any decision. The mutation request, server authorization, and conflict handling are unchanged. Four focused component, service, and route suites passed with **91 tests**; TypeScript, targeted ESLint, `git diff --check`, and the Impeccable detector passed. No live hide or restore action was performed.
+
+## User-assisted visual acceptance of other administrator surfaces
+
+User-provided local screenshots show the account search/status/role filters, paginated account cards, Staff-filtered results, and the role-removal, suspension, and deactivation confirmation panels at a narrow width. The confirmations identify the account and state that current sessions will be revoked; the suspension panel shows its reason control. Screenshots do not demonstrate a completed account mutation.
+
+Screenshots of reference-data management show category search/status controls and cards, the campus-location create/search controls and two location cards, and an edit form populated from an existing location. Save, deactivate, and cancel controls remain distinct and visible. No category or location save/deactivation was evidenced. These are visual checks, not independent browser automation or proof of live mutation behavior.
