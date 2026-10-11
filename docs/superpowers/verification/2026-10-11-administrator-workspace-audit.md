@@ -32,7 +32,7 @@ Duplicate scoring, scan limit, report visibility, flag policy, schemas, and all 
 | --- | --- |
 | Focused duplicate-review component tests | 9 passed, including new grouping, queue-state, pending-flag, stale-result, retry, and access-loss cases |
 | Administrator UI, route, and service tests | 51 files, 813 tests passed |
-| Full project tests | 183 files, 3062 tests passed after the final change |
+| Full project tests | 183 files, 3064 tests passed after the administrator follow-ups |
 | TypeScript (`npx.cmd tsc --noEmit`) | Passed |
 | ESLint (`npm.cmd run lint`) | Passed |
 | Production build (`npm.cmd run build`) | Passed; all four administrator routes generated |
@@ -57,7 +57,7 @@ No production deployment, GitHub push, or live data write was performed in this 
 
 The duplicate review screenshots exposed several reports with identical titles. The flag queue previously showed only each report's title beside moderation actions, making the target hard to distinguish before a decision. The queue now shows the existing event date and short report ID on each card; no API, database, permission, or decision behavior changed. A regression test renders two same-title reports and checks both identities.
 
-The five focused moderation UI, route, and service suites passed with **113 tests** after this change. TypeScript, targeted ESLint, `git diff --check`, and the Impeccable detector also passed. The earlier full-project test and build results above predate this follow-up; no new live moderation decision was performed.
+The five focused moderation UI, route, and service suites passed with **113 tests** after this change. TypeScript, targeted ESLint, `git diff --check`, and the Impeccable detector also passed. The production build result above predates this follow-up; no new live moderation decision was performed.
 
 ## Follow-up: direct report visibility decisions
 
@@ -68,3 +68,5 @@ The direct visibility list also contained same-title reports without a visible r
 User-provided local screenshots show the account search/status/role filters, paginated account cards, Staff-filtered results, and the role-removal, suspension, and deactivation confirmation panels at a narrow width. The confirmations identify the account and state that current sessions will be revoked; the suspension panel shows its reason control. Screenshots do not demonstrate a completed account mutation.
 
 Screenshots of reference-data management show category search/status controls and cards, the campus-location create/search controls and two location cards, and an edit form populated from an existing location. Save, deactivate, and cancel controls remain distinct and visible. No category or location save/deactivation was evidenced. These are visual checks, not independent browser automation or proof of live mutation behavior.
+
+User-provided administrator overview screenshots show the three management entry points and internally consistent report, Claim, and account totals. The overview counts all users, while account management lists only Student and Staff accounts; the two totals therefore have different scopes. The overview and account-list service suites passed **20 tests**. No discrepancy or new code defect was confirmed from the screenshots.
