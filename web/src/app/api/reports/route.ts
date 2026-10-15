@@ -52,6 +52,11 @@ export async function GET(request: Request) {
     return invalidReportQueryResponse(parsed.error);
   }
 
+  if (parsed.data.smartQuery) {
+    const limit = consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+    if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+  }
+
   try {
     return Response.json(await listReports(user, parsed.data));
   } catch (error) {

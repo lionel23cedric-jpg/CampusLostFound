@@ -6,8 +6,12 @@ import { AuthError, authErrorResponse } from "@/lib/auth/errors";
 import {
   REPORT_IMAGE_CONTENT_TYPES,
   REPORT_IMAGE_MAX_BYTES,
+  REPORT_IMAGE_REQUEST_MAX_BYTES,
 } from "@/lib/reports/photo-reference";
 import { listActiveCategories } from "@/lib/reports/reference-data";
+import { readAndValidateReportImageFile } from "@/lib/reports/image-validation";
+import { readMultipartRequestBody } from "@/lib/request-body";
+import { consumeRateLimit, rateLimitedResponse, rateLimitPolicies } from "@/lib/rate-limit";
 
 const supportedTypes = new Set<string>(REPORT_IMAGE_CONTENT_TYPES);
 
@@ -46,9 +50,12 @@ export async function POST(request: Request) {
     );
   }
 
+  const limit = consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   let form: FormData;
   try {
-    form = await request.formData();
+    form = await readMultipartRequestBody(request, REPORT_IMAGE_REQUEST_MAX_BYTES);
   } catch {
     return safeError("AI_IMAGE_INVALID", "Image request is invalid", 400);
   }
@@ -62,7 +69,17 @@ export async function POST(request: Request) {
     return safeError("AI_IMAGE_INVALID", "Image request is invalid", 400);
   }
   const image = entries[0][1];
-  if (!supportedTypes.has(image.type) || image.size > REPORT_IMAGE_MAX_BYTES) {
+  if (!supportedTypes.has(image.type) || image.size === 0 || image.size > REPORT_IMAGE_MAX_BYTES) {
+    return safeError("AI_IMAGE_INVALID", "Image request is invalid", 400);
+  }
+
+  let sanitised: Blob;
+  try {
+    const validated = await readAndValidateReportImageFile(image);
+    sanitised = new Blob([new Uint8Array(validated.data)], {
+      type: validated.contentType,
+    });
+  } catch {
     return safeError("AI_IMAGE_INVALID", "Image request is invalid", 400);
   }
 
@@ -76,7 +93,7 @@ export async function POST(request: Request) {
       );
     }
     const result = imageCategoryResponseSchema.parse(
-      await suggestImageCategories(image, categories),
+      await suggestImageCategories(sanitised, categories),
     );
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch {

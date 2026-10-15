@@ -8,8 +8,11 @@ prepare a report and help an administrator find records worth reviewing. They
 do not decide ownership, approve a Claim, hide content, or change a category
 without a person's action.
 
-No OpenAI, Gemini, or other paid inference API is used. Inference runs inside
-the Next.js server process with pinned ONNX models and ONNX Runtime WebAssembly.
+At runtime, these features process inputs inside the Next.js server with pinned
+ONNX models and ONNX Runtime WebAssembly. They do not call a hosted inference API.
+AI assistance used to develop the application or prepare the report is a
+separate disclosure. Generated decorative photographs are recorded in
+[AI-generated visual assets](ai-generated-visual-assets.md).
 The audited model files are packaged with the source, so production inference
 does not depend on a first-request download. If a model is unavailable, each
 core workflow remains usable through a bounded deterministic fallback.
@@ -32,6 +35,10 @@ Matching, smart search, semantic tag ranking, and duplicate detection reuse
 is mean-pooled and normalised before cosine similarity is calculated. Reusing
 one local model keeps the implementation understandable and within the course
 scope.
+
+The encoder reads at most 512 tokens, including its boundary tokens. Longer
+text is truncated only for inference. The saved title and description are
+unchanged, but wording beyond that limit does not affect the semantic result.
 
 The browser receives only bounded results and a method label. `model_assisted`
 is displayed as AI-assisted. A deterministic result is displayed as fallback
@@ -93,6 +100,11 @@ text and vision weights to perform zero-shot image classification against the
 current active category names. Up to three category names and bounded
 confidence values are returned.
 
+The endpoint checks file signatures, decodes and re-encodes the image, removes
+metadata, and rejects images exceeding 20 million pixels before inference.
+Both image endpoints bound the complete multipart request to 3 MiB plus 16 KiB
+of form overhead before parsing; the file itself must still fit within 3 MiB.
+
 The analysis endpoint processes the uploaded file in memory, sends `Cache-Control:
 no-store`, and does not create a report image record. If inference is not
 available, it returns an empty, visibly labelled fallback result. The selected
@@ -125,6 +137,10 @@ decision; scanning never hides or deletes a report.
   closed to safe messages rather than exposing database or model details.
 - Packaged local models still require server memory. A cold request can be
   slower, and a missing or damaged model file uses the documented fallback.
+- The five AI request paths share a per-account allowance of 10 requests per
+  minute within each server process. Excess requests return HTTP 429 and
+  `Retry-After`. Ordinary keyword browsing is outside this allowance. Multiple
+  server instances do not share the counters.
 - Similarity and confidence are ranking aids, not probabilities of ownership or
   proof that two records describe the same physical item.
 - MiniLM is English-focused, CLIP may reflect training-data bias, and the small

@@ -4,6 +4,7 @@ import {
   JSON_REQUEST_BODY_LIMIT,
   RequestBodyError,
   readJsonRequestBody,
+  readMultipartRequestBody,
   requestBodyErrorResponse,
 } from "./request-body";
 
@@ -156,5 +157,53 @@ describe("readJsonRequestBody", () => {
     expect(await invalid.json()).toEqual({
       error: { code: "INVALID_REQUEST", message: "Request body is invalid" },
     });
+  });
+});
+
+describe("readMultipartRequestBody", () => {
+  it("parses bounded file bytes and text without decoding the file as UTF-8", async () => {
+    const form = new FormData();
+    form.append("uploadKey", "test-key");
+    form.append("image", new File([new Uint8Array([0xff, 0x00])], "item.png"));
+    const request = new Request("https://campus-find.test/api", { method: "POST", body: form });
+    const parsed = await readMultipartRequestBody(request, 1024);
+    expect(parsed.get("uploadKey")).toBe("test-key");
+    expect(new Uint8Array(await (parsed.get("image") as File).arrayBuffer()))
+      .toEqual(new Uint8Array([0xff, 0x00]));
+  });
+
+  it("rejects oversized declared lengths before parsing", async () => {
+    const request = new Request("https://campus-find.test/api", {
+      method: "POST",
+      headers: { "content-type": "multipart/form-data; boundary=x", "content-length": "1025" },
+      body: "small",
+    });
+    await expect(readMultipartRequestBody(request, 1024)).rejects.toMatchObject({ code: "BODY_TOO_LARGE" });
+  });
+
+  it.each([undefined, "1"])("cancels streamed overflow with content-length %s", async (declaredLength) => {
+    let cancelled = false;
+    const headers = new Headers({ "content-type": "multipart/form-data; boundary=x" });
+    if (declaredLength) headers.set("content-length", declaredLength);
+    const request = new Request("https://campus-find.test/api", {
+      method: "POST", headers,
+      body: new ReadableStream<Uint8Array>({
+        pull(controller) { controller.enqueue(new Uint8Array(600)); },
+        cancel() { cancelled = true; },
+      }),
+      duplex: "half",
+    } as RequestInit & { duplex: "half" });
+    await expect(readMultipartRequestBody(request, 1024)).rejects.toMatchObject({ code: "BODY_TOO_LARGE" });
+    expect(cancelled).toBe(true);
+  });
+
+  it("rejects malformed multipart and other media types safely", async () => {
+    const request = new Request("https://campus-find.test/api", {
+      method: "POST", body: "private contents",
+      headers: { "content-type": "multipart/form-data; boundary=x" },
+    });
+    await expect(readMultipartRequestBody(request, 1024)).rejects.toMatchObject({ code: "INVALID_MULTIPART" });
+    await expect(readMultipartRequestBody(jsonRequest("{}"), 1024))
+      .rejects.toMatchObject({ code: "UNSUPPORTED_MEDIA_TYPE" });
   });
 });

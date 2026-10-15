@@ -38,6 +38,9 @@ const sensitiveApiSources = [
 ];
 
 const nextConfig: NextConfig = {
+  // ONNX resolves its WASM helpers through Node paths. Keep those paths out of
+  // bundler asset rewriting (Webpack otherwise produces an invalid /_next URL).
+  serverExternalPackages: ["onnxruntime-web"],
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },

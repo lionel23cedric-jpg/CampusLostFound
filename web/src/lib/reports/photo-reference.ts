@@ -2,6 +2,8 @@ import { z } from "zod";
 
 export const REPORT_IMAGE_LIMIT = 5;
 export const REPORT_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+// One image plus multipart headers and the upload key, bounded before parsing.
+export const REPORT_IMAGE_REQUEST_MAX_BYTES = REPORT_IMAGE_MAX_BYTES + 16 * 1024;
 export const REPORT_IMAGE_CONTENT_TYPES = [
   "image/jpeg",
   "image/png",

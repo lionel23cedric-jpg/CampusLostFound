@@ -10,6 +10,7 @@ import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { MatchingError } from "@/lib/reports/matching-errors";
 import { findReportMatches } from "@/lib/reports/matching-service";
+import { consumeRateLimit, rateLimitPolicies, resetRateLimitsForTests } from "@/lib/rate-limit";
 
 import { GET } from "./[id]/matches/route";
 
@@ -103,6 +104,7 @@ async function expectError(
 
 describe("report matching route", () => {
   beforeEach(() => {
+    resetRateLimitsForTests();
     vi.mocked(readSessionCookie).mockReset();
     vi.mocked(getCurrentUser).mockReset();
     vi.mocked(findReportMatches).mockReset();
@@ -110,6 +112,16 @@ describe("report matching route", () => {
     vi.mocked(readSessionCookie).mockResolvedValue("raw-session-token");
     vi.mocked(getCurrentUser).mockResolvedValue(user);
     vi.mocked(findReportMatches).mockResolvedValue(matches);
+  });
+
+  it("limits repeated matching requests before invoking inference", async () => {
+    for (let i = 0; i < rateLimitPolicies.aiInference.limit; i += 1) {
+      consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+    }
+    const response = await GET(request(), context(reportId));
+    expect(response.status).toBe(429);
+    expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect(findReportMatches).not.toHaveBeenCalled();
   });
 
   it.each(["student", "staff", "administrator"] as const)(

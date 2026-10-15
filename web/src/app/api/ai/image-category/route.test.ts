@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import sharp from "sharp";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/auth/cookie", () => ({ readSessionCookie: vi.fn() }));
 vi.mock("@/lib/auth/current-user", () => ({ getCurrentUser: vi.fn() }));
@@ -13,6 +14,8 @@ import { suggestImageCategories } from "@/lib/ai/image-classifier";
 import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { listActiveCategories } from "@/lib/reports/reference-data";
+import { consumeRateLimit, rateLimitPolicies, resetRateLimitsForTests } from "@/lib/rate-limit";
+import { REPORT_IMAGE_REQUEST_MAX_BYTES } from "@/lib/reports/photo-reference";
 
 import * as route from "./route";
 
@@ -54,9 +57,16 @@ const result = {
   ],
 };
 
+let png: Uint8Array<ArrayBuffer>;
+beforeAll(async () => {
+  png = new Uint8Array(await sharp({ create: {
+    width: 3, height: 2, channels: 3, background: "#1f6a52",
+  } }).png().toBuffer());
+});
+
 function imageFile(
   type = "image/png",
-  contents: BlobPart[] = [new Uint8Array([1, 2, 3])],
+  contents: BlobPart[] = [png],
 ) {
   return new File(contents, "campus-item.png", { type });
 }
@@ -78,6 +88,7 @@ async function expectError(response: Response, status: number, code: string) {
 
 describe("image category suggestion route", () => {
   beforeEach(() => {
+    resetRateLimitsForTests();
     vi.clearAllMocks();
     vi.mocked(readSessionCookie).mockResolvedValue("session-token");
     vi.mocked(getCurrentUser).mockResolvedValue(user);
@@ -117,7 +128,7 @@ describe("image category suggestion route", () => {
   it.each([
     ["missing image", []],
     ["unknown field", [["ownerId", user.id]]],
-    ["unsupported MIME", [["image", imageFile("image/gif")]]],
+    ["unsupported MIME", [["image", imageFile("image/gif", ["GIF89a"])]]],
   ] as Array<[string, Array<[string, string | File]>]>)(
     "rejects %s",
     async (_label, entries) => {
@@ -125,6 +136,34 @@ describe("image category suggestion route", () => {
       expect(suggestImageCategories).not.toHaveBeenCalled();
     },
   );
+
+  it("rejects empty, corrupt and mismatched image bytes before inference", async () => {
+    for (const file of [imageFile("image/png", []), imageFile("image/png", ["not an image"]), imageFile("image/jpeg")]) {
+      await expectError(await route.POST(request([["image", file]])), 400, "AI_IMAGE_INVALID");
+    }
+    expect(listActiveCategories).not.toHaveBeenCalled();
+    expect(suggestImageCategories).not.toHaveBeenCalled();
+  });
+
+  it("bounds the whole multipart request before parsing", async () => {
+    const oversized = new Request("http://localhost/api/ai/image-category", {
+      method: "POST",
+      headers: { "content-type": "multipart/form-data; boundary=x" },
+      body: new Uint8Array(REPORT_IMAGE_REQUEST_MAX_BYTES + 1),
+    });
+    await expectError(await route.POST(oversized), 400, "AI_IMAGE_INVALID");
+    expect(suggestImageCategories).not.toHaveBeenCalled();
+  });
+
+  it("limits repeated inference before reading image bytes", async () => {
+    for (let i = 0; i < rateLimitPolicies.aiInference.limit; i += 1) {
+      consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+    }
+    const response = await route.POST({} as Request);
+    await expectError(response, 429, "RATE_LIMITED");
+    expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect(suggestImageCategories).not.toHaveBeenCalled();
+  });
 
   it("rejects an image larger than three megabytes", async () => {
     const oversized = imageFile("image/png", [new Uint8Array(3 * 1024 * 1024 + 1)]);
@@ -153,7 +192,7 @@ describe("image category suggestion route", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     await expect(response.json()).resolves.toEqual(result);
     expect(suggestImageCategories).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "image/png", size: 3 }),
+      expect.objectContaining({ type: "image/png", size: expect.any(Number) }),
       categories,
     );
   });

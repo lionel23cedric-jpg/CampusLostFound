@@ -43,12 +43,17 @@ not presented as passed evidence.
 
 ## Automated baseline
 
+The [16 October repository audit](verification/2026-10-16-repository-audit.md)
+records the current checks, multipart body limits, long-text inference and AI
+rate-limit regressions. The baselines below retain their original dates. In
+particular, their dependency audit counts do not describe today's advisories.
+
 The 16 September delivery gate passed 169 test files and 2940 tests. The
 22 September supervisor-feedback gate adds Staff membership and local-model
 matching: **174 test files / 2973 tests**, lint, TypeScript, and the Next.js
 16.3.5 production build all passed. The [Staff verification](superpowers/verification/2026-09-22-client-managed-staff.md)
 and [AI verification](superpowers/verification/2026-09-22-local-ai-matching.md)
-record what was demonstrated. `npm audit` reports zero known
+record what was demonstrated. At that gate, `npm audit` reported zero known
 vulnerabilities. Baseline and real local-model evaluation both use 12 synthetic
 cases and 60 comparisons. `MANUAL-01` was completed against the configured
 database on 16 September 2026. Live Staff promotion/demotion and a browser
