@@ -4,13 +4,13 @@
   "checks/ai-status.json": "273b56c15120fd9d240a24330595964a596fbf05e07c234b08733532c4287035",
   "checks/ai.log": "1822281d977450398cb1e0112cfffa6b9efd179f4395ab8da22de9ba05e0be21",
   "checks/build-status.json": "d155990772c2cd08316320ff52fb3d681b40c8dac3beb4ab307c54ae2857815f",
-  "checks/build.log": "1bbf469c7b3857df32984f07aa78ceac1bc87bb220492a55d21f323ac3f027dc",
+  "checks/build.log": "b099f7784d1e3058f450521ffd3d3a1ae48034479140376e997899a25f63614a",
   "checks/lint-status.json": "796a48887eeb05a123ea167a72d48234c627817474c4db4c11a754b7d311c1d2",
   "checks/lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "checks/tests-status.json": "c0a38b8bb48219154036b0d554e27dcc414741df7c61533182a2106eaa9d8c1e",
   "checks/tests.log": "2ac5727c74a5e2aa3cd649e40cc6192bbf335d141e8f43dd45a748a47767d3a1",
   "checks/types-status.json": "ca8b74534bf35c613c2966024e68f1793ac66fd1e27ce7b20ea3ac37bd831619",
   "checks/types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "publication-manifest.json": "8439a5daa72c6092c09af6663a839f48b15b7812f1b9041dc5369b39a423ee46",
+  "publication-manifest.json": "fbfff85c6ee791100e86dda8cc07b7a0721c8291522c3e9d874a34dea2ff13cf",
   "vitest-results-summary.json": "a52d8cb28d974ccd241cf9c35894546ec8f28ae0aca72f0273870289cffb8c13"
 }

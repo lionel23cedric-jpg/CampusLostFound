@@ -1,6 +1,6 @@
 {
   "sourceArchiveSHA256": "1d661ddbed1d72e38f1abec51aa9051659e21e4a29626e1953bbe3361c4f2772",
-  "transformation": "Local machine paths replaced with portable labels; JSON whitespace normalised; timestamps, outcomes and counts retained.",
+  "transformation": "Local machine paths replaced with portable labels; JSON formatting and log line endings/trailing whitespace normalised; timestamps, outcomes and counts retained.",
   "files": [
     {
       "file": "ai-evaluation.json",
@@ -25,7 +25,7 @@
     {
       "file": "checks/build.log",
       "sourceEntrySHA256": "1bbf469c7b3857df32984f07aa78ceac1bc87bb220492a55d21f323ac3f027dc",
-      "publishedSHA256": "1bbf469c7b3857df32984f07aa78ceac1bc87bb220492a55d21f323ac3f027dc"
+      "publishedSHA256": "b099f7784d1e3058f450521ffd3d3a1ae48034479140376e997899a25f63614a"
     },
     {
       "file": "checks/lint-status.json",
