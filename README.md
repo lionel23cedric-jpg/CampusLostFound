@@ -10,6 +10,10 @@ suggestion remains reviewable and has a deterministic fallback.
 ## Install and run
 
 Use Node.js 24.19.0 and npm, Git, and a MongoDB Atlas database.
+For database-backed use, create a database user and allow your current IP in
+Atlas Network Access. Use a separate course/test database, not the team's live
+database. The [web setup guide](web/README.md#database-prerequisites) explains
+the transaction requirement and common connection problems.
 
 1. Clone the repository and open the web application directory:
 
@@ -36,6 +40,7 @@ commands and production configuration details. Production builds use Webpack.
 
 ## Project documentation
 
+- [Submission evidence and dated verification](docs/submission-evidence/README.md)
 - [Web application setup](web/README.md)
 - [AI matching evaluation](docs/ai-matching-evaluation.md)
 - [AI feature suite, privacy boundaries, and fallbacks](docs/ai-feature-suite.md)

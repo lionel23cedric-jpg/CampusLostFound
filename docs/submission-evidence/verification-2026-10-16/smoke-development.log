@@ -1,0 +1,11 @@
+▲ Next.js 16.3.8 (Turbopack)
+- Local:         http://localhost:3147
+- Network:       http://10.1.242.197:3147
+✓ Ready in 845ms
+✓ Running next.config.ts took 83ms
+
+○ Compiling / ...
+ GET / 200 in 43s (next.js: 42s, application-code: 381ms)
+ GET /login 200 in 775ms (next.js: 694ms, application-code: 81ms)
+ POST /api/ai/report-assistant 401 in 1226ms (next.js: 574ms, application-code: 653ms)
+ POST /api/ai/image-category 401 in 345ms (next.js: 226ms, application-code: 120ms)

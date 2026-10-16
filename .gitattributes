@@ -1,0 +1,2 @@
+# Preserve published evidence bytes and SHA-256 manifests on every platform.
+docs/submission-evidence/** -text

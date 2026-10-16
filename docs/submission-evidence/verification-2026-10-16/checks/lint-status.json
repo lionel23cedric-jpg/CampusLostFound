@@ -1,0 +1,16 @@
+{
+  "check": "lint",
+  "sourceCommit": "12c0acff48b88cd5fc4a2a6547c49e6ee64d0006",
+  "sourceMethod": "Clean git archive export; no existing node_modules, .next or .env files copied",
+  "runtime": "Node.js 24.19.0; Windows",
+  "executable": "<node>",
+  "arguments": [
+    "node_modules/eslint/bin/eslint.js",
+    "."
+  ],
+  "startedUtc": "2026-10-16T00:03:30.8635140+00:00",
+  "finishedUtc": "2026-10-16T00:03:57.5067326+00:00",
+  "durationSeconds": 26.628,
+  "exitCode": 0,
+  "log": "lint.log"
+}

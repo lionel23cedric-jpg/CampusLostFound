@@ -1,0 +1,31 @@
+{
+  "check": "tests",
+  "command": [
+    "<node>",
+    "node_modules/vitest/vitest.mjs",
+    "run",
+    "--maxWorkers=4",
+    "--reporter=default",
+    "--reporter=json",
+    "--outputFile.json=<workspace>\\tmp\\submission-final\\checks\\vitest-results.json"
+  ],
+  "cwd": "<workspace>\\CampusLostFound-matching-audit\\web",
+  "started_utc": "2026-10-14T09:32:38.389603+00:00",
+  "ended_utc": "2026-10-14T09:34:04.412347+00:00",
+  "duration_seconds": 86.02,
+  "exit_code": 0,
+  "node_version": "v24.19.0",
+  "git_commit": "59da62a94a1eb60c1199cc865bd0ea18421c1a8b",
+  "release_tree_equivalent_to": "58b2ad4b50e902d84d5ab41960f8626a6a7988a7",
+  "no_source_edits_or_deployment_requested": true,
+  "counts": {
+    "numTotalTestSuites": 368,
+    "numPassedTestSuites": 368,
+    "numTotalTests": 3064,
+    "numPassedTests": 3064,
+    "numFailedTests": 0,
+    "success": true
+  },
+  "started_nzdt": "2026-10-14T22:32:38.389603+13:00",
+  "ended_nzdt": "2026-10-14T22:34:04.412347+13:00"
+}

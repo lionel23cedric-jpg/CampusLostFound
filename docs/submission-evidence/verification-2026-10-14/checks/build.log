@@ -1,0 +1,88 @@
+▲ Next.js 16.3.8 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 150ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 49s
+  Running TypeScript ...
+  Finished TypeScript in 4.2s ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/41) ...
+  Generating static pages using 31 workers (10/41)
+  Generating static pages using 31 workers (20/41)
+  Generating static pages using 31 workers (30/41)
+✓ Generating static pages using 31 workers (41/41) in 1021ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /admin/accounts
+├ ○ /admin/moderation
+├ ○ /admin/reference-data
+├ ƒ /api/admin/accounts
+├ ƒ /api/admin/accounts/[userId]/role
+├ ƒ /api/admin/accounts/[userId]/status
+├ ƒ /api/admin/ai/duplicates
+├ ƒ /api/admin/campus-locations
+├ ƒ /api/admin/campus-locations/[campusLocationId]
+├ ƒ /api/admin/categories
+├ ƒ /api/admin/categories/[categoryId]
+├ ƒ /api/admin/overview
+├ ƒ /api/admin/report-flags
+├ ƒ /api/admin/report-flags/[flagId]
+├ ƒ /api/admin/reports
+├ ƒ /api/admin/reports/[reportId]/moderation
+├ ƒ /api/ai/image-category
+├ ƒ /api/ai/report-assistant
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/me
+├ ƒ /api/auth/register
+├ ƒ /api/campus-locations
+├ ƒ /api/categories
+├ ƒ /api/claims/[id]
+├ ƒ /api/claims/[id]/withdraw
+├ ƒ /api/claims/mine
+├ ƒ /api/health/database
+├ ƒ /api/notifications
+├ ƒ /api/notifications/[id]/read
+├ ƒ /api/profile
+├ ƒ /api/report-images/[imageId]
+├ ƒ /api/reports
+├ ƒ /api/reports/[id]
+├ ƒ /api/reports/[id]/claim-questions
+├ ƒ /api/reports/[id]/claims
+├ ƒ /api/reports/[id]/flags
+├ ƒ /api/reports/[id]/images
+├ ƒ /api/reports/[id]/matches
+├ ƒ /api/reports/mine
+├ ƒ /api/staff/claims
+├ ƒ /api/staff/claims/[id]
+├ ƒ /api/staff/claims/[id]/complete
+├ ƒ /api/staff/claims/[id]/decision
+├ ƒ /api/staff/reports
+├ ƒ /api/staff/reports/[reportId]
+├ ƒ /api/staff/reports/[reportId]/storage
+├ ƒ /api/staff/reports/[reportId]/verify
+├ ○ /claims
+├ ƒ /claims/[id]
+├ ○ /dashboard
+├ ○ /login
+├ ○ /notifications
+├ ○ /profile
+├ ○ /register
+├ ○ /reports
+├ ƒ /reports/[id]
+├ ƒ /reports/[id]/claim
+├ ○ /reports/mine
+├ ○ /reports/new
+├ ○ /staff/claims
+├ ƒ /staff/claims/[id]
+├ ○ /staff/reports
+└ ƒ /staff/reports/[reportId]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

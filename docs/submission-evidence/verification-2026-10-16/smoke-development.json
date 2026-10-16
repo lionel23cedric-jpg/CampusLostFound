@@ -1,0 +1,39 @@
+{
+  "mode": "development",
+  "startedUtc": "2026-10-16T00:08:48.697Z",
+  "finishedUtc": "2026-10-16T00:09:36.281Z",
+  "sourceCommit": "12c0acff48b88cd5fc4a2a6547c49e6ee64d0006",
+  "environmentFilesCopied": false,
+  "databaseWrites": false,
+  "checks": [
+    {
+      "method": "GET",
+      "route": "/",
+      "status": 200,
+      "expected": 200,
+      "cacheControl": "no-cache, must-revalidate"
+    },
+    {
+      "method": "GET",
+      "route": "/login",
+      "status": 200,
+      "expected": 200,
+      "cacheControl": "no-cache, must-revalidate"
+    },
+    {
+      "method": "POST",
+      "route": "/api/ai/report-assistant",
+      "status": 401,
+      "expected": 401,
+      "cacheControl": "no-store"
+    },
+    {
+      "method": "POST",
+      "route": "/api/ai/image-category",
+      "status": 401,
+      "expected": 401,
+      "cacheControl": "no-store"
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,39 @@
+{
+  "mode": "production",
+  "startedUtc": "2026-10-16T00:08:20.257Z",
+  "finishedUtc": "2026-10-16T00:08:22.558Z",
+  "sourceCommit": "12c0acff48b88cd5fc4a2a6547c49e6ee64d0006",
+  "environmentFilesCopied": false,
+  "databaseWrites": false,
+  "checks": [
+    {
+      "method": "GET",
+      "route": "/",
+      "status": 200,
+      "expected": 200,
+      "cacheControl": "s-maxage=31536000"
+    },
+    {
+      "method": "GET",
+      "route": "/login",
+      "status": 200,
+      "expected": 200,
+      "cacheControl": "s-maxage=31536000"
+    },
+    {
+      "method": "POST",
+      "route": "/api/ai/report-assistant",
+      "status": 401,
+      "expected": 401,
+      "cacheControl": "no-store"
+    },
+    {
+      "method": "POST",
+      "route": "/api/ai/image-category",
+      "status": 401,
+      "expected": 401,
+      "cacheControl": "no-store"
+    }
+  ],
+  "passed": true
+}

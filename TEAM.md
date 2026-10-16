@@ -9,29 +9,33 @@
 - Team size: 5 members
 - Group coordinator: Luyang Liu
 
-## Confirmed responsibility allocation
+## Delivered workstreams
 
-The current allocation follows the revised Project Progress Report. It replaces
-the broader role allocation in the original proposal.
+Each member completed an allocated module and handed the work to Luyang Liu
+for integration. He combined the modules, resolved integration issues, submitted
+the shared code and assembled the final report. This table follows the final
+report's contribution sections rather than the preliminary allocation.
 
-| Team member | Student ID | Email | Current workstream | Main responsibility |
-|---|---:|---|---|---|
-| Zheyu Feng | 25007580 | 3371807105@qq.com | Identity, profile, and account security | Registration, login, sessions, profile settings, role checks, and account status controls |
-| Tianyu Li | 25008551 | 863501837@qq.com | Reports, search, images, and privacy | Report creation, browsing, filters, owner history, protected images, and privacy boundaries |
-| Xinrui Han | 25007620 | b61s@qq.com | Member Claims and notifications | Claim submission and withdrawal, notification lists, unread counts, and mark-as-read behaviour |
-| Zhikai Wang | 25008100 | sanmao_email@126.com | Staff review and recovery | Report verification, custody records, Claim decisions, handover preparation, and completed recovery |
-| Luyang Liu | 25007541 | 86801163@qq.com | Administrator tools and project leadership | Overview statistics, reference data, report moderation, integration checks, project coordination, and evidence collection |
+| Team member | Student ID | Delivered workstream | Main responsibility |
+|---|---:|---|---|
+| Zheyu Feng | 25007580 | Identity, profile and AI-assisted homepage | Registration, login, sessions, profile settings, role/account-status checks and public homepage design and implementation with AI assistance |
+| Tianyu Li | 25008551 | Reports, search, images and privacy | Report creation, browsing/filtering, Smart Search, owner history, protected images and public/private data boundaries |
+| Xinrui Han | 25007620 | Student dashboard, Claims and notifications | Dashboard summary/navigation, Claim submission/tracking/withdrawal, private answers, notification lists, unread counts and read updates |
+| Zhikai Wang | 25008100 | Staff handling, recovery and image-category suggestions | Report verification, custody, Claim decisions, handover, completed recovery and user-confirmed image-category suggestions |
+| Luyang Liu | 25007541 | Administrator development, coordination and final integration | Account/Staff-access management, reference data, moderation, most overview functions, assisted chart/duplicate-review work, integration, release checks, report editing, selected Figma diagrams and workflow evidence |
 
-All five members share responsibility for learning, testing, evaluating, and
-explaining the deterministic item-matching feature.
+The shared matching feature combines deterministic factors with local MiniLM
+text comparison and a labelled rule fallback. All members are responsible for
+understanding its place in the workflow. Shared understanding does not imply
+that every member independently implemented the matching engine.
 
 ## Evidence boundaries
 
-- The current workstream allocation is recorded in the revised Project Progress Report.
-- The original proposal records the team names, student IDs, email addresses, and group coordinator.
+- The final report's Sections 13, 14 and 16 describe verification, module delivery and each member's reflection.
+- [Contribution evidence](docs/submission-evidence/contributions.md) links the delivered modules to source files and dated integration milestones; the [CSV ledger](project_management/contribution_log.csv) provides a compact record.
 - Git currently shows `Luyang LIU` and `Cedric` with the same email address. They are treated as one repository identity, not as two team members.
-- A responsibility allocation does not by itself prove implementation time or authorship. Each member must add their own dated task, branch or pull request, evidence, hours, and reflection to `project_management/contribution_log.csv` before final submission.
-- Unknown individual hours and commit ownership are deliberately recorded as `Not recorded`; they are not inferred from the repository account.
+- The contribution names come from the group's module handovers and report. Commits identify when work entered the shared repository, not exclusive individual authorship or personal completion dates.
+- Personal working hours were not consistently timed. This record does not reconstruct hours from commit activity or command runtimes. Each member remains responsible for checking their own contribution and reflection.
 
 ## Collaboration rules
 
