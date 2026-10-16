@@ -5,7 +5,8 @@ export type RequestBodyErrorCode =
   | "BODY_TOO_LARGE"
   | "INVALID_UTF8"
   | "EMPTY_BODY"
-  | "INVALID_JSON";
+  | "INVALID_JSON"
+  | "INVALID_MULTIPART";
 
 export class RequestBodyError extends Error {
   constructor(readonly code: RequestBodyErrorCode) {
@@ -44,10 +45,10 @@ export function requestBodyErrorResponse(error: RequestBodyError) {
   );
 }
 
-export async function readJsonRequestBody(
+async function readBoundedBody(
   request: Request,
-  limit = JSON_REQUEST_BODY_LIMIT,
-): Promise<unknown> {
+  limit: number,
+): Promise<ArrayBuffer> {
   const declaredLength = request.headers.get("content-length");
   if (
     declaredLength !== null &&
@@ -61,9 +62,8 @@ export async function readJsonRequestBody(
   if (!request.body) throw new RequestBodyError("EMPTY_BODY");
 
   const reader = request.body.getReader();
-  const decoder = new TextDecoder("utf-8", { fatal: true });
   let byteLength = 0;
-  let text = "";
+  const chunks: Uint8Array[] = [];
 
   try {
     while (true) {
@@ -75,11 +75,6 @@ export async function readJsonRequestBody(
       }
 
       if (chunk.done) {
-        try {
-          text += decoder.decode();
-        } catch {
-          throw new RequestBodyError("INVALID_UTF8");
-        }
         break;
       }
 
@@ -87,11 +82,7 @@ export async function readJsonRequestBody(
       if (byteLength > limit) {
         throw new RequestBodyError("BODY_TOO_LARGE");
       }
-      try {
-        text += decoder.decode(chunk.value, { stream: true });
-      } catch {
-        throw new RequestBodyError("INVALID_UTF8");
-      }
+      chunks.push(chunk.value);
     }
   } catch (error) {
     try {
@@ -104,6 +95,27 @@ export async function readJsonRequestBody(
     reader.releaseLock();
   }
 
+  const bytes = new Uint8Array(byteLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes.buffer;
+}
+
+export async function readJsonRequestBody(
+  request: Request,
+  limit = JSON_REQUEST_BODY_LIMIT,
+): Promise<unknown> {
+  const bytes = await readBoundedBody(request, limit);
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new RequestBodyError("INVALID_UTF8");
+  }
+
   if (text.trim().length === 0) throw new RequestBodyError("EMPTY_BODY");
   if (!isJsonContentType(request.headers.get("content-type"))) {
     throw new RequestBodyError("UNSUPPORTED_MEDIA_TYPE");
@@ -113,5 +125,24 @@ export async function readJsonRequestBody(
     return JSON.parse(text) as unknown;
   } catch {
     throw new RequestBodyError("INVALID_JSON");
+  }
+}
+
+export async function readMultipartRequestBody(
+  request: Request,
+  limit: number,
+): Promise<FormData> {
+  const contentType = request.headers.get("content-type");
+  if (!contentType || !/^multipart\/form-data\s*;/i.test(contentType)) {
+    await cancelBody(request.body);
+    throw new RequestBodyError("UNSUPPORTED_MEDIA_TYPE");
+  }
+  const bytes = await readBoundedBody(request, limit);
+  try {
+    return await new Response(bytes, {
+      headers: { "Content-Type": contentType },
+    }).formData();
+  } catch {
+    throw new RequestBodyError("INVALID_MULTIPART");
   }
 }

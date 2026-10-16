@@ -14,6 +14,8 @@ import { getCurrentUser } from "@/lib/auth/current-user";
 import { ReportImageError } from "@/lib/reports/image-errors";
 import { uploadReportImage } from "@/lib/reports/image-upload-service";
 import { readAndValidateReportImageFile } from "@/lib/reports/image-validation";
+import { REPORT_IMAGE_REQUEST_MAX_BYTES } from "@/lib/reports/photo-reference";
+import { resetRateLimitsForTests } from "@/lib/rate-limit";
 
 import * as route from "./route";
 
@@ -78,6 +80,7 @@ async function expectError(response: Response, status: number, code: string) {
 
 describe("report image upload route", () => {
   beforeEach(() => {
+    resetRateLimitsForTests();
     vi.clearAllMocks();
     vi.mocked(readSessionCookie).mockResolvedValue("session");
     vi.mocked(getCurrentUser).mockResolvedValue(user);
@@ -140,6 +143,17 @@ describe("report image upload route", () => {
     await expect(response.json()).resolves.toMatchObject({
       error: { code: "IMAGE_CONTENT_INVALID" },
     });
+  });
+
+  it("rejects oversized multipart bodies before decoding the image", async () => {
+    const oversized = new Request("http://localhost/api", {
+      method: "POST",
+      headers: { "content-type": "multipart/form-data; boundary=x", "content-length": String(REPORT_IMAGE_REQUEST_MAX_BYTES + 1) },
+      body: "small",
+    });
+    await expectError(await route.POST(oversized, context()), 413, "IMAGE_TOO_LARGE");
+    expect(readAndValidateReportImageFile).not.toHaveBeenCalled();
+    expect(uploadReportImage).not.toHaveBeenCalled();
   });
 
   it.each([

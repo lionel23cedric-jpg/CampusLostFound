@@ -7,6 +7,8 @@ import {
 } from "@/lib/reports/image-errors";
 import { uploadReportImage } from "@/lib/reports/image-upload-service";
 import { readAndValidateReportImageFile } from "@/lib/reports/image-validation";
+import { REPORT_IMAGE_REQUEST_MAX_BYTES } from "@/lib/reports/photo-reference";
+import { RequestBodyError, readMultipartRequestBody } from "@/lib/request-body";
 import {
   consumeRateLimit,
   rateLimitedResponse,
@@ -75,8 +77,11 @@ export async function POST(request: Request, context: Context) {
 
   let formData: FormData;
   try {
-    formData = await request.formData();
-  } catch {
+    formData = await readMultipartRequestBody(request, REPORT_IMAGE_REQUEST_MAX_BYTES);
+  } catch (error) {
+    if (error instanceof RequestBodyError && error.code === "BODY_TOO_LARGE") {
+      return noStore(reportImageErrorResponse(new ReportImageError("IMAGE_TOO_LARGE")));
+    }
     return invalidRequest();
   }
 

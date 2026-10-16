@@ -9,6 +9,7 @@ vi.mock("@/lib/reports/browse-service", () => ({
 
 import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { consumeRateLimit, rateLimitPolicies, resetRateLimitsForTests } from "@/lib/rate-limit";
 import { getReport, listReports } from "@/lib/reports/browse-service";
 import { ReportError } from "@/lib/reports/errors";
 import type { MemberReport } from "@/lib/reports/public-report";
@@ -110,6 +111,7 @@ function expectNoSecrets(value: unknown) {
 
 describe("report browsing routes", () => {
   beforeEach(() => {
+    resetRateLimitsForTests();
     vi.mocked(readSessionCookie).mockReset();
     vi.mocked(getCurrentUser).mockReset();
     vi.mocked(listReports).mockReset();
@@ -119,6 +121,17 @@ describe("report browsing routes", () => {
     vi.mocked(getCurrentUser).mockResolvedValue(user);
     vi.mocked(listReports).mockResolvedValue(page);
     vi.mocked(getReport).mockResolvedValue(report);
+  });
+
+  it("limits smart inference but keeps ordinary browsing available", async () => {
+    for (let i = 0; i < rateLimitPolicies.aiInference.limit; i += 1) {
+      consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+    }
+    const response = await reportListGet(listRequest("?smartQuery=black+charger"));
+    expect(response.status).toBe(429);
+    expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect(listReports).not.toHaveBeenCalled();
+    expect((await reportListGet(listRequest())).status).toBe(200);
   });
 
   it("returns a member-visible page with transformed browse parameters", async () => {

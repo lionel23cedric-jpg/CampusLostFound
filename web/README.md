@@ -12,13 +12,15 @@ The full-stack web application for the 159.333 Campus Lost and Found project.
 
 ## Requirements
 
-- Node.js 20.9 or later
+- Node.js 24.19.0, the version used for local verification. The locked jsdom
+  30 test dependency requires a supported Node 22, 24 or 26 release; Node 20
+  cannot run the complete toolchain.
 - npm
 - A MongoDB Atlas connection string
 
 ## Local setup
 
-1. Run `npm install` to install dependencies.
+1. From `web`, run `npm ci` to install the versions in the lockfile.
 2. Run `Copy-Item .env.example .env.local` to create a local environment file.
 3. Replace the placeholder in `.env.local` with a real MongoDB connection string.
 4. Run `npm run dev` to start the development server.
@@ -73,7 +75,7 @@ ordinary registration cannot request a privileged role.
 
 Recommended fresh-database order:
 
-1. Create `.env.local` and run `npm install`.
+1. Create `.env.local` and run `npm ci` from `web`.
 2. Run `npm run db:bootstrap` to add missing standard reference data.
 3. Register the initial administrator and other accounts in the web UI.
 4. Dry-run and then apply the administrator setup command after verifying its output.
@@ -111,6 +113,10 @@ the text factor, and reranks at most 30 candidates. Only final scores of at
 least 35 are shown. If model loading or inference fails, the original rule
 ranking remains available and the page says so.
 
+The text encoder accepts at most 512 tokens, including its boundary tokens.
+Longer input is truncated for inference only; the saved report stays intact.
+Information after that boundary does not contribute to the semantic score.
+
 Run `npm run evaluate:matching:ai` to load the packaged model and reproduce the
 synthetic comparison. Runtime inference does not download model files or call
 an external AI service. The pinned model is bundled into Git and the source
@@ -121,13 +127,33 @@ input. A suggested match never approves a Claim.
 
 Run these commands before creating a pull request:
 
+- `npm test`
 - `npm run lint`
+- `npx tsc --noEmit`
 - `npm run build`
+- `npm audit --omit=dev`
 - `npm audit`
 
-The lockfile resolves patched versions of Next.js, Sharp, Vitest, js-yaml, and
-PostCSS. Narrow npm overrides keep vulnerable transitive versions out of the
-installed tree until their parent dependency ranges make those pins unnecessary.
+If child-process test workers do not start in a restricted Windows environment,
+run `npm test -- --pool=threads --maxWorkers=2`. This runs the same test files
+with thread workers.
+
+`npm run build` uses Webpack. ONNX Runtime remains a server dependency so its
+WASM helpers retain their Node file paths. Start the resulting production
+server with `npm start`.
+
+The Turbopack production path can be checked separately with
+`npx next build --turbopack`. It is not the release build path because its CSS
+worker exited before establishing a connection in the Windows audit.
+
+On 16 October 2026, the production dependency audit reported no known
+vulnerabilities. The full audit still reported five high-severity entries in
+one development-tool chain: `eslint-config-next` → `@next/eslint-plugin-next`
+→ `fast-glob` → `micromatch` → `braces`. The
+[upstream braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+lists no patched release. The lockfile updates both affected copies of
+`brace-expansion` to compatible patched versions. Recheck advisories before a
+release; these results are dated observations.
 
 ## Guides and evidence
 

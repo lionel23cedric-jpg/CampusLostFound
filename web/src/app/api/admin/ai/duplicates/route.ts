@@ -4,6 +4,7 @@ import { duplicateScanResponseSchema } from "@/lib/ai/contracts";
 import { scanDuplicateReports } from "@/lib/ai/duplicate-detection";
 import type { PublicUser } from "@/lib/auth/public-user";
 import { getCurrentModerationAdministrator } from "@/lib/moderation/access";
+import { consumeRateLimit, rateLimitedResponse, rateLimitPolicies } from "@/lib/rate-limit";
 import {
   invalidModerationResponse,
   moderationErrorResponse,
@@ -39,6 +40,9 @@ export async function GET(request: Request) {
     return noStore(moderationErrorResponse(error));
   }
   if (!parsed.success) return noStore(invalidModerationResponse(parsed.error));
+
+  const limit = consumeRateLimit(`ai:${administrator.id}`, rateLimitPolicies.aiInference);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
 
   try {
     const result = duplicateScanResponseSchema.parse(

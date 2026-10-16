@@ -9,6 +9,7 @@ import * as ort from "onnxruntime-web/wasm";
 // tokenizer are packaged with the app; runtime inference never calls a remote API.
 const MODEL_ID = "Xenova/all-MiniLM-L6-v2";
 const MODEL_CONFIG_PATH = path.join(MODEL_ID, "config.json");
+const MAX_TOKEN_COUNT = 512;
 
 function resolveLocalModelRoot() {
   const candidates = [
@@ -126,8 +127,15 @@ function normalizedMeanPool(
 
 export async function embedPublicText(text: string): Promise<Float32Array> {
   const encoding = getTokenizer().encode(text);
-  const inputIds = BigInt64Array.from(encoding.ids, BigInt);
-  const attentionMask = encoding.attention_mask;
+  const ids = encoding.ids.slice(0, MAX_TOKEN_COUNT);
+  const attentionMask = encoding.attention_mask.slice(0, MAX_TOKEN_COUNT);
+  // The tokenizer does not truncate. Keep the final [SEP] when clipping so a
+  // valid long report stays inside the model's positional embedding table.
+  if (encoding.ids.length > MAX_TOKEN_COUNT) {
+    ids[MAX_TOKEN_COUNT - 1] = encoding.ids[encoding.ids.length - 1];
+    attentionMask[MAX_TOKEN_COUNT - 1] = 1;
+  }
+  const inputIds = BigInt64Array.from(ids, BigInt);
   const dimensions: [number, number] = [1, inputIds.length];
   const session = await getSession();
   const output = await session.run({

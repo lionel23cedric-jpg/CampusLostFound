@@ -6,6 +6,7 @@ import { reportIdSchema } from "@/lib/reports/browse-validation";
 import { invalidReportQueryResponse } from "@/lib/reports/errors";
 import { matchingErrorResponse } from "@/lib/reports/matching-errors";
 import { findReportMatches } from "@/lib/reports/matching-service";
+import { consumeRateLimit, rateLimitedResponse, rateLimitPolicies } from "@/lib/rate-limit";
 
 type Context = {
   params: Promise<{ id: string }>;
@@ -35,6 +36,9 @@ export async function GET(_request: Request, context: Context) {
   if (!parsed.success) {
     return invalidReportQueryResponse();
   }
+
+  const limit = consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
 
   try {
     return Response.json(await findReportMatches(user, parsed.data));

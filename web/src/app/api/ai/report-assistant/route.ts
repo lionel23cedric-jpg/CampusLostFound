@@ -5,6 +5,8 @@ import {
 import { suggestReportDetails } from "@/lib/ai/report-assistant";
 import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import type { PublicUser } from "@/lib/auth/public-user";
+import { consumeRateLimit, rateLimitedResponse, rateLimitPolicies } from "@/lib/rate-limit";
 import {
   AuthError,
   authErrorResponse,
@@ -34,15 +36,20 @@ function assistantErrorResponse() {
 }
 
 export async function POST(request: Request) {
+  let user: PublicUser;
   try {
-    const user = await getCurrentUser(await readSessionCookie(), {
+    const current = await getCurrentUser(await readSessionCookie(), {
       includeInactive: true,
     });
-    if (!user) throw new AuthError("AUTHENTICATION_REQUIRED");
-    if (user.status !== "active") throw new AuthError("ACCOUNT_UNAVAILABLE");
+    if (!current) throw new AuthError("AUTHENTICATION_REQUIRED");
+    if (current.status !== "active") throw new AuthError("ACCOUNT_UNAVAILABLE");
+    user = current;
   } catch (error) {
     return noStore(authErrorResponse(error));
   }
+
+  const limit = consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
 
   let body: unknown;
   try {

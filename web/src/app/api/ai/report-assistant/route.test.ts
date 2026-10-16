@@ -9,6 +9,7 @@ vi.mock("@/lib/ai/report-assistant", () => ({
 import { suggestReportDetails } from "@/lib/ai/report-assistant";
 import { readSessionCookie } from "@/lib/auth/cookie";
 import { getCurrentUser } from "@/lib/auth/current-user";
+import { consumeRateLimit, rateLimitPolicies, resetRateLimitsForTests } from "@/lib/rate-limit";
 
 import { POST } from "./route";
 
@@ -67,6 +68,7 @@ async function expectError(
 
 describe("report assistant route", () => {
   beforeEach(() => {
+    resetRateLimitsForTests();
     vi.mocked(readSessionCookie).mockReset();
     vi.mocked(getCurrentUser).mockReset();
     vi.mocked(suggestReportDetails).mockReset();
@@ -86,6 +88,17 @@ describe("report assistant route", () => {
       "AUTHENTICATION_REQUIRED",
       "Authentication required",
     );
+    expect(suggestReportDetails).not.toHaveBeenCalled();
+  });
+
+  it("limits repeated inference before reading the body", async () => {
+    for (let i = 0; i < rateLimitPolicies.aiInference.limit; i += 1) {
+      consumeRateLimit(`ai:${user.id}`, rateLimitPolicies.aiInference);
+    }
+    const response = await POST({} as Request);
+    expect(response.status).toBe(429);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
     expect(suggestReportDetails).not.toHaveBeenCalled();
   });
 

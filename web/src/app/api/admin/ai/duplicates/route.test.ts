@@ -12,6 +12,7 @@ import { AuthError } from "@/lib/auth/errors";
 import type { PublicUser } from "@/lib/auth/public-user";
 import { getCurrentModerationAdministrator } from "@/lib/moderation/access";
 import { ModerationError } from "@/lib/moderation/errors";
+import { consumeRateLimit, rateLimitPolicies, resetRateLimitsForTests } from "@/lib/rate-limit";
 
 import * as route from "./route";
 
@@ -43,6 +44,7 @@ async function expectError(response: Response, status: number, code: string, mes
 
 describe("administrator duplicate scan route", () => {
   beforeEach(() => {
+    resetRateLimitsForTests();
     vi.clearAllMocks();
     vi.mocked(getCurrentModerationAdministrator).mockResolvedValue(administrator);
     vi.mocked(scanDuplicateReports).mockResolvedValue({ pairs: [] });
@@ -85,6 +87,17 @@ describe("administrator duplicate scan route", () => {
       new Request("http://localhost/api/admin/ai/duplicates?limit=500"),
     );
     await expectError(response, 400, "VALIDATION_ERROR", "Moderation request is invalid");
+    expect(scanDuplicateReports).not.toHaveBeenCalled();
+  });
+
+  it("limits repeated administrator scans before querying reports", async () => {
+    for (let i = 0; i < rateLimitPolicies.aiInference.limit; i += 1) {
+      consumeRateLimit(`ai:${administrator.id}`, rateLimitPolicies.aiInference);
+    }
+    const response = await route.GET(new Request("http://localhost/api/admin/ai/duplicates"));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
     expect(scanDuplicateReports).not.toHaveBeenCalled();
   });
 
