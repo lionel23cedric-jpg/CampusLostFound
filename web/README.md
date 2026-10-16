@@ -18,10 +18,30 @@ The full-stack web application for the 159.333 Campus Lost and Found project.
 - npm
 - A MongoDB Atlas connection string
 
+## Database prerequisites
+
+Use a separate course/test database that you are authorised to modify. In Atlas,
+create a database user with read/write access to that database and add your
+current IP address to Network Access. Obtain the application's connection string
+from the cluster's Connect workflow, replace its placeholders and include the
+intended database name. The database user is separate from your Atlas website
+login. Follow [MongoDB's connection guide](https://www.mongodb.com/docs/atlas/connect-to-database-deployment/)
+if authentication or IP access fails.
+
+Claim decisions, handover and account-role setup use multi-document transactions.
+A plain standalone `mongod` is not a complete substitute: use Atlas or a
+transaction-capable replica set. See the
+[MongoDB transaction requirements](https://www.mongodb.com/docs/manual/core/transactions-production-consideration/).
+
+Tests and the production build can run without `.env.local`; protected APIs still
+require a valid database configuration for signed-in operation. No shared
+privileged account or production credential is included in the repository.
+
 ## Local setup
 
 1. From `web`, run `npm ci` to install the versions in the lockfile.
-2. Run `Copy-Item .env.example .env.local` to create a local environment file.
+2. Run `Copy-Item .env.example .env.local` in PowerShell, or
+   `cp .env.example .env.local` on macOS/Linux.
 3. Replace the placeholder in `.env.local` with a real MongoDB connection string.
 4. Run `npm run dev` to start the development server.
 5. Open `http://localhost:3000` in a browser.
@@ -157,6 +177,8 @@ release; these results are dated observations.
 
 ## Guides and evidence
 
+- The [submission evidence index](../docs/submission-evidence/README.md) links
+  the dated results, contribution record and manual screenshots cited by the report.
 - The role-by-role setup and operation sequence is in
   [`../docs/user-guide.md`](../docs/user-guide.md).
 - Requirement coverage and outstanding manual checks are in

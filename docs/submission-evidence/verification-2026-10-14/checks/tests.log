@@ -1,0 +1,281 @@
+
+ RUN  v4.1.11 <workspace>/CampusLostFound-matching-audit/web
+
+ ✓ src/components/claims/staff-claim-detail-client.test.tsx (40 tests) 5498ms
+     ✓ provides the protected async staff route  346ms
+     ✓ confirms approval, warns about competing Claims and posts the trimmed note once  683ms
+     ✓ preserves safe detail and enables refresh after a decision conflict  420ms
+     ✓ blocks another completion after conflict until refresh succeeds  320ms
+ ✓ src/components/admin/admin-account-management-client.test.tsx (36 tests) 7490ms
+   ✓ loads page one and renders public account cards  446ms
+   ✓ lets an administrator add and remove Staff access with confirmation  334ms
+   ✓ removes Staff membership while retaining a suspended account  322ms
+   ✓ submits normalized search and filters explicitly  648ms
+   ✓ resets filters and returns to page one  322ms
+   ✓ announces refreshes and prevents duplicate pagination requests  392ms
+   ✓ aborts the previous request and ignores its late completion  347ms
+   ✓ reloads the committed query after ACCOUNT_STATE_CONFLICT  432ms
+   ✓ reloads the committed query after ACCOUNT_NOT_FOUND  402ms
+   ✓ closes a stale confirmation when refreshed account data arrives  317ms
+ ✓ src/components/admin/campus-location-management-panel.test.tsx (18 tests) 9313ms
+   ✓ loads page one and renders privacy-safe campus location cards  435ms
+   ✓ submits search explicitly, changes status at page one, resets and pages  800ms
+   ✓ ignores aborted and stale list responses and aborts on unmount  319ms
+   ✓ creates a campus location once, clears the form, resets filters and focuses success  1488ms
+   ✓ blocks duplicate create submissions and retains safe form errors  770ms
+   ✓ edits approved fields with the exact updatedAt token and focuses the record  1366ms
+   ✓ requires explicit confirmation to deactivate and restore campus locations  514ms
+   ✓ preserves a stale edit and requires an explicit latest-record reload  707ms
+   ✓ closes a missing editor, refreshes the list and keeps duplicate drafts  716ms
+   ✓ retains an edit after a safe server failure and allows an explicit retry  590ms
+   ✓ uses safe list and mutation failures without exposing raw errors  645ms
+ ✓ src/components/reports/report-form.test.tsx (23 tests) 9494ms
+     ✓ applies an image category only after the member confirms it  831ms
+     ✓ requires public context and applies a reviewed assistant suggestion only after confirmation  439ms
+     ✓ dismisses a fallback suggestion without changing the form and supports retry  448ms
+     ✓ renders four semantic groups with labelled initial controls  326ms
+     ✓ uses stable unique IDs and enforces dynamic row limits  1839ms
+     ✓ clears a field's stale error when it is edited  463ms
+     ✓ clears only the edited error when repeated fields have sibling errors  304ms
+     ✓ disables and relabels submission while ignoring a second submit  328ms
+     ✓ merges safe 400 field errors without exposing private values  314ms
+     ✓ associates a flattened privacySettings error with a real control and clears it on edit  445ms
+     ✓ associates a flattened privateVerification error with a real control and clears it on edit  402ms
+     ✓ keeps an unknown flattened field error in the summary  379ms
+ ✓ src/components/auth/register-form.test.tsx (9 tests) 5940ms
+   ✓ reports a mismatched confirmation and does not submit  1121ms
+   ✓ sends no confirmation field and preserves password whitespace  1193ms
+   ✓ shows the safe duplicate-email response and associates it with email  1077ms
+   ✓ prevents duplicate registration while pending  1159ms
+   ✓ hides unknown error details  1089ms
+ ✓ src/components/profile/profile-settings-client.test.tsx (15 tests) 3112ms
+     ✓ prevents a sixth campus selection and announces the limit  424ms
+     ✓ normalises the exact PATCH body and saves only once  638ms
+     ✓ focuses the first invalid field and preserves input after a field error  602ms
+ ✓ src/components/reports/report-browser.test.tsx (30 tests) 4045ms
+     ✓ submits validated filters to a canonical URL and resets the page  825ms
+     ✓ focuses a linked validation summary and does not navigate invalid values  670ms
+     ✓ focuses results after user navigation but not initial load or retry  329ms
+     ✓ does not let an old queued focus announce the next query before it completes  641ms
+ ✓ src/components/admin/category-management-panel.test.tsx (16 tests) 6089ms
+   ✓ submits search explicitly, changes status at page one, resets and pages  618ms
+   ✓ shows unfiltered and filtered empty states with a safe reset  311ms
+   ✓ creates a category once, clears the form, resets filters and focuses success  1019ms
+   ✓ blocks duplicate create submissions and retains safe form errors  415ms
+   ✓ edits approved fields with the exact updatedAt token and focuses the record  1004ms
+   ✓ requires explicit confirmation to deactivate and restore categories  469ms
+   ✓ preserves a stale edit and requires an explicit latest-record reload  652ms
+   ✓ closes a missing editor, refreshes the list and keeps duplicate drafts  399ms
+ ✓ src/components/claims/claim-submission-client.test.tsx (18 tests) 3646ms
+     ✓ submits only current server indexes and redirects to the encoded claim detail  470ms
+     ✓ keeps answers after a retryable failure and prevents duplicate submits  471ms
+     ✓ ignores a successful submission after the form unmounts  309ms
+     ✓ ignores a stale submission failure after the report changes  345ms
+     ✓ redirects when authentication expires and uses local validation copy  374ms
+ ✓ src/components/claims/claim-detail-client.test.tsx (37 tests) 3077ms
+ ✓ src/components/reports/report-submission-client.test.tsx (36 tests) 3339ms
+     ✓ refreshes stale options without losing the mounted form state  377ms
+     ✓ mounts an empty account-scoped form when the active student changes  434ms
+ ✓ src/components/auth/login-form.test.tsx (8 tests) 3491ms
+   ✓ submits transformed email and untouched password once  698ms
+   ✓ shows only the safe invalid-credentials message  625ms
+   ✓ disables a pending submission and prevents duplicate requests  735ms
+   ✓ hides network error details  595ms
+   ✓ hides unknown error details  582ms
+ ✓ src/lib/ai/image-classifier.test.ts (4 tests) 1908ms
+     ✓ runs the packaged model without a network download  1893ms
+ ✓ src/components/reports/report-flag-panel.test.tsx (9 tests) 2961ms
+     ✓ submits a controlled privacy concern  1173ms
+     ✓ cancels and resets the form  353ms
+ ✓ src/components/claims/staff-claim-list-client.test.tsx (20 tests) 1574ms
+ ✓ src/components/reports/report-detail-client.test.tsx (34 tests) 1898ms
+ ✓ src/components/claims/claim-list-client.test.tsx (16 tests) 1564ms
+ ✓ src/components/staff-reports/staff-report-detail-client.test.tsx (7 tests) 1444ms
+     ✓ normalises and stores a staff-only location  565ms
+     ✓ refreshes a changed report after a conflict and removes stale input  346ms
+ ✓ src/components/reports/owner-report-history.test.tsx (23 tests) 1374ms
+ ✓ src/components/admin/admin-moderation-report-list.test.tsx (7 tests) 1763ms
+     ✓ identifies the selected report when same-title reports are moderated  527ms
+     ✓ searches on submission and applies controlled filters  432ms
+     ✓ requires a direct hide reason and sends the exact timestamp  315ms
+ ✓ src/components/site-header.test.tsx (32 tests) 997ms
+ ✓ src/components/staff-reports/staff-report-list-client.test.tsx (7 tests) 1285ms
+     ✓ loads the active pending queue and renders safe semantic rows  335ms
+     ✓ applies four filters at page one and clears to the canonical URL  490ms
+ ✓ src/components/notifications/notification-centre.test.tsx (18 tests) 845ms
+ ✓ src/components/admin/admin-moderation-client.test.tsx (9 tests) 1443ms
+ ✓ src/components/admin/admin-reference-data-client.test.tsx (5 tests) 1266ms
+   ✓ mounts campus locations lazily and preserves both drafts across switches  696ms
+ ✓ src/components/reports/report-matches-panel.test.tsx (9 tests) 909ms
+     ✓ waits for activation, announces loading and renders safe explanations  304ms
+ ✓ src/components/notifications/notification-provider.test.tsx (22 tests) 803ms
+ ✓ src/components/admin/admin-moderation-flag-queue.test.tsx (7 tests) 1176ms
+     ✓ hides from a flag with both exact timestamps  392ms
+ ✓ src/components/admin/reference-data-panel-controls.test.tsx (8 tests) 1176ms
+   ✓ exposes labelled category filters and reports changes explicitly  565ms
+ ✓ src/lib/reports/local-embedding.test.ts (1 test) 672ms
+     ✓ returns finite, normalized vectors from the packaged quantized model  669ms
+ ✓ src/components/claims/staff-claim-access-boundary.test.tsx (12 tests) 541ms
+ ✓ src/components/auth/auth-session-provider.test.tsx (7 tests) 566ms
+ ✓ src/components/admin/admin-overview-client.test.tsx (9 tests) 1190ms
+   ✓ loads once and renders every metric with a definition  456ms
+ ✓ src/components/dashboard/dashboard-client.test.tsx (13 tests) 623ms
+ ✓ src/components/reports/report-card.test.tsx (10 tests) 403ms
+ ✓ src/components/notifications/notification-access-boundary.test.tsx (11 tests) 319ms
+ ✓ src/components/staff/staff-access-boundary.test.tsx (9 tests) 421ms
+ ✓ src/components/reports/report-image-picker.test.tsx (11 tests) 508ms
+ ✓ src/app/home-page.test.tsx (1 test) 279ms
+ ✓ src/components/auth/password-field.test.tsx (1 test) 287ms
+ ✓ src/components/claims/claimant-access-boundary.test.tsx (8 tests) 339ms
+ ✓ src/components/admin/administrator-access-boundary.test.tsx (12 tests) 476ms
+ ✓ src/lib/auth/password.test.ts (6 tests) 342ms
+ ✓ src/lib/claims/staff-service.test.ts (45 tests) 144ms
+ ✓ src/lib/reports/browser-client.test.ts (75 tests) 90ms
+ ✓ src/app/staff/reports/staff-report-pages.test.tsx (2 tests) 170ms
+ ✓ src/app/api/admin/campus-locations/admin-campus-location-routes.test.ts (39 tests) 87ms
+ ✓ src/components/page-back-link.test.tsx (1 test) 181ms
+ ✓ src/lib/claims/staff-browser-client.test.ts (60 tests) 73ms
+ ✓ src/components/admin/overview-donut.test.tsx (2 tests) 214ms
+ ✓ src/app/api/admin/categories/admin-category-routes.test.ts (35 tests) 80ms
+ ✓ src/lib/reports/image-validation.test.ts (18 tests) 110ms
+ ✓ src/lib/admin/reference-data-browser-client.test.ts (35 tests) 80ms
+ ✓ src/app/api/ai/image-category/route.test.ts (12 tests) 74ms
+ ✓ src/lib/reports/form-validation.test.ts (53 tests) 61ms
+ ✓ src/lib/request-body.test.ts (12 tests) 66ms
+ ✓ src/lib/staff-reports/browser-client.test.ts (22 tests) 69ms
+ ✓ src/app/api/reports/[id]/images/report-image-upload-route.test.ts (15 tests) 67ms
+ ✓ src/app/api/profile/profile-routes.test.ts (14 tests) 67ms
+ ✓ src/app/api/reports/report-routes.test.ts (20 tests) 68ms
+ ✓ src/lib/admin/browser-client.test.ts (19 tests) 68ms
+ ✓ src/lib/moderation/browser-client.test.ts (21 tests) 69ms
+ ✓ src/lib/reports/errors.test.ts (36 tests) 59ms
+ ✓ src/lib/admin/account-browser-client.test.ts (24 tests) 68ms
+ ✓ src/models/item-report.test.ts (24 tests) 46ms
+ ✓ src/app/api/staff/claims/staff-claim-routes.test.ts (47 tests) 59ms
+ ✓ src/components/context-illustration.test.tsx (9 tests) 66ms
+ ✓ src/lib/reports/browse-service.test.ts (17 tests) 84ms
+ ✓ src/lib/rate-limit.test.ts (5 tests) 63ms
+ ✓ src/lib/claims/claimant-service.test.ts (40 tests) 62ms
+ ✓ src/lib/claims/errors.test.ts (18 tests) 52ms
+ ✓ src/app/api/claims/claimant-routes.test.ts (50 tests) 60ms
+ ✓ src/app/api/admin/report-flags/admin-report-flag-routes.test.ts (35 tests) 72ms
+ ✓ src/app/api/ai/report-assistant/route.test.ts (5 tests) 55ms
+ ✓ src/lib/moderation/admin-service.test.ts (50 tests) 75ms
+ ✓ src/lib/reports/owner-history-service.test.ts (12 tests) 78ms
+ ✓ src/app/api/reports/mine/owner-report-history-route.test.ts (26 tests) 52ms
+ ✓ src/components/home/home-object-illustration.test.tsx (4 tests) 56ms
+ ✓ src/app/api/admin/overview/admin-overview-route.test.ts (13 tests) 55ms
+ ✓ src/app/api/admin/accounts/[userId]/status/admin-account-status-route.test.ts (18 tests) 62ms
+ ✓ src/lib/reports/matching-service.test.ts (20 tests) 46ms
+ ✓ src/app/api/reports/matching-routes.test.ts (12 tests) 54ms
+ ✓ src/app/api/report-images/[imageId]/report-image-read-route.test.ts (7 tests) 49ms
+ ✓ src/app/api/reports/browse-routes.test.ts (19 tests) 53ms
+ ✓ src/lib/claims/browser-client.test.ts (35 tests) 47ms
+ ✓ src/app/api/reports/[id]/flags/report-flag-route.test.ts (26 tests) 49ms
+ ✓ src/lib/profile/errors.test.ts (9 tests) 46ms
+ ✓ src/lib/reports/image-errors.test.ts (17 tests) 55ms
+ ✓ src/lib/admin/account-errors.test.ts (12 tests) 47ms
+ ✓ src/app/api/notifications/notification-routes.test.ts (28 tests) 47ms
+ ✓ src/app/api/admin/reports/[reportId]/moderation/admin-report-moderation-route.test.ts (17 tests) 61ms
+ ✓ src/lib/reports/image-upload-service.test.ts (27 tests) 48ms
+ ✓ src/lib/reports/validation.test.ts (48 tests) 51ms
+ ✓ src/lib/auth/errors.test.ts (8 tests) 49ms
+ ✓ src/lib/reports/matching-errors.test.ts (8 tests) 44ms
+ ✓ src/lib/notifications/service.test.ts (17 tests) 41ms
+ ✓ src/lib/admin/reference-data-errors.test.ts (10 tests) 44ms
+ ✓ src/lib/staff-reports/errors.test.ts (8 tests) 42ms
+ ✓ src/lib/admin/errors.test.ts (9 tests) 43ms
+ ✓ src/lib/notifications/browser-client.test.ts (36 tests) 41ms
+ ✓ src/app/api/staff/reports/staff-report-routes.test.ts (24 tests) 37ms
+ ✓ src/lib/moderation/validation.test.ts (31 tests) 47ms
+ ✓ src/lib/notifications/errors.test.ts (5 tests) 41ms
+ ✓ src/app/notifications/notification-page.test.tsx (1 test) 39ms
+ ✓ src/lib/admin/account-status-service.test.ts (27 tests) 38ms
+ ✓ src/lib/admin/reference-data-contract.test.ts (55 tests) 34ms
+ ✓ src/app/api/admin/reports/admin-report-list-route.test.ts (17 tests) 51ms
+ ✓ src/models/report-moderation-event.test.ts (33 tests) 34ms
+ ✓ src/lib/admin/overview-service.test.ts (11 tests) 33ms
+ ✓ src/lib/auth/browser-client.test.ts (23 tests) 38ms
+ ✓ src/app/api/admin/accounts/admin-account-list-route.test.ts (12 tests) 49ms
+ ✓ src/app/admin/admin-page.test.tsx (1 test) 39ms
+ ✓ src/app/api/admin/accounts/[userId]/role/admin-account-role-route.test.ts (7 tests) 46ms
+ ✓ src/models/claim-evidence.test.ts (12 tests) 27ms
+ ✓ src/app/api/admin/ai/duplicates/route.test.ts (7 tests) 40ms
+ ✓ src/lib/moderation/errors.test.ts (13 tests) 39ms
+ ✓ src/app/api/auth/auth-routes.test.ts (20 tests) 36ms
+ ✓ src/lib/reports/browse-search.test.ts (42 tests) 32ms
+ ✓ src/lib/staff-reports/service.test.ts (21 tests) 35ms
+ ✓ src/lib/admin/campus-location-service.test.ts (19 tests) 35ms
+ ✓ src/app/admin/reference-data/admin-reference-data-page.test.tsx (1 test) 42ms
+ ✓ src/lib/admin/category-service.test.ts (19 tests) 35ms
+ ✓ src/models/report-image.test.ts (19 tests) 31ms
+ ✓ src/models/report-flag.test.ts (20 tests) 30ms
+ ✓ src/models/account-administration-event.test.ts (18 tests) 26ms
+ ✓ src/app/admin/moderation/admin-moderation-page.test.tsx (1 test) 40ms
+ ✓ src/lib/admin/account-role-service.test.ts (11 tests) 25ms
+ ✓ scripts/set-account-role.test.ts (18 tests) 29ms
+ ✓ src/app/admin/accounts/admin-account-page.test.tsx (1 test) 40ms
+ ✓ src/models/notification.test.ts (15 tests) 26ms
+ ✓ src/lib/reports/matching-score.test.ts (20 tests) 19ms
+ ✓ src/lib/admin/account-contract.test.ts (21 tests) 29ms
+ ✓ src/lib/reports/browse-validation.test.ts (54 tests) 29ms
+ ✓ src/lib/moderation/contracts.test.ts (12 tests) 31ms
+ ✓ src/models/claim.test.ts (13 tests) 27ms
+ ✓ src/lib/auth/current-user.test.ts (10 tests) 24ms
+ ✓ src/lib/reports/image-read-service.test.ts (18 tests) 25ms
+ ✓ src/lib/profile/service.test.ts (8 tests) 22ms
+ ✓ src/lib/admin/overview-contract.test.ts (13 tests) 24ms
+ ✓ src/lib/moderation/flag-service.test.ts (12 tests) 26ms
+ ✓ src/lib/claims/validation.test.ts (29 tests) 25ms
+ ✓ src/lib/admin/account-list-service.test.ts (9 tests) 32ms
+ ✓ src/lib/claims/staff-list-search.test.ts (31 tests) 12ms
+ ✓ src/lib/notifications/contracts.test.ts (14 tests) 23ms
+ ✓ src/lib/notifications/delivery.test.ts (16 tests) 20ms
+ ✓ src/lib/reports/service.test.ts (11 tests) 20ms
+ ✓ src/lib/ai/contracts.test.ts (5 tests) 19ms
+ ✓ src/lib/moderation/browser-contract.test.ts (5 tests) 18ms
+ ✓ src/lib/auth/service.test.ts (10 tests) 18ms
+ ✓ src/lib/admin/account-browser-contract.test.ts (14 tests) 17ms
+ ✓ src/lib/profile/validation.test.ts (18 tests) 17ms
+ ✓ src/lib/moderation/access.test.ts (17 tests) 22ms
+ ✓ src/lib/notifications/validation.test.ts (14 tests) 16ms
+ ✓ src/lib/reports/matching-evaluation-fixture.test.ts (2 tests) 16ms
+ ✓ src/models/account-role-change-event.test.ts (2 tests) 18ms
+ ✓ src/lib/admin/reference-data-access.test.ts (8 tests) 12ms
+stdout | src/lib/reports/matching-evaluation.test.ts > matching evaluation metrics > meets the recorded course-level floors on independent labelled data
+MATCHING_EVALUATION={"truePositive":24,"falsePositive":5,"falseNegative":0,"trueNegative":31,"precision":0.8275862068965517,"recall":1,"f1":0.9056603773584906,"accuracy":0.9166666666666666,"topMatchAccuracy":1,"cases":12,"comparisons":60}
+
+ ✓ src/lib/reports/matching-evaluation.test.ts (4 tests) 12ms
+ ✓ src/lib/reports/match-notifications.test.ts (3 tests) 13ms
+ ✓ src/lib/auth/public-user.test.ts (2 tests) 17ms
+ ✓ src/lib/ai/report-assistant.test.ts (3 tests) 12ms
+ ✓ src/lib/staff-reports/access.test.ts (8 tests) 12ms
+ ✓ src/lib/ai/duplicate-detection.test.ts (4 tests) 21ms
+ ✓ src/lib/reports/photo-reference.test.ts (16 tests) 11ms
+ ✓ src/lib/staff-reports/list-search.test.ts (18 tests) 11ms
+ ✓ src/lib/staff-reports/validation.test.ts (22 tests) 18ms
+ ✓ src/lib/auth/cookie.test.ts (5 tests) 11ms
+ ✓ src/models/session.test.ts (4 tests) 16ms
+ ✓ src/lib/reports/owner-history-search.test.ts (29 tests) 11ms
+ ✓ src/lib/auth/token.test.ts (3 tests) 10ms
+ ✓ scripts/audit-legacy-photo-urls.test.ts (4 tests) 15ms
+ ✓ src/lib/reports/reference-data.test.ts (2 tests) 10ms
+ ✓ src/lib/claims/list-search.test.ts (26 tests) 12ms
+ ✓ src/lib/admin/account-access.test.ts (5 tests) 7ms
+ ✓ src/lib/reports/public-report.test.ts (11 tests) 16ms
+ ✓ src/lib/claims/public-claim.test.ts (3 tests) 10ms
+ ✓ src/lib/reports/owner-history-validation.test.ts (27 tests) 14ms
+ ✓ src/lib/reports/semantic-score.test.ts (5 tests) 9ms
+ ✓ scripts/bootstrap-reference-data.test.ts (2 tests) 14ms
+ ✓ src/lib/auth/validation.test.ts (8 tests) 11ms
+ ✓ src/lib/staff-reports/contracts.test.ts (5 tests) 13ms
+ ✓ src/components/auth/form-validation.test.ts (4 tests) 9ms
+ ✓ src/lib/claims/verification.test.ts (9 tests) 8ms
+ ✓ next-config.test.ts (2 tests) 6ms
+
+ Test Files  183 passed (183)
+      Tests  3064 passed (3064)
+   Start at  22:32:39
+   Duration  84.49s (transform 14.91s, setup 0ms, import 90.43s, tests 101.78s, environment 89.76s)
+
+JSON report written to <workspace>/tmp/submission-final/checks/vitest-results.json

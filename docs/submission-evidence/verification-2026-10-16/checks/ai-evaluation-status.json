@@ -1,0 +1,15 @@
+{
+  "check": "ai-evaluation",
+  "sourceCommit": "12c0acff48b88cd5fc4a2a6547c49e6ee64d0006",
+  "sourceMethod": "Clean git archive export; no existing node_modules, .next or .env files copied",
+  "runtime": "Node.js 24.19.0; Windows",
+  "executable": "<node>",
+  "arguments": [
+    "scripts/evaluate-local-ai.mjs"
+  ],
+  "startedUtc": "2026-10-16T00:04:47.6023982+00:00",
+  "finishedUtc": "2026-10-16T00:04:49.6098992+00:00",
+  "durationSeconds": 1.994,
+  "exitCode": 0,
+  "log": "ai-evaluation.log"
+}

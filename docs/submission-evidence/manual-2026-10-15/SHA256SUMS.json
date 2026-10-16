@@ -1,0 +1,21 @@
+{
+  "ADMIN-2026-10-15/00-overview-15-oct.png": "7924e8cf425a9fa5465bf1fa77595c816c6fe8ac3a4d36fcb919e7517cc7fb0d",
+  "ADMIN-2026-10-15/01-duplicate-scan-summary.png": "9c61f5cc307ad104deb367c7672b5c60d4ba33c7362a89cf2f6dc121d085f56b",
+  "ADMIN-2026-10-15/02-grouped-duplicate-targets.png": "164ba2dce8b077437ad591c298a69f6fdb48a3fb084cf2d2d3c287c1a90da833",
+  "ADMIN-2026-10-15/03-existing-pending-flags.png": "64935595952f23fc4ffc7dfa1aa566362948f0c901d8f6062b14719592e2fc96",
+  "ADMIN-2026-10-15/04-alternate-pair-expanded.png": "9ba86f7d413acf32304c2c6a72c6266fef3f8ab5f8c3c904b763aa838897880d",
+  "ADMIN-2026-10-15/05-moderation-320x800-top.png": "3cad1643748fc7b2e85b846e64d196f8dbf2e327bcdbdf91c6308e9d4534dc9e",
+  "DEPLOYMENT-2026-10-15/01-production-overview.png": "bacf47802220775e05feed713736538f944b188d73f482504f9463d692958b5c",
+  "DEPLOYMENT-2026-10-15/02-production-history.png": "e38812c36391d7039816c06f2d99d0400f60027aa8c9bcbd031f1d52c2c8b25a",
+  "DEPLOYMENT-2026-10-15/03-production-details.png": "c6e28e7afbe3c34071116334ca739fc71620ff14b450a23695baf209c5faf104",
+  "KEYBOARD-2026-10-15/01-home-sign-in-focus.png": "83eb28b601ebf634d371363d9166d46e31c7e38e0c5adb725ed41c3c8d5d94f9",
+  "KEYBOARD-2026-10-15/02-login-navigation-result.png": "7300a0a03494b45978a4ead8caaa03eac0f5fab118ab8dccc400faf9cc8b94c9",
+  "KEYBOARD-2026-10-15/03-login-submit-focus.png": "db710ce3bf16b8f652794e0e9af07077340ff3821355892b8aa8ca0415b627d4",
+  "KEYBOARD-2026-10-15/04-login-email-focus.png": "37be4a9466d5cf3a1afb314eb6c265932472cdd717ee30a26f342cee8a0c3a08",
+  "README.md": "1b70b4c362fd6c3dc9277859d1df41192a98019039ce483cd7ed23efc7b4dac2",
+  "RESPONSIVE-2026-10-15/01-home-320x800-top.png": "3c4c061783663b502c55978ee00e6c62a7140f4cc01feb16b054097d2b49de49",
+  "RESPONSIVE-2026-10-15/02-home-320x800-actions.png": "dff7ae6d45873d7cbb8ebab9ea3941f46249d339b7157366a6458e04b7434986",
+  "RESPONSIVE-2026-10-15/03-home-320x800-recovery-explanation.png": "54a3ed15ea6e7b519f41fc99e7a4585c37c7db9da99e47f59353fd31344f239c",
+  "RESPONSIVE-2026-10-15/04-home-320x800-privacy-footer.png": "d298f650997ff5e424b76e88fa0e9ad6ddfec1a27b73e05dd9a41738c3792c1f",
+  "RESPONSIVE-2026-10-15/05-home-390x800-top.png": "d01180a95d30b28676ef9d8c86086083b3270ef0e44ce88ca4ade2889ddb733a"
+}

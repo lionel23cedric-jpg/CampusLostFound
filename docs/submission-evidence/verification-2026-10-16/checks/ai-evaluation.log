@@ -1,0 +1,5 @@
+(node:43580) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///<workspace>/output/final-verification-2026-10-16/clean-source/web/src/lib/reports/matching-score.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\<workspace>\output\final-verification-2026-10-16\clean-source\web\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+LOCAL_AI_EVALUATION={"model":"Xenova/all-MiniLM-L6-v2","cases":12,"comparisons":60,"truePositive":24,"falsePositive":18,"falseNegative":0,"trueNegative":18,"precision":0.5714285714285714,"recall":1,"f1":0.7272727272727273,"accuracy":0.7,"topMatchAccuracy":1,"durationSeconds":1}
